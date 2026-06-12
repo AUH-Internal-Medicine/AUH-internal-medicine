@@ -20,347 +20,287 @@
             --gray-200: #e9ecef;
             --gray-300: #dee2e6;
             --gray-700: #495057;
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
             --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
-            --shadow-xl: 0 20px 25px rgba(0,0,0,0.15);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 30px rgba(0,0,0,0.12);
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
             --radius-xl: 20px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: all 0.25s ease;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Tajawal', 'Cairo', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 50%, #e0f2f1 100%);
             color: var(--dark);
             min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
         }
 
-        .bg-animation {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
-        }
-        .bg-circle {
-            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
-            animation: float 20s infinite ease-in-out;
-        }
-        .bg-circle-1 { width: 400px; height: 400px; background: #667eea; top: -100px; right: -100px; }
-        .bg-circle-2 { width: 300px; height: 300px; background: #764ba2; bottom: -50px; left: -50px; animation-delay: -7s; }
-        .bg-circle-3 { width: 350px; height: 350px; background: #f093fb; top: 50%; left: 50%; animation-delay: -14s; }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(50px, -50px) scale(1.1); }
-            50% { transform: translate(0, -100px) scale(0.9); }
-            75% { transform: translate(-50px, -50px) scale(1.05); }
+        /* خلفية هادئة */
+        .bg-pattern {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(0, 184, 148, 0.06) 0%, transparent 50%);
         }
 
+        /* هيدر */
         .main-header {
             background: linear-gradient(135deg, #1a73e8 0%, #6c5ce7 50%, #00b894 100%);
-            position: relative; overflow: hidden; padding: 40px 20px; text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3); border-bottom: 3px solid rgba(255,255,255,0.2);
+            padding: 30px 20px; text-align: center; color: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
-        .header-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        .hospital-logo { font-size: 50px; margin-bottom: 10px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        .main-title .line1 { font-size: 2em; font-weight: 900; display: block; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .main-title .line2 { font-size: 1.6em; font-weight: 800; display: block; margin-top: 5px; color: #ffd700; }
+        .hospital-name { font-size: 1.1em; margin-top: 10px; opacity: 0.9; }
+        .header-stats { display: flex; justify-content: center; gap: 12px; margin-top: 15px; flex-wrap: wrap; }
+        .stat-badge {
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); padding: 8px 18px;
+            border-radius: 50px; font-size: 13px; border: 1px solid rgba(255,255,255,0.3);
         }
-        .header-content { position: relative; z-index: 1; }
-        .hospital-logo { font-size: 60px; color: white; margin-bottom: 15px; animation: pulse 2s infinite; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        .main-title { color: white; margin-bottom: 10px; animation: slideDown 0.8s ease; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
-        .title-line-1 { display: block; font-size: 2.5em; font-weight: 900; text-shadow: 3px 3px 6px rgba(0,0,0,0.3); letter-spacing: 2px; }
-        .title-line-2 { display: block; font-size: 2em; font-weight: 800; margin-top: 8px; background: linear-gradient(to right, #ffd700, #ffed4a, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 3s infinite; }
-        @keyframes shimmer { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
-        .hospital-name { color: rgba(255,255,255,0.95); font-size: 1.3em; font-weight: 600; margin-top: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
-        .header-stats { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
-        .stat-badge { background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 10px 22px; border-radius: 50px; color: white; font-size: 14px; font-weight: 500; border: 2px solid rgba(255,255,255,0.3); transition: var(--transition); }
 
+        /* التنقل */
         .main-nav {
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100;
-            box-shadow: 0 5px 30px rgba(0,0,0,0.15); border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+            background: white; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 10px;
         }
-        .nav-container { display: flex; justify-content: center; gap: 10px; padding: 12px 15px; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
+        .nav-container { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; max-width: 900px; margin: 0 auto; }
         .nav-btn {
-            padding: 12px 22px; border: 2px solid transparent; background: var(--gray-100); border-radius: 50px;
-            cursor: pointer; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: 700; color: var(--gray-700);
-            transition: var(--transition); display: flex; align-items: center; gap: 8px; white-space: nowrap;
+            padding: 10px 20px; border: 2px solid #e0e0e0; background: white; border-radius: 50px;
+            cursor: pointer; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: 600;
+            color: #555; transition: var(--transition); display: flex; align-items: center; gap: 6px;
         }
-        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25); }
-        .nav-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+        .nav-btn:hover { border-color: #667eea; color: #667eea; }
+        .nav-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; }
 
-        .main-content { max-width: 1400px; margin: 30px auto; padding: 0 15px; position: relative; }
-        .tab-content { display: none; animation: slideIn 0.5s ease; }
+        /* المحتوى */
+        .main-content { max-width: 1200px; margin: 25px auto; padding: 0 15px; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
         .tab-content.active { display: block; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* رأس القسم */
         .section-header {
-            background: white; padding: 20px 25px; border-radius: 20px; margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; justify-content: space-between;
-            align-items: center; flex-wrap: wrap; gap: 15px; border-right: 4px solid #667eea;
+            background: white; padding: 18px 22px; border-radius: 16px; margin-bottom: 18px;
+            box-shadow: var(--shadow-md); display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 12px; border-right: 4px solid #667eea;
         }
-        .section-header h2 { color: var(--dark); font-size: 1.5em; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-        .section-header h2 i { color: #667eea; font-size: 22px; background: linear-gradient(135deg, #667eea20, #764ba220); padding: 10px; border-radius: 12px; }
+        .section-header h2 { font-size: 1.3em; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+        .section-header h2 i { color: #667eea; }
 
-        .search-container { min-width: 280px; }
-        .search-box { position: relative; }
+        /* مربع البحث */
+        .search-box { position: relative; min-width: 250px; }
         .search-box input {
-            width: 100%; padding: 12px 45px 12px 15px; border: 2px solid var(--gray-200); border-radius: 50px;
-            font-size: 15px; font-family: 'Tajawal', sans-serif; transition: var(--transition); background: var(--gray-100);
+            width: 100%; padding: 10px 40px 10px 15px; border: 2px solid #e0e0e0; border-radius: 50px;
+            font-size: 14px; font-family: 'Tajawal', sans-serif; transition: var(--transition); background: #fafafa;
         }
-        .search-box input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); background: white; }
-        .search-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #667eea; font-size: 16px; }
+        .search-box input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); background: white; }
+        .search-box i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #667eea; }
 
-        /* ========== تصميم الجدول المحسن ========== */
+        /* جدول (للكمبيوتر فقط) */
+        .desktop-table { display: block; }
+        .mobile-cards { display: none; }
         .table-wrapper {
-            background: white; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-            overflow-x: auto; -webkit-overflow-scrolling: touch;
+            background: white; border-radius: 16px; box-shadow: var(--shadow-lg); overflow-x: auto;
         }
-
-        table { width: 100%; border-collapse: collapse; min-width: 750px; font-size: 13px; }
-        thead { background: linear-gradient(135deg, #667eea, #764ba2); position: sticky; top: 0; z-index: 5; }
-        th { padding: 12px 8px; text-align: center; color: white; font-weight: 700; font-size: 12px; white-space: nowrap; }
-        td { padding: 10px 8px; border-bottom: 1px solid var(--gray-200); font-size: 12px; color: var(--dark); text-align: center; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; font-size: 13px; }
+        thead { background: linear-gradient(135deg, #667eea, #764ba2); }
+        th { padding: 11px 8px; text-align: center; color: white; font-weight: 700; font-size: 12px; }
+        td { padding: 10px 8px; border-bottom: 1px solid #eee; font-size: 12px; text-align: center; }
         td:first-child, th:first-child { text-align: right; }
-        
-        tbody tr { transition: var(--transition); }
-        tbody tr:hover { background: #f0f4ff; }
-        tbody tr:nth-child(even) { background: rgba(102, 126, 234, 0.03); }
-        tbody tr:nth-child(even):hover { background: #f0f4ff; }
+        tbody tr:hover { background: #f5f7ff; }
+        tbody tr:nth-child(even) { background: #fafafa; }
 
         .status-badge {
-            padding: 5px 12px; border-radius: 50px; font-size: 11px; font-weight: 700;
-            display: inline-block; white-space: nowrap;
+            padding: 4px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; display: inline-block;
         }
-        .status-joined { background: #d4edda; color: #155724; border: 1px solid #28a745; }
-        .status-pending { background: #fff3cd; color: #856404; border: 1px solid #ffc107; animation: glow 2s infinite; }
-        @keyframes glow { 0%, 100% { box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2); } 50% { box-shadow: 0 4px 16px rgba(255, 193, 7, 0.5); } }
+        .status-joined { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
 
-        /* زر نسخ رقم الهاتف */
         .copy-btn {
-            background: #667eea; color: white; border: none; padding: 4px 10px; border-radius: 15px;
-            cursor: pointer; font-size: 11px; margin-right: 6px; transition: var(--transition);
-            font-family: 'Tajawal', sans-serif;
+            background: #667eea; color: white; border: none; padding: 3px 8px; border-radius: 12px;
+            cursor: pointer; font-size: 10px; margin-right: 4px; transition: var(--transition);
         }
-        .copy-btn:hover { background: #764ba2; transform: scale(1.05); }
+        .copy-btn:hover { background: #764ba2; }
         .copy-btn.copied { background: #28a745; }
-        .phone-cell { display: flex; align-items: center; justify-content: center; gap: 4px; direction: ltr; }
 
-        /* ========== تصميم بطاقات الموبايل ========== */
-        .mobile-cards { display: none; }
-        
-        .resident-card {
-            background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-right: 4px solid #667eea;
-            transition: var(--transition);
+        /* بطاقات الموبايل */
+        .resident-card, .shift-card {
+            background: white; border-radius: 14px; padding: 14px; margin-bottom: 10px;
+            box-shadow: var(--shadow-sm); border-right: 3px solid #667eea;
         }
-        .resident-card:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(102, 126, 234, 0.2); }
-        .resident-card .card-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
-            padding-bottom: 10px; border-bottom: 1px solid var(--gray-200);
-        }
-        .resident-card .card-name { font-size: 16px; font-weight: 800; color: var(--dark); }
-        .resident-card .card-abbr { font-size: 13px; color: #667eea; font-weight: 700; }
-        .resident-card .card-row {
-            display: flex; justify-content: space-between; align-items: center; padding: 6px 0;
-            font-size: 13px; border-bottom: 1px dotted var(--gray-200);
-        }
-        .resident-card .card-row:last-child { border-bottom: none; }
-        .resident-card .card-label { color: #7f8c8d; font-weight: 500; }
-        .resident-card .card-value { color: var(--dark); font-weight: 600; text-align: left; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+        .card-name { font-size: 15px; font-weight: 800; }
+        .card-abbr { font-size: 12px; color: #667eea; font-weight: 700; }
+        .card-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; }
+        .card-label { color: #888; }
+        .card-value { font-weight: 600; text-align: left; }
 
-        /* نتيجة بحث الطالب */
+        /* بطاقات الفروز */
+        .shifts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+        .shift-card-full {
+            background: white; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-md);
+            border-top: 4px solid #667eea; transition: var(--transition);
+        }
+        .shift-card-full:hover { transform: translateY(-3px); box-shadow: var(--shadow-xl); }
+        .shift-card-full h3 { color: #667eea; font-size: 1.1em; margin-bottom: 12px; }
+        .shift-stats { display: flex; gap: 15px; margin-bottom: 12px; }
+        .shift-stat { text-align: center; }
+        .shift-stat .num { font-size: 1.8em; font-weight: 900; color: #667eea; }
+        .shift-stat .lbl { font-size: 11px; color: #888; }
+        .shift-names { font-size: 13px; color: #555; line-height: 1.6; padding-top: 10px; border-top: 1px solid #eee; }
+
+        /* معلوماتي */
         .student-result {
-            background: white; border-radius: 20px; padding: 25px; margin-top: 20px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.1); display: none; animation: slideIn 0.5s ease;
+            background: white; border-radius: 16px; padding: 20px; margin-top: 15px;
+            box-shadow: var(--shadow-lg); display: none;
         }
-        .student-result.show { display: block; }
-        .student-info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
-        .info-card {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 16px; border-radius: 12px;
-            border-right: 3px solid #667eea;
+        .student-result.show { display: block; animation: fadeIn 0.4s ease; }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 15px; }
+        .info-item { background: #f8f9fa; padding: 14px; border-radius: 10px; border-right: 3px solid #667eea; }
+        .info-item .info-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .info-item .info-value { font-size: 15px; font-weight: 700; color: #2c3e50; }
+        .search-results-list { margin-top: 10px; }
+        .search-result-item {
+            background: white; padding: 12px 16px; margin-bottom: 6px; border-radius: 10px;
+            cursor: pointer; border: 2px solid #eee; transition: var(--transition); display: flex;
+            justify-content: space-between; align-items: center;
         }
-        .info-card h4 { color: #667eea; margin-bottom: 8px; font-size: 13px; }
-        .info-card p { font-size: 15px; font-weight: 700; color: var(--dark); }
-        .no-results { text-align: center; padding: 40px; color: #e74c3c; font-size: 16px; font-weight: 600; grid-column: 1/-1; }
+        .search-result-item:hover { border-color: #667eea; background: #f5f7ff; }
+        .search-result-item.selected { border-color: #667eea; background: #eef0ff; }
+        .no-results { text-align: center; padding: 30px; color: #e74c3c; }
 
-        /* مؤشر التحميل */
-        .loading-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 1000;
-            justify-content: center; align-items: center;
+        /* تحميل سريع */
+        .loading-bar {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 3px; z-index: 9999;
+            background: linear-gradient(90deg, #667eea, #764ba2, #00b894);
+            animation: loadingAnim 0.8s ease infinite;
         }
-        .spinner-box { text-align: center; background: white; padding: 35px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-        .spinner { width: 50px; height: 50px; border: 4px solid var(--gray-200); border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes loadingAnim { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-        .main-footer { background: linear-gradient(135deg, #2c3e50, #34495e); padding: 20px; text-align: center; color: white; margin-top: 40px; font-size: 14px; }
-        .main-footer i { color: #e74c3c; margin: 0 4px; animation: heartbeat 1.5s infinite; }
-        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .main-footer { background: #2c3e50; padding: 16px; text-align: center; color: white; margin-top: 40px; font-size: 13px; }
 
-        /* عرض الجدول على الشاشات الكبيرة والبطاقات على الموبايل */
-        @media (min-width: 769px) {
-            .desktop-table { display: block; }
-            .mobile-cards { display: none; }
-        }
+        /* موبايل */
         @media (max-width: 768px) {
             .desktop-table { display: none; }
             .mobile-cards { display: block; }
-            .title-line-1 { font-size: 1.8em; }
-            .title-line-2 { font-size: 1.4em; }
-            .hospital-name { font-size: 1.1em; }
-            .hospital-logo { font-size: 45px; }
-            .section-header { padding: 15px 20px; }
-            .nav-btn { padding: 10px 15px; font-size: 12px; }
-            .nav-btn span { font-size: 11px; }
-            .student-info-cards { grid-template-columns: 1fr; }
-            .main-content { padding: 0 10px; margin: 20px auto; }
+            .main-title .line1 { font-size: 1.5em; }
+            .main-title .line2 { font-size: 1.2em; }
+            .nav-btn { padding: 8px 12px; font-size: 12px; }
+            .shifts-grid { grid-template-columns: 1fr; }
+            .info-grid { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 480px) {
-            .nav-btn { padding: 8px 10px; font-size: 11px; gap: 5px; }
-            .nav-btn i { font-size: 14px; }
-            .title-line-1 { font-size: 1.4em; }
-            .title-line-2 { font-size: 1.1em; }
+            .info-grid { grid-template-columns: 1fr; }
+            .nav-btn span { font-size: 10px; }
         }
-
-        ::-webkit-scrollbar { height: 6px; width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--gray-100); border-radius: 8px; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; }
     </style>
 </head>
 <body>
-    <div class="bg-animation">
-        <div class="bg-circle bg-circle-1"></div>
-        <div class="bg-circle bg-circle-2"></div>
-        <div class="bg-circle bg-circle-3"></div>
-    </div>
+    <div class="bg-pattern"></div>
+    <div class="loading-bar" id="loadingBar"></div>
 
     <header class="main-header">
-        <div class="header-overlay"></div>
-        <div class="header-content">
-            <div class="hospital-logo"><i class="fas fa-hospital-alt"></i></div>
-            <h1 class="main-title">
-                <span class="title-line-1">أطباء قسم الداخلية</span>
-                <span class="title-line-2">السنة الاولى</span>
-            </h1>
-            <h2 class="hospital-name">🏥 مشفى حلب الجامعي 🏥</h2>
-            <div class="header-stats">
-                <div class="stat-badge"><i class="fas fa-calendar-alt"></i> <span id="currentDateHeader"></span></div>
-                <div class="stat-badge"><i class="fas fa-sync-alt fa-spin"></i> <span id="lastUpdateTime">جاري التحميل...</span></div>
-            </div>
+        <div class="hospital-logo">🏥</div>
+        <h1 class="main-title">
+            <span class="line1">أطباء قسم الداخلية</span>
+            <span class="line2">السنة الاولى</span>
+        </h1>
+        <p class="hospital-name">مشفى حلب الجامعي</p>
+        <div class="header-stats">
+            <span class="stat-badge">📅 <span id="currentDateHeader"></span></span>
+            <span class="stat-badge">🔄 <span id="lastUpdateTime">تحميل...</span></span>
         </div>
     </header>
 
     <nav class="main-nav">
         <div class="nav-container">
-            <button class="nav-btn active" data-tab="residents"><i class="fas fa-user-graduate"></i><span>لائحة المقيمين</span></button>
-            <button class="nav-btn" data-tab="shifts"><i class="fas fa-clipboard-list"></i><span>جدول الفروز</span></button>
-            <button class="nav-btn" data-tab="oncall"><i class="fas fa-calendar-check"></i><span>جدول المناوبات</span></button>
-            <button class="nav-btn" data-tab="student-search"><i class="fas fa-search"></i><span>بحث عن طالب</span></button>
+            <button class="nav-btn active" data-tab="residents">👨‍⚕️ <span>لائحة المقيمين</span></button>
+            <button class="nav-btn" data-tab="shifts">📋 <span>جدول الفروز</span></button>
+            <button class="nav-btn" data-tab="oncall">📅 <span>جدول المناوبات</span></button>
+            <button class="nav-btn" data-tab="myinfo">🔍 <span>معلوماتي</span></button>
         </div>
     </nav>
 
     <main class="main-content">
-        <!-- واجهة لائحة المقيمين -->
+        <!-- لائحة المقيمين -->
         <section class="tab-content active" id="residents-tab">
             <div class="section-header">
-                <h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى</h2>
-                <div class="search-container">
-                    <div class="search-box">
-                        <input type="text" id="residentSearch" placeholder="ابحث بالاسم أو الاختصار...">
-                        <i class="fas fa-search"></i>
-                    </div>
+                <h2>👨‍⚕️ لائحة مقيمي السنة الأولى</h2>
+                <div class="search-box">
+                    <input type="text" id="residentSearch" placeholder="ابحث بالاسم أو الاختصار...">
+                    <i class="fas fa-search"></i>
                 </div>
             </div>
-            <!-- جدول للشاشات الكبيرة -->
             <div class="table-wrapper desktop-table">
-                <table id="residentsTable">
-                    <thead>
-                        <tr>
-                            <th>الاسم الثلاثي</th>
-                            <th>الاختصار</th>
-                            <th>الاختصاص</th>
-                            <th>رقم الهاتف</th>
-                            <th>تاريخ الالتحاق</th>
-                            <th>المناوبات</th>
-                            <th>الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody id="residentsBody"></tbody>
-                </table>
+                <table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead>
+                <tbody id="residentsBody"></tbody></table>
             </div>
-            <!-- بطاقات للموبايل -->
             <div class="mobile-cards" id="residentsCards"></div>
         </section>
 
-        <!-- واجهة جدول الفروز -->
+        <!-- جدول الفروز -->
         <section class="tab-content" id="shifts-tab">
             <div class="section-header">
-                <h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2>
-            </div>
-            <div class="table-wrapper">
-                <table id="shiftsTable">
-                    <thead><tr><th>الفرز</th><th>عدد الأولى</th><th>عدد الثانية</th><th>الأسماء</th></tr></thead>
-                    <tbody id="shiftsBody"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- واجهة جدول المناوبات -->
-        <section class="tab-content" id="oncall-tab">
-            <div class="section-header">
-                <h2><i class="fas fa-calendar-check"></i> جدول مناوبات <span id="oncallMonthName"></span></h2>
-            </div>
-            <div class="table-wrapper">
-                <table id="oncallTable">
-                    <thead id="oncallHeader"></thead>
-                    <tbody id="oncallBody"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- واجهة بحث عن طالب -->
-        <section class="tab-content" id="student-search-tab">
-            <div class="section-header">
-                <h2><i class="fas fa-user-search"></i> بحث عن طالب ومعرفة فروزه ومناوباته</h2>
-                <div class="search-container">
-                    <div class="search-box">
-                        <input type="text" id="studentSearch" placeholder="اكتب الاسم أو الاختصار...">
-                        <i class="fas fa-search"></i>
-                    </div>
+                <h2>📋 جدول فروز <span id="shiftMonthName"></span></h2>
+                <div class="search-box">
+                    <input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز...">
+                    <i class="fas fa-search"></i>
                 </div>
             </div>
-            <div id="studentResult" class="student-result">
-                <h3 style="color: #667eea; margin-bottom: 15px;"><i class="fas fa-user-check"></i> نتيجة البحث</h3>
-                <div class="student-info-cards" id="studentInfoCards"></div>
+            <div class="shifts-grid" id="shiftsGrid"></div>
+        </section>
+
+        <!-- جدول المناوبات -->
+        <section class="tab-content" id="oncall-tab">
+            <div class="section-header">
+                <h2>📅 جدول مناوبات <span id="oncallMonthName"></span></h2>
+            </div>
+            <div class="table-wrapper">
+                <table><thead id="oncallHeader"></thead><tbody id="oncallBody"></tbody></table>
             </div>
         </section>
 
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="spinner-box">
-                <div class="spinner"></div>
-                <p style="font-size: 16px; font-weight: 600; color: #2c3e50;">جاري تحديث البيانات...</p>
+        <!-- معلوماتي -->
+        <section class="tab-content" id="myinfo-tab">
+            <div class="section-header">
+                <h2>🔍 معلوماتي</h2>
+                <div class="search-box">
+                    <input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك...">
+                    <i class="fas fa-search"></i>
+                </div>
             </div>
-        </div>
+            <div id="searchResultsList" class="search-results-list"></div>
+            <div id="myInfoResult" class="student-result"></div>
+        </section>
     </main>
 
     <footer class="main-footer">
-        <p>&copy; <span id="currentYear"></span> مشفى حلب الجامعي - قسم الداخلية <i class="fas fa-heart"></i></p>
+        <p>© <span id="currentYear"></span> مشفى حلب الجامعي - قسم الداخلية</p>
     </footer>
 
     <script>
         const SHEET_ID = '1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
+        const ARABIC_MONTHS = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
         
-        const ARABIC_MONTHS = [
-            'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
-            'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
-        ];
-        
+        // دالة نسخ
+        function copyPhone(phone, btn) {
+            navigator.clipboard.writeText(phone).then(() => {
+                const icon = btn.querySelector('i');
+                const orig = icon.className;
+                icon.className = 'fas fa-check';
+                btn.classList.add('copied');
+                setTimeout(() => { icon.className = orig; btn.classList.remove('copied'); }, 1500);
+            });
+        }
+
         class HospitalApp {
             constructor() {
                 this.currentMonth = new Date().getMonth();
@@ -368,525 +308,441 @@
                 this.allResidents = [];
                 this.allShifts = [];
                 this.allOncall = [];
-                this.sheetNames = []; // أسماء الأوراق الفعلية
+                this.allSheetNames = [];
                 this.init();
             }
-        
+
             init() {
-                this.updateHeaderDate();
-                this.updateFooterYear();
-                this.loadAllData();
+                document.getElementById('currentDateHeader').textContent = new Date().toLocaleDateString('ar-SA', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+                document.getElementById('currentYear').textContent = new Date().getFullYear();
                 this.setupTabs();
-                this.setupSearch();
-                this.setupStudentSearch();
+                this.setupSearches();
+                this.loadAllData();
                 setInterval(() => this.loadAllData(), 120000);
             }
-        
-            updateHeaderDate() {
-                const now = new Date();
-                document.getElementById('currentDateHeader').textContent = 
-                    now.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            showLoading(show) {
+                document.getElementById('loadingBar').style.display = show ? 'block' : 'none';
             }
-        
-            updateFooterYear() {
-                document.getElementById('currentYear').textContent = new Date().getFullYear();
-            }
-        
+
             setupTabs() {
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                         btn.classList.add('active');
-                        document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+                        document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
                     });
                 });
             }
-        
-            setupSearch() {
-                document.getElementById('residentSearch').addEventListener('input', (e) => {
-                    this.filterResidents(e.target.value);
-                });
+
+            setupSearches() {
+                document.getElementById('residentSearch').addEventListener('input', e => this.filterResidents(e.target.value));
+                document.getElementById('shiftSearch').addEventListener('input', e => this.filterShifts(e.target.value));
+                document.getElementById('myInfoSearch').addEventListener('input', e => this.searchMyInfo(e.target.value));
             }
-        
-            setupStudentSearch() {
-                document.getElementById('studentSearch').addEventListener('input', (e) => {
-                    this.searchStudent(e.target.value);
-                });
-            }
-        
-            async getAllSheetNames() {
-                // نحاول جلب أسماء الأوراق عبر Google Sheets API metadata
-                const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`;
+
+            async fetchSheet(sheetName) {
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
                 try {
-                    const response = await fetch(metadataUrl);
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.sheetNames = data.sheets.map(s => s.properties.title);
-                        console.log('أسماء الأوراق:', this.sheetNames);
-                        return this.sheetNames;
-                    }
-                } catch (e) {
-                    console.log('لا يمكن جلب metadata، سنستخدم الطريقة البديلة');
-                }
-                
-                // طريقة بديلة: نجرب أسماء شائعة
-                const possibleNames = [
-                    'لائحة مقيمي السنة الاولى',
-                    'Sheet1', 'Sheet2', 'Sheet3',
-                    'لائحة مقيمي السنة الأولى',
-                    'جدول فروز شهر تموز',
-                    'جدول مناوبات تموز',
-                    'ورقة1', 'ورقة2', 'ورقة3'
-                ];
-                
-                this.sheetNames = possibleNames;
-                return possibleNames;
+                    const res = await fetch(url);
+                    if (!res.ok) return null;
+                    const text = await res.text();
+                    if (text.includes('<!DOCTYPE') || text.includes('<html')) return null;
+                    return this.parseCSV(text);
+                } catch(e) { return null; }
             }
-        
-            async fetchSheetDataByIndex(sheetName) {
-                const publishUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-                try {
-                    const response = await fetch(publishUrl);
-                    if (response.ok) {
-                        const csvText = await response.text();
-                        // التحقق أن البيانات ليست صفحة HTML خطأ
-                        if (csvText.includes('<!DOCTYPE') || csvText.includes('<html')) {
-                            return null;
-                        }
-                        return this.parseCSV(csvText);
-                    }
-                } catch (e) {
-                    console.log(`فشل جلب: ${sheetName}`);
-                }
-                return null;
-            }
-        
-            parseCSV(csvText) {
+
+            parseCSV(text) {
                 const rows = [];
-                const lines = csvText.split('\n');
-                
+                const lines = text.split('\n');
                 for (let line of lines) {
-                    if (line.trim()) {
-                        const row = [];
-                        let inQuotes = false;
-                        let currentValue = '';
-                        
-                        for (let char of line) {
-                            if (char === '"') {
-                                inQuotes = !inQuotes;
-                            } else if (char === ',' && !inQuotes) {
-                                row.push(currentValue.trim());
-                                currentValue = '';
-                            } else {
-                                currentValue += char;
-                            }
-                        }
-                        row.push(currentValue.trim());
-                        rows.push(row);
+                    if (!line.trim()) continue;
+                    const row = []; let inQ = false, val = '';
+                    for (let c of line) {
+                        if (c === '"') { inQ = !inQ; }
+                        else if (c === ',' && !inQ) { row.push(val.trim()); val = ''; }
+                        else { val += c; }
                     }
+                    row.push(val.trim());
+                    rows.push(row);
                 }
                 return rows;
             }
-        
-            // محاولة تعريف الورقة: هل هي لائحة مقيمين، فروز، أم مناوبات؟
-            identifySheetType(headers, data) {
-                if (!headers || headers.length === 0) return 'unknown';
-                
-                const headerStr = headers.join(' ').toLowerCase();
-                
-                // تحقق من كلمات مفتاحية
-                if (headerStr.includes('اسم') && (headerStr.includes('اختصاص') || headerStr.includes('هاتف') || headerStr.includes('التحاق'))) {
-                    return 'residents';
+
+            identifyType(headers, sampleRow) {
+                const h = headers.join(' ').toLowerCase();
+                if (h.includes('اسم') && (h.includes('اختصاص') || h.includes('هاتف') || h.includes('التحاق'))) return 'residents';
+                if (h.includes('فرز') || (h.includes('أولى') && h.includes('ثانية'))) return 'shifts';
+                if (h.includes('مناوب') || h.includes('طبيب')) return 'oncall';
+                // try content
+                if (sampleRow) {
+                    const s = sampleRow.join(' ').toLowerCase();
+                    if (s.includes('التحق') || s.includes('ملتحق')) return 'residents';
                 }
-                if (headerStr.includes('فرز') || (headerStr.includes('أولى') && headerStr.includes('ثانية'))) {
-                    return 'shifts';
-                }
-                if (headerStr.includes('مناوب') || headerStr.includes('تاريخ') || headerStr.includes('طبيب')) {
-                    return 'oncall';
-                }
-                
-                // تحقق من محتوى البيانات
-                if (data.length > 0 && data[0].length >= 5) {
-                    const rowStr = data[0].join(' ').toLowerCase();
-                    if (rowStr.includes('التحق') || rowStr.includes('طبيب') || rowStr.includes('اختصاص')) {
-                        return 'residents';
-                    }
-                    if (rowStr.includes('فرز') || rowStr.includes('أولى')) {
-                        return 'shifts';
-                    }
-                }
-                
                 return 'unknown';
             }
-        
+
             async loadAllData() {
                 this.showLoading(true);
-                
                 try {
-                    // نجرب كل الأسماء الممكنة
-                    const sheetNamesToTry = this.sheetNames.length > 0 ? this.sheetNames : await this.getAllSheetNames();
+                    // Get all sheet names
+                    const allNames = [
+                        'لائحة مقيمي السنة الاولى', 'لائحة مقيمي السنة الأولى',
+                        'جدول فروز شهر تموز', 'جدول فروز شهر ' + this.currentMonthName,
+                        'جدول مناوبات تموز', 'جدول مناوبات ' + this.currentMonthName,
+                        'Sheet1', 'Sheet2', 'Sheet3', 'ورقة1', 'ورقة2', 'ورقة3'
+                    ];
                     
-                    let residentsData = null;
-                    let shiftsData = null;
-                    let oncallData = null;
-                    
-                    // نجرب كل اسم ورقة ونتعرف على نوعها
-                    for (const sheetName of sheetNamesToTry) {
-                        const data = await this.fetchSheetDataByIndex(sheetName);
+                    let residentsData = null, shiftsData = null, oncallData = null;
+                    const allFoundData = [];
+                    const foundNames = [];
+
+                    // Try all names
+                    for (const name of allNames) {
+                        const data = await this.fetchSheet(name);
                         if (data && data.length > 0) {
                             const headers = data[0] || [];
-                            const rows = data.slice(1);
-                            const type = this.identifySheetType(headers, rows);
+                            const sample = data[1] || null;
+                            const type = this.identifyType(headers, sample);
+                            console.log(`Found sheet: "${name}" -> type: ${type}`);
                             
-                            console.log(`ورقة "${sheetName}" تم تعريفها كـ: ${type}`);
-                            
-                            if (type === 'residents' && !residentsData) {
-                                residentsData = data;
-                            } else if (type === 'shifts' && !shiftsData) {
-                                shiftsData = data;
-                            } else if (type === 'oncall' && !oncallData) {
-                                oncallData = data;
+                            if (type === 'residents' && !residentsData) residentsData = data;
+                            else if (type === 'shifts' && !shiftsData) shiftsData = data;
+                            else if (type === 'oncall' && !oncallData) oncallData = data;
+                            else if (type === 'unknown') {
+                                allFoundData.push(data);
+                                foundNames.push(name);
                             }
                         }
                     }
-                    
-                    // إذا لم نجد كل الأنواع، نستخدم الترتيب: الأولى = مقيمين، الثانية = فروز، الثالثة = مناوبات
-                    const allData = [];
-                    for (const sheetName of sheetNamesToTry) {
-                        const data = await this.fetchSheetDataByIndex(sheetName);
-                        if (data && data.length > 0) {
-                            allData.push(data);
-                        }
-                    }
-                    
-                    // إذا لم يتم التعرف التلقائي، استخدم الترتيب
-                    if (!residentsData && allData.length >= 1) residentsData = allData[0];
-                    if (!shiftsData && allData.length >= 2) shiftsData = allData[1];
-                    if (!oncallData && allData.length >= 3) oncallData = allData[2];
-                    
-                    // عرض البيانات
+
+                    // Fallback: use order
+                    if (!residentsData && allFoundData.length >= 1) residentsData = allFoundData.shift();
+                    if (!shiftsData && allFoundData.length >= 1) shiftsData = allFoundData.shift();
+                    if (!oncallData && allFoundData.length >= 1) oncallData = allFoundData.shift();
+
                     if (residentsData) this.renderResidents(residentsData);
                     if (shiftsData) this.renderShifts(shiftsData);
                     if (oncallData) this.renderOncall(oncallData);
-                    
-                    this.updateLastUpdateTime();
-                } catch (error) {
-                    console.error('Error:', error);
+
+                    if (!residentsData && !shiftsData && !oncallData) {
+                        console.log('Using demo data');
+                        this.useDemoData();
+                    }
+
+                    this.updateTime();
+                } catch(e) {
+                    console.error(e);
                     this.useDemoData();
                 }
-                
                 this.showLoading(false);
             }
-        
+
             renderResidents(data) {
                 this.allResidents = [];
                 const tbody = document.getElementById('residentsBody');
-                const cardsDiv = document.getElementById('residentsCards');
-                tbody.innerHTML = '';
-                cardsDiv.innerHTML = '';
-                
+                const cards = document.getElementById('residentsCards');
+                tbody.innerHTML = ''; cards.innerHTML = '';
+
                 for (let i = 1; i < data.length; i++) {
-                    const row = data[i];
-                    // نتأكد أن الصف فيه بيانات كافية
-                    if (!row[1] || !row[1].trim()) continue;
+                    const r = data[i];
+                    if (!r[1] || !r[1].trim() || r[1].includes('الاسم')) continue;
                     
                     const resident = {
-                        name: row[1] || '',          // B - الاسم الثلاثي
-                        abbreviation: row[2] || '',   // C - الاختصار
-                        specialty: row[3] || '',      // D - الاختصاص
-                        phone: row[4] || '',          // E - رقم الهاتف
-                        joinDate: row[9] || '',       // J - تاريخ الالتحاق
-                        oncall: row[10] || '',        // K - المناوبات
-                        status: row[11] || ''         // L - الحالة
+                        name: (r[1]||'').trim(),
+                        abbreviation: (r[2]||'').trim(),
+                        specialty: (r[3]||'').trim(),
+                        phone: (r[4]||'').trim(),
+                        joinDate: (r[9]||'').trim(),
+                        oncall: (r[10]||'').trim(),
+                        status: (r[11]||'').trim()
                     };
-                    
-                    // تخطي إذا كان الاسم فارغاً أو أنه صف عناوين
-                    if (!resident.name || resident.name === 'الاسم الثلاثي' || resident.name === 'الاسم') continue;
-                    
+                    if (!resident.name) continue;
                     this.allResidents.push(resident);
+                    
                     const isJoined = resident.status.includes('التحق') || resident.status.includes('ملتحق');
                     
-                    // صف الجدول للشاشات الكبيرة
+                    // جدول
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="text-align:right;"><strong>${resident.name}</strong></td>
-                        <td>${resident.abbreviation}</td>
-                        <td>${resident.specialty}</td>
-                        <td>
-                            <div class="phone-cell">
-                                <span dir="ltr">${resident.phone}</span>
-                                <button class="copy-btn" onclick="copyPhone('${resident.phone}', this)" title="نسخ الرقم">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
-                        </td>
-                        <td>${resident.joinDate || '-'}</td>
-                        <td>${resident.oncall || '-'}</td>
-                        <td><span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">${resident.status || 'غير محدد'}</span></td>
-                    `;
+                    tr.innerHTML = `<td style="text-align:right;"><strong>${resident.name}</strong></td>
+                        <td>${resident.abbreviation}</td><td>${resident.specialty}</td>
+                        <td><span dir="ltr">${resident.phone}</span> <button class="copy-btn" onclick="copyPhone('${resident.phone}',this)"><i class="fas fa-copy"></i></button></td>
+                        <td>${resident.joinDate||'-'}</td><td>${resident.oncall||'-'}</td>
+                        <td><span class="status-badge ${isJoined?'status-joined':'status-pending'}">${resident.status||'غير محدد'}</span></td>`;
                     tbody.appendChild(tr);
                     
-                    // بطاقة للموبايل
+                    // بطاقة
                     const card = document.createElement('div');
                     card.className = 'resident-card';
-                    card.innerHTML = `
-                        <div class="card-header">
-                            <span class="card-name">${resident.name}</span>
-                            <span class="card-abbr">${resident.abbreviation}</span>
-                        </div>
+                    card.innerHTML = `<div class="card-header"><span class="card-name">${resident.name}</span><span class="card-abbr">${resident.abbreviation}</span></div>
                         <div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${resident.specialty}</span></div>
-                        <div class="card-row">
-                            <span class="card-label">رقم الهاتف</span>
-                            <span class="card-value" style="display:flex;align-items:center;gap:8px;">
-                                <span dir="ltr">${resident.phone}</span>
-                                <button class="copy-btn" onclick="copyPhone('${resident.phone}', this)" title="نسخ"><i class="fas fa-copy"></i></button>
-                            </span>
-                        </div>
-                        <div class="card-row"><span class="card-label">تاريخ الالتحاق</span><span class="card-value">${resident.joinDate || '-'}</span></div>
-                        <div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${resident.oncall || '-'}</span></div>
-                        <div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">${resident.status || 'غير محدد'}</span></span></div>
-                    `;
-                    cardsDiv.appendChild(card);
+                        <div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${resident.phone}</span> <button class="copy-btn" onclick="copyPhone('${resident.phone}',this)"><i class="fas fa-copy"></i></button></span></div>
+                        <div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${resident.joinDate||'-'}</span></div>
+                        <div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${resident.oncall||'-'}</span></div>
+                        <div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${isJoined?'status-joined':'status-pending'}">${resident.status||'غير محدد'}</span></span></div>`;
+                    cards.appendChild(card);
                 }
             }
-        
+
             renderShifts(data) {
                 this.allShifts = [];
-                const tbody = document.getElementById('shiftsBody');
-                tbody.innerHTML = '';
+                const grid = document.getElementById('shiftsGrid');
+                grid.innerHTML = '';
                 document.getElementById('shiftMonthName').textContent = this.currentMonthName;
-                
+
                 for (let i = 1; i < data.length; i++) {
-                    const row = data[i];
-                    if (!row[1] || !row[1].trim()) continue;
-                    
+                    const r = data[i];
+                    if (!r[1] || !r[1].trim()) continue;
                     const shift = {
-                        name: row[1] || '',
-                        firstCount: row[2] || '',
-                        secondCount: row[3] || '',
-                        names: row[4] || ''
+                        name: (r[1]||'').trim(),
+                        firstCount: (r[2]||'0').trim(),
+                        secondCount: (r[3]||'0').trim(),
+                        names: (r[4]||'').trim()
                     };
-                    
+                    if (!shift.name) continue;
                     this.allShifts.push(shift);
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${shift.name}</strong></td>
-                        <td>${shift.firstCount}</td>
-                        <td>${shift.secondCount}</td>
-                        <td>${shift.names}</td>
-                    `;
-                    tbody.appendChild(tr);
                 }
+
+                this.displayShifts(this.allShifts);
             }
-        
+
+            displayShifts(shifts) {
+                const grid = document.getElementById('shiftsGrid');
+                grid.innerHTML = '';
+                shifts.forEach(shift => {
+                    const card = document.createElement('div');
+                    card.className = 'shift-card-full';
+                    card.innerHTML = `
+                        <h3>📋 ${shift.name}</h3>
+                        <div class="shift-stats">
+                            <div class="shift-stat"><div class="num">${shift.firstCount}</div><div class="lbl">عدد الأولى</div></div>
+                            <div class="shift-stat"><div class="num">${shift.secondCount}</div><div class="lbl">عدد الثانية</div></div>
+                        </div>
+                        <div class="shift-names"><strong>الأسماء:</strong> ${shift.names || 'لا يوجد'}</div>`;
+                    grid.appendChild(card);
+                });
+            }
+
+            filterShifts(term) {
+                const t = term.toLowerCase().trim();
+                if (!t) { this.displayShifts(this.allShifts); return; }
+                const filtered = this.allShifts.filter(s => 
+                    s.name.toLowerCase().includes(t) || s.names.toLowerCase().includes(t)
+                );
+                this.displayShifts(filtered);
+            }
+
             renderOncall(data) {
                 this.allOncall = [];
                 const thead = document.getElementById('oncallHeader');
                 const tbody = document.getElementById('oncallBody');
                 document.getElementById('oncallMonthName').textContent = this.currentMonthName;
-                
-                if (data.length > 0) {
-                    thead.innerHTML = `<tr>${data[0].map(h => `<th>${h}</th>`).join('')}</tr>`;
-                    
-                    tbody.innerHTML = '';
-                    for (let i = 1; i < data.length; i++) {
-                        const row = data[i];
-                        if (row.some(cell => cell && cell.trim())) {
-                            this.allOncall.push(row);
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = row.map(cell => `<td>${cell || '-'}</td>`).join('');
-                            tbody.appendChild(tr);
-                        }
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">⚠️ لا توجد بيانات للمناوبات حالياً. يرجى التأكد من الورقة الثالثة.</td></tr>';
+                    return;
+                }
+
+                const headers = data[0];
+                thead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+                tbody.innerHTML = '';
+
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (row.some(c => c && c.trim())) {
+                        this.allOncall.push(row);
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = row.map(c => `<td>${c||'-'}</td>`).join('');
+                        tbody.appendChild(tr);
                     }
                 }
             }
-        
-            filterResidents(searchTerm) {
-                const term = searchTerm.toLowerCase().trim();
+
+            filterResidents(term) {
+                const t = term.toLowerCase().trim();
                 const rows = document.querySelectorAll('#residentsBody tr');
                 const cards = document.querySelectorAll('#residentsCards .resident-card');
                 
-                rows.forEach((row, index) => {
-                    if (term === '') { row.style.display = ''; return; }
-                    const resident = this.allResidents[index];
-                    if (resident) {
-                        const match = resident.name.toLowerCase().includes(term) || 
-                                      resident.abbreviation.toLowerCase().includes(term);
-                        row.style.display = match ? '' : 'none';
-                    }
-                });
-                
-                cards.forEach((card, index) => {
-                    if (term === '') { card.style.display = ''; return; }
-                    const resident = this.allResidents[index];
-                    if (resident) {
-                        const match = resident.name.toLowerCase().includes(term) || 
-                                      resident.abbreviation.toLowerCase().includes(term);
-                        card.style.display = match ? '' : 'none';
-                    }
+                this.allResidents.forEach((r, i) => {
+                    const match = !t || r.name.toLowerCase().includes(t) || r.abbreviation.toLowerCase().includes(t);
+                    if (rows[i]) rows[i].style.display = match ? '' : 'none';
+                    if (cards[i]) cards[i].style.display = match ? '' : 'none';
                 });
             }
-        
-            searchStudent(searchTerm) {
-                const resultDiv = document.getElementById('studentResult');
-                const infoCards = document.getElementById('studentInfoCards');
-                const term = searchTerm.toLowerCase().trim();
+
+            searchMyInfo(term) {
+                const t = term.toLowerCase().trim();
+                const resultsList = document.getElementById('searchResultsList');
+                const resultDiv = document.getElementById('myInfoResult');
                 
-                if (term.length < 1) {
+                if (t.length < 1) {
+                    resultsList.innerHTML = '';
                     resultDiv.classList.remove('show');
                     return;
                 }
-                
-                // البحث المحسن: نجرب تطابق كامل ثم جزئي
-                let foundResident = this.allResidents.find(r => 
-                    r.name.toLowerCase() === term || 
-                    r.abbreviation.toLowerCase() === term
+
+                // بحث متقدم: تطابق كامل، ثم جزئي، ثم كلمات منفصلة
+                let matches = this.allResidents.filter(r => 
+                    r.name.toLowerCase() === t || r.abbreviation.toLowerCase() === t
                 );
                 
-                if (!foundResident) {
-                    foundResident = this.allResidents.find(r => 
-                        r.name.toLowerCase().includes(term) || 
-                        r.abbreviation.toLowerCase().includes(term)
+                if (matches.length === 0) {
+                    matches = this.allResidents.filter(r => 
+                        r.name.toLowerCase().includes(t) || r.abbreviation.toLowerCase().includes(t)
                     );
                 }
                 
-                // إذا لم نجد، نجرب البحث في كل كلمة من الاسم
-                if (!foundResident) {
-                    const words = term.split(/[\s,.]+/).filter(w => w.length > 0);
-                    foundResident = this.allResidents.find(r => {
-                        const nameWords = r.name.toLowerCase().split(/[\s]+/);
-                        const abbrClean = r.abbreviation.toLowerCase().replace(/[.\s]/g, '');
-                        return words.some(w => 
-                            nameWords.some(nw => nw.includes(w)) ||
-                            abbrClean.includes(w) ||
-                            r.name.toLowerCase().includes(w)
-                        );
+                // بحث بالكلمات
+                if (matches.length === 0) {
+                    const words = t.split(/[\s,.]+/).filter(w => w.length > 1);
+                    matches = this.allResidents.filter(r => {
+                        const nameWords = r.name.toLowerCase().split(/\s+/);
+                        const abbr = r.abbreviation.toLowerCase().replace(/[.\s]/g, '');
+                        return words.some(w => nameWords.some(nw => nw.includes(w)) || abbr.includes(w));
                     });
                 }
-                
-                if (!foundResident) {
-                    resultDiv.classList.add('show');
-                    infoCards.innerHTML = `
-                        <div class="no-results">
-                            <i class="fas fa-user-slash" style="font-size: 45px; display: block; margin-bottom: 12px;"></i>
-                            لا يوجد طالب بهذا الاسم أو الاختصار<br>
-                            <small style="color:#7f8c8d;">تأكد من كتابة الاسم أو الاختصار بشكل صحيح</small>
-                        </div>
-                    `;
+
+                if (matches.length === 0) {
+                    resultsList.innerHTML = '<div class="no-results">🔍 لا يوجد نتائج مطابقة. تأكد من كتابة الاسم بشكل صحيح.</div>';
+                    resultDiv.classList.remove('show');
                     return;
                 }
-                
+
+                if (matches.length === 1) {
+                    resultsList.innerHTML = '';
+                    this.showMyInfo(matches[0]);
+                } else {
+                    // عرض قائمة للاختيار
+                    resultsList.innerHTML = matches.map((m, i) => `
+                        <div class="search-result-item" data-index="${i}" onclick="app.selectMyInfo(${i})">
+                            <span><strong>${m.name}</strong> (${m.abbreviation})</span>
+                            <span style="color:#667eea;">${m.specialty}</span>
+                        </div>
+                    `).join('');
+                    resultDiv.classList.remove('show');
+                    // تخزين النتائج مؤقتاً
+                    this._searchMatches = matches;
+                }
+            }
+
+            selectMyInfo(index) {
+                const resident = this._searchMatches[index];
+                if (resident) {
+                    document.getElementById('searchResultsList').innerHTML = '';
+                    this.showMyInfo(resident);
+                }
+            }
+
+            showMyInfo(resident) {
+                const resultDiv = document.getElementById('myInfoResult');
+                const isJoined = resident.status.includes('التحق') || resident.status.includes('ملتحق');
+
                 // البحث في الفروز
-                let shiftInfo = 'غير موجود في الفروز';
-                for (let shift of this.allShifts) {
-                    const shiftNames = (shift.names || '').toLowerCase();
-                    if (shiftNames.includes(foundResident.name.toLowerCase()) || 
-                        (foundResident.abbreviation && shiftNames.includes(foundResident.abbreviation.toLowerCase()))) {
-                        shiftInfo = shift.name;
+                let shiftFound = null;
+                for (let s of this.allShifts) {
+                    if (s.names.toLowerCase().includes(resident.name.toLowerCase()) ||
+                        (resident.abbreviation && s.names.toLowerCase().includes(resident.abbreviation.toLowerCase()))) {
+                        shiftFound = s;
                         break;
                     }
                 }
-                
+
                 // البحث في المناوبات
-                let oncallDetails = [];
+                let oncallRows = [];
                 for (let row of this.allOncall) {
-                    const rowText = row.join(' ').toLowerCase();
-                    if (rowText.includes(foundResident.name.toLowerCase()) || 
-                        (foundResident.abbreviation && rowText.includes(foundResident.abbreviation.toLowerCase()))) {
-                        oncallDetails.push(row);
+                    const rt = row.join(' ').toLowerCase();
+                    if (rt.includes(resident.name.toLowerCase()) ||
+                        (resident.abbreviation && rt.includes(resident.abbreviation.toLowerCase()))) {
+                        oncallRows.push(row);
                     }
                 }
-                
-                const isJoined = foundResident.status.includes('التحق') || foundResident.status.includes('ملتحق');
-                
-                resultDiv.classList.add('show');
-                infoCards.innerHTML = `
-                    <div class="info-card"><h4><i class="fas fa-user"></i> الاسم الثلاثي</h4><p>${foundResident.name}</p></div>
-                    <div class="info-card"><h4><i class="fas fa-tag"></i> الاختصار</h4><p>${foundResident.abbreviation}</p></div>
-                    <div class="info-card"><h4><i class="fas fa-stethoscope"></i> الاختصاص</h4><p>${foundResident.specialty}</p></div>
-                    <div class="info-card"><h4><i class="fas fa-phone"></i> رقم الهاتف</h4><p dir="ltr">${foundResident.phone} <button class="copy-btn" onclick="copyPhone('${foundResident.phone}', this)"><i class="fas fa-copy"></i></button></p></div>
-                    <div class="info-card"><h4><i class="fas fa-calendar-plus"></i> تاريخ الالتحاق</h4><p>${foundResident.joinDate || 'غير محدد'}</p></div>
-                    <div class="info-card"><h4><i class="fas fa-clipboard-check"></i> الفرز</h4><p>${shiftInfo}</p></div>
-                    <div class="info-card"><h4><i class="fas fa-calendar-alt"></i> المناوبات</h4><p>${oncallDetails.length > 0 ? oncallDetails.length + ' مناوبة' : 'غير موجود'}</p></div>
-                    <div class="info-card"><h4><i class="fas fa-circle"></i> الحالة</h4><p><span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">${foundResident.status || 'غير محدد'}</span></p></div>
-                `;
-                
-                if (oncallDetails.length > 0) {
-                    let detailsHTML = '<div class="info-card" style="grid-column:1/-1;"><h4><i class="fas fa-list"></i> تفاصيل المناوبات</h4>';
-                    detailsHTML += '<div style="overflow-x:auto;"><table style="width:100%;margin-top:8px;min-width:auto;font-size:11px;"><thead><tr>';
-                    const headerThs = document.querySelectorAll('#oncallHeader th');
-                    headerThs.forEach(th => detailsHTML += `<th style="font-size:10px;padding:6px;">${th.textContent}</th>`);
-                    detailsHTML += '</tr></thead><tbody>';
-                    oncallDetails.forEach(row => {
-                        detailsHTML += '<tr>' + row.map(cell => `<td style="font-size:10px;padding:6px;">${cell||'-'}</td>`).join('') + '</tr>';
-                    });
-                    detailsHTML += '</tbody></table></div></div>';
-                    infoCards.innerHTML += detailsHTML;
+
+                let html = `<h3 style="color:#667eea;margin-bottom:15px;">👤 ${resident.name}</h3>`;
+                html += '<div class="info-grid">';
+                html += `<div class="info-item"><div class="info-label">الاختصار</div><div class="info-value">${resident.abbreviation}</div></div>`;
+                html += `<div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${resident.specialty}</div></div>`;
+                html += `<div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${resident.phone}</span> <button class="copy-btn" onclick="copyPhone('${resident.phone}',this)"><i class="fas fa-copy"></i></button></div></div>`;
+                html += `<div class="info-item"><div class="info-label">تاريخ الالتحاق</div><div class="info-value">${resident.joinDate||'غير محدد'}</div></div>`;
+                html += `<div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${isJoined?'status-joined':'status-pending'}">${resident.status||'غير محدد'}</span></div></div>`;
+                html += `<div class="info-item"><div class="info-label">عدد المناوبات الكلي</div><div class="info-value">${resident.oncall||'0'}</div></div>`;
+                html += '</div>';
+
+                // الفرز
+                html += '<div style="margin-top:20px;"><h4 style="color:#667eea;">📋 الفرز</h4>';
+                if (shiftFound) {
+                    html += `<div class="shift-card-full" style="margin-top:8px;">
+                        <h3>${shiftFound.name}</h3>
+                        <div class="shift-stats">
+                            <div class="shift-stat"><div class="num">${shiftFound.firstCount}</div><div class="lbl">عدد الأولى</div></div>
+                            <div class="shift-stat"><div class="num">${shiftFound.secondCount}</div><div class="lbl">عدد الثانية</div></div>
+                        </div>
+                        <div class="shift-names"><strong>الزملاء في نفس الفرز:</strong> ${shiftFound.names}</div>
+                    </div>`;
+                } else {
+                    html += '<p style="color:#888;">لم يتم العثور على فرز لهذا الشهر.</p>';
                 }
+                html += '</div>';
+
+                // المناوبات
+                html += '<div style="margin-top:20px;"><h4 style="color:#667eea;">📅 مناوبات هذا الشهر</h4>';
+                if (oncallRows.length > 0) {
+                    html += `<p style="margin-bottom:10px;">عدد المناوبات هذا الشهر: <strong>${oncallRows.length}</strong></p>`;
+                    html += '<div class="table-wrapper" style="margin-top:8px;"><table><thead><tr>';
+                    const headers = document.querySelectorAll('#oncallHeader th');
+                    if (headers.length > 0) {
+                        headers.forEach(th => html += `<th>${th.textContent}</th>`);
+                    } else {
+                        html += '<th>اليوم</th><th>التاريخ</th><th>الطبيب</th><th>الاحتياط</th>';
+                    }
+                    html += '</tr></thead><tbody>';
+                    oncallRows.forEach(row => {
+                        html += '<tr>' + row.map(c => `<td>${c||'-'}</td>`).join('') + '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                } else {
+                    html += '<p style="color:#888;">لا توجد مناوبات مسجلة هذا الشهر.</p>';
+                }
+                html += '</div>';
+
+                resultDiv.innerHTML = html;
+                resultDiv.classList.add('show');
+                document.getElementById('searchResultsList').innerHTML = '';
             }
-        
+
             useDemoData() {
-                console.log('استخدام بيانات تجريبية...');
-                const rData = [
-                    ['', 'الاسم الثلاثي', 'الاختصار', 'الاختصاص', 'رقم الهاتف', '', '', '', '', 'تاريخ الالتحاق', 'المناوبات', 'الحالة'],
-                    ['', 'أحمد محمد علي', 'أ.م.ع', 'الباطنة', '0991234567', '', '', '', '', '2023-10-01', '15', 'ملتحق'],
-                    ['', 'فاطمة خالد حسن', 'ف.خ.ح', 'القلبية', '0992345678', '', '', '', '', '2023-10-01', '12', 'ملتحق'],
-                    ['', 'عمر محمود سعيد', 'ع.م.س', 'الصدرية', '0993456789', '', '', '', '', '2023-11-15', '10', 'ملتحق'],
-                    ['', 'سارة يوسف إبراهيم', 'س.ي.إ', 'الهضمية', '0994567890', '', '', '', '', '', '8', 'لم يلتحق بعد'],
-                    ['', 'خالد عبد الله', 'خ.ع.ا', 'الباطنة', '0995678901', '', '', '', '', '2024-01-05', '5', 'ملتحق'],
-                    ['', 'نور علي حسن', 'ن.ع.ح', 'الكلية', '0996789012', '', '', '', '', '2024-02-01', '3', 'ملتحق'],
-                ];
-                this.renderResidents(rData);
-                
-                const sData = [
-                    ['', 'الفرز', 'عدد الأولى', 'عدد الثانية', 'الأسماء'],
-                    ['', 'الفرز الأول', '10', '5', 'أحمد محمد علي، فاطمة خالد حسن، عمر محمود سعيد'],
-                    ['', 'الفرز الثاني', '8', '7', 'سارة يوسف إبراهيم، خالد عبد الله'],
-                    ['', 'الفرز الثالث', '12', '3', 'نور علي حسن، محمد علي'],
-                ];
-                this.renderShifts(sData);
-                
-                const oData = [
-                    ['اليوم', 'التاريخ', 'الطبيب المناوب', 'الطبيب الاحتياط'],
-                    ['السبت', '2024-07-01', 'أحمد محمد علي', 'فاطمة خالد حسن'],
-                    ['الأحد', '2024-07-02', 'عمر محمود سعيد', 'سارة يوسف إبراهيم'],
-                    ['الاثنين', '2024-07-03', 'خالد عبد الله', 'أحمد محمد علي'],
-                ];
-                this.renderOncall(oData);
-                
-                this.updateLastUpdateTime();
+                this.renderResidents([
+                    ['','الاسم الثلاثي','الاختصار','الاختصاص','الهاتف','','','','','تاريخ الالتحاق','المناوبات','الحالة'],
+                    ['','أحمد محمد علي','أ.م.ع','الباطنة','0991234567','','','','','2023-10-01','15','ملتحق'],
+                    ['','فاطمة خالد حسن','ف.خ.ح','القلبية','0992345678','','','','','2023-10-01','12','ملتحق'],
+                    ['','عمر محمود سعيد','ع.م.س','الصدرية','0993456789','','','','','2023-11-15','10','ملتحق'],
+                    ['','سارة يوسف إبراهيم','س.ي.إ','الهضمية','0994567890','','','','','','8','لم يلتحق بعد'],
+                    ['','خالد عبد الله','خ.ع.ا','الباطنة','0995678901','','','','','2024-01-05','5','ملتحق'],
+                ]);
+                this.renderShifts([
+                    ['','الفرز','عدد الأولى','عدد الثانية','الأسماء'],
+                    ['','الفرز الأول','10','5','أحمد محمد علي، فاطمة خالد حسن، عمر محمود سعيد'],
+                    ['','الفرز الثاني','8','7','سارة يوسف إبراهيم، خالد عبد الله'],
+                ]);
+                this.renderOncall([
+                    ['اليوم','التاريخ','الطبيب المناوب','الطبيب الاحتياط'],
+                    ['السبت','2024-07-01','أحمد محمد علي','فاطمة خالد حسن'],
+                    ['الأحد','2024-07-02','عمر محمود سعيد','سارة يوسف إبراهيم'],
+                    ['الاثنين','2024-07-03','خالد عبد الله','أحمد محمد علي'],
+                    ['الثلاثاء','2024-07-04','أحمد محمد علي','عمر محمود سعيد'],
+                ]);
+                this.updateTime();
             }
-        
-            updateLastUpdateTime() {
-                document.getElementById('lastUpdateTime').textContent = 
-                    'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
-            }
-        
-            showLoading(show) {
-                document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+
+            updateTime() {
+                document.getElementById('lastUpdateTime').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
             }
         }
-        
-        // دالة نسخ رقم الهاتف (عامة)
-        function copyPhone(phone, btn) {
-            navigator.clipboard.writeText(phone).then(() => {
-                const icon = btn.querySelector('i');
-                const originalClass = icon.className;
-                icon.className = 'fas fa-check';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                    icon.className = originalClass;
-                    btn.classList.remove('copied');
-                }, 1500);
-            }).catch(err => {
-                console.error('فشل النسخ:', err);
-            });
-        }
-        
+
+        let app;
         document.addEventListener('DOMContentLoaded', () => {
-            new HospitalApp();
+            app = new HospitalApp();
+            window.app = app; // للوصول من onclick
         });
     </script>
 </body>
