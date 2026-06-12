@@ -9,14 +9,12 @@
     <style>
         :root {
             --primary: #1a73e8;
-            --primary-dark: #1557b0;
             --secondary: #6c5ce7;
             --accent: #00b894;
             --danger: #e74c3c;
             --warning: #f39c12;
             --success: #27ae60;
             --dark: #2c3e50;
-            --light: #ecf0f1;
             --white: #ffffff;
             --gray-100: #f8f9fa;
             --gray-200: #e9ecef;
@@ -33,11 +31,7 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Tajawal', 'Cairo', sans-serif;
@@ -49,48 +43,15 @@
         }
 
         .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
         }
-
         .bg-circle {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.3;
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
             animation: float 20s infinite ease-in-out;
         }
-
-        .bg-circle-1 {
-            width: 400px;
-            height: 400px;
-            background: #667eea;
-            top: -100px;
-            right: -100px;
-        }
-
-        .bg-circle-2 {
-            width: 300px;
-            height: 300px;
-            background: #764ba2;
-            bottom: -50px;
-            left: -50px;
-            animation-delay: -7s;
-        }
-
-        .bg-circle-3 {
-            width: 350px;
-            height: 350px;
-            background: #f093fb;
-            top: 50%;
-            left: 50%;
-            animation-delay: -14s;
-        }
+        .bg-circle-1 { width: 400px; height: 400px; background: #667eea; top: -100px; right: -100px; }
+        .bg-circle-2 { width: 300px; height: 300px; background: #764ba2; bottom: -50px; left: -50px; animation-delay: -7s; }
+        .bg-circle-3 { width: 350px; height: 350px; background: #f093fb; top: 50%; left: 50%; animation-delay: -14s; }
 
         @keyframes float {
             0%, 100% { transform: translate(0, 0) scale(1); }
@@ -101,533 +62,175 @@
 
         .main-header {
             background: linear-gradient(135deg, #1a73e8 0%, #6c5ce7 50%, #00b894 100%);
-            position: relative;
-            overflow: hidden;
-            padding: 50px 20px;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            border-bottom: 3px solid rgba(255,255,255,0.2);
+            position: relative; overflow: hidden; padding: 40px 20px; text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); border-bottom: 3px solid rgba(255,255,255,0.2);
         }
-
         .header-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
-
-        .header-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .hospital-logo {
-            font-size: 70px;
-            color: white;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .main-title {
-            color: white;
-            margin-bottom: 15px;
-            animation: slideDown 0.8s ease;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .title-line-1 {
-            display: block;
-            font-size: 2.8em;
-            font-weight: 900;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
-            letter-spacing: 2px;
-        }
-
-        .title-line-2 {
-            display: block;
-            font-size: 2.2em;
-            font-weight: 800;
-            margin-top: 10px;
-            background: linear-gradient(to right, #ffd700, #ffed4a, #ffd700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 3s infinite;
-        }
-
-        @keyframes shimmer {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.3); }
-        }
-
-        .hospital-name {
-            color: rgba(255,255,255,0.95);
-            font-size: 1.5em;
-            font-weight: 600;
-            margin-top: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .header-stats {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 25px;
-            flex-wrap: wrap;
-        }
-
-        .stat-badge {
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            padding: 12px 25px;
-            border-radius: 50px;
-            color: white;
-            font-size: 15px;
-            font-weight: 500;
-            border: 2px solid rgba(255,255,255,0.3);
-            transition: var(--transition);
-            animation: fadeInUp 0.6s ease;
-        }
-
-        .stat-badge:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-3px);
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .header-content { position: relative; z-index: 1; }
+        .hospital-logo { font-size: 60px; color: white; margin-bottom: 15px; animation: pulse 2s infinite; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .main-title { color: white; margin-bottom: 10px; animation: slideDown 0.8s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .title-line-1 { display: block; font-size: 2.5em; font-weight: 900; text-shadow: 3px 3px 6px rgba(0,0,0,0.3); letter-spacing: 2px; }
+        .title-line-2 { display: block; font-size: 2em; font-weight: 800; margin-top: 8px; background: linear-gradient(to right, #ffd700, #ffed4a, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 3s infinite; }
+        @keyframes shimmer { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+        .hospital-name { color: rgba(255,255,255,0.95); font-size: 1.3em; font-weight: 600; margin-top: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .header-stats { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        .stat-badge { background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 10px 22px; border-radius: 50px; color: white; font-size: 14px; font-weight: 500; border: 2px solid rgba(255,255,255,0.3); transition: var(--transition); }
 
         .main-nav {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 5px 30px rgba(0,0,0,0.15);
-            border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.15); border-bottom: 2px solid rgba(102, 126, 234, 0.2);
         }
-
-        .nav-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            padding: 15px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            flex-wrap: wrap;
-        }
-
+        .nav-container { display: flex; justify-content: center; gap: 10px; padding: 12px 15px; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
         .nav-btn {
-            padding: 15px 30px;
-            border: 2px solid transparent;
-            background: var(--gray-100);
-            border-radius: 50px;
-            cursor: pointer;
-            font-family: 'Tajawal', sans-serif;
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--gray-700);
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            white-space: nowrap;
-            position: relative;
-            overflow: hidden;
+            padding: 12px 22px; border: 2px solid transparent; background: var(--gray-100); border-radius: 50px;
+            cursor: pointer; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: 700; color: var(--gray-700);
+            transition: var(--transition); display: flex; align-items: center; gap: 8px; white-space: nowrap;
         }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25); }
+        .nav-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
 
-        .nav-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(102, 126, 234, 0.3);
-            transition: all 0.5s ease;
-            transform: translate(-50%, -50%);
-        }
-
-        .nav-btn:hover::before {
-            width: 300px;
-            height: 300px;
-        }
-
-        .nav-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .nav-btn.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-            border-color: transparent;
-            transform: translateY(-2px);
-        }
-
-        .nav-btn i {
-            font-size: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .nav-btn span {
-            position: relative;
-            z-index: 1;
-        }
-
-        .main-content {
-            max-width: 1400px;
-            margin: 40px auto;
-            padding: 0 20px;
-            position: relative;
-        }
-
-        .tab-content {
-            display: none;
-            animation: slideIn 0.6s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .main-content { max-width: 1400px; margin: 30px auto; padding: 0 15px; position: relative; }
+        .tab-content { display: none; animation: slideIn 0.5s ease; }
+        .tab-content.active { display: block; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
 
         .section-header {
-            background: white;
-            padding: 25px 35px;
-            border-radius: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            border-right: 5px solid #667eea;
-            transition: var(--transition);
+            background: white; padding: 20px 25px; border-radius: 20px; margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 15px; border-right: 4px solid #667eea;
         }
+        .section-header h2 { color: var(--dark); font-size: 1.5em; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .section-header h2 i { color: #667eea; font-size: 22px; background: linear-gradient(135deg, #667eea20, #764ba220); padding: 10px; border-radius: 12px; }
 
-        .section-header:hover {
-            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .section-header h2 {
-            color: var(--dark);
-            font-size: 1.8em;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .section-header h2 i {
-            color: #667eea;
-            font-size: 28px;
-            background: linear-gradient(135deg, #667eea20, #764ba220);
-            padding: 12px;
-            border-radius: 15px;
-        }
-
-        .search-container {
-            min-width: 320px;
-        }
-
-        .search-box {
-            position: relative;
-        }
-
-        .search-box i {
-            position: absolute;
-            right: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #667eea;
-            font-size: 18px;
-            transition: var(--transition);
-            pointer-events: none;
-        }
-
+        .search-container { min-width: 280px; }
+        .search-box { position: relative; }
         .search-box input {
-            width: 100%;
-            padding: 14px 50px 14px 20px;
-            border: 2px solid var(--gray-200);
-            border-radius: 50px;
-            font-size: 16px;
-            font-family: 'Tajawal', sans-serif;
-            transition: var(--transition);
-            background: var(--gray-100);
+            width: 100%; padding: 12px 45px 12px 15px; border: 2px solid var(--gray-200); border-radius: 50px;
+            font-size: 15px; font-family: 'Tajawal', sans-serif; transition: var(--transition); background: var(--gray-100);
         }
+        .search-box input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); background: white; }
+        .search-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #667eea; font-size: 16px; }
 
-        .search-box input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-            background: white;
-        }
-
+        /* ========== تصميم الجدول المحسن ========== */
         .table-wrapper {
-            background: white;
-            border-radius: 25px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-            overflow: hidden;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            background: white; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+            overflow-x: auto; -webkit-overflow-scrolling: touch;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 900px;
-            font-size: 14px;
-        }
-
-        thead {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        th {
-            padding: 15px 12px;
-            text-align: right;
-            color: white;
-            font-weight: 800;
-            font-size: 14px;
-            white-space: nowrap;
-            letter-spacing: 0.5px;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--gray-200);
-            font-size: 14px;
-            color: var(--dark);
-            transition: var(--transition);
-            white-space: nowrap;
-        }
-
-        tbody tr {
-            transition: var(--transition);
-            animation: fadeInRow 0.5s ease;
-        }
-
-        @keyframes fadeInRow {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        tbody tr:hover {
-            background: linear-gradient(90deg, #f0f4ff, #f8f0ff);
-            transform: scale(1.005);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-
-        tbody tr:nth-child(even) {
-            background: rgba(102, 126, 234, 0.02);
-        }
+        table { width: 100%; border-collapse: collapse; min-width: 750px; font-size: 13px; }
+        thead { background: linear-gradient(135deg, #667eea, #764ba2); position: sticky; top: 0; z-index: 5; }
+        th { padding: 12px 8px; text-align: center; color: white; font-weight: 700; font-size: 12px; white-space: nowrap; }
+        td { padding: 10px 8px; border-bottom: 1px solid var(--gray-200); font-size: 12px; color: var(--dark); text-align: center; white-space: nowrap; }
+        td:first-child, th:first-child { text-align: right; }
+        
+        tbody tr { transition: var(--transition); }
+        tbody tr:hover { background: #f0f4ff; }
+        tbody tr:nth-child(even) { background: rgba(102, 126, 234, 0.03); }
+        tbody tr:nth-child(even):hover { background: #f0f4ff; }
 
         .status-badge {
-            padding: 6px 14px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 700;
-            display: inline-block;
-            letter-spacing: 0.5px;
+            padding: 5px 12px; border-radius: 50px; font-size: 11px; font-weight: 700;
+            display: inline-block; white-space: nowrap;
+        }
+        .status-joined { background: #d4edda; color: #155724; border: 1px solid #28a745; }
+        .status-pending { background: #fff3cd; color: #856404; border: 1px solid #ffc107; animation: glow 2s infinite; }
+        @keyframes glow { 0%, 100% { box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2); } 50% { box-shadow: 0 4px 16px rgba(255, 193, 7, 0.5); } }
+
+        /* زر نسخ رقم الهاتف */
+        .copy-btn {
+            background: #667eea; color: white; border: none; padding: 4px 10px; border-radius: 15px;
+            cursor: pointer; font-size: 11px; margin-right: 6px; transition: var(--transition);
+            font-family: 'Tajawal', sans-serif;
+        }
+        .copy-btn:hover { background: #764ba2; transform: scale(1.05); }
+        .copy-btn.copied { background: #28a745; }
+        .phone-cell { display: flex; align-items: center; justify-content: center; gap: 4px; direction: ltr; }
+
+        /* ========== تصميم بطاقات الموبايل ========== */
+        .mobile-cards { display: none; }
+        
+        .resident-card {
+            background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-right: 4px solid #667eea;
             transition: var(--transition);
         }
-
-        .status-joined {
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
-            color: #155724;
-            border: 2px solid #28a745;
-            box-shadow: 0 3px 10px rgba(40, 167, 69, 0.2);
+        .resident-card:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(102, 126, 234, 0.2); }
+        .resident-card .card-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+            padding-bottom: 10px; border-bottom: 1px solid var(--gray-200);
         }
-
-        .status-pending {
-            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-            color: #856404;
-            border: 2px solid #ffc107;
-            box-shadow: 0 3px 10px rgba(255, 193, 7, 0.2);
-            animation: glow 2s infinite;
+        .resident-card .card-name { font-size: 16px; font-weight: 800; color: var(--dark); }
+        .resident-card .card-abbr { font-size: 13px; color: #667eea; font-weight: 700; }
+        .resident-card .card-row {
+            display: flex; justify-content: space-between; align-items: center; padding: 6px 0;
+            font-size: 13px; border-bottom: 1px dotted var(--gray-200);
         }
+        .resident-card .card-row:last-child { border-bottom: none; }
+        .resident-card .card-label { color: #7f8c8d; font-weight: 500; }
+        .resident-card .card-value { color: var(--dark); font-weight: 600; text-align: left; }
 
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 3px 10px rgba(255, 193, 7, 0.2); }
-            50% { box-shadow: 0 5px 20px rgba(255, 193, 7, 0.5); }
-        }
-
-        /* تنسيق بطاقة نتيجة البحث للطالب */
+        /* نتيجة بحث الطالب */
         .student-result {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            margin-top: 20px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-            display: none;
-            animation: slideIn 0.5s ease;
+            background: white; border-radius: 20px; padding: 25px; margin-top: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1); display: none; animation: slideIn 0.5s ease;
         }
-
-        .student-result.show {
-            display: block;
-        }
-
-        .student-info-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
+        .student-result.show { display: block; }
+        .student-info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
         .info-card {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            border-right: 4px solid #667eea;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 16px; border-radius: 12px;
+            border-right: 3px solid #667eea;
         }
+        .info-card h4 { color: #667eea; margin-bottom: 8px; font-size: 13px; }
+        .info-card p { font-size: 15px; font-weight: 700; color: var(--dark); }
+        .no-results { text-align: center; padding: 40px; color: #e74c3c; font-size: 16px; font-weight: 600; grid-column: 1/-1; }
 
-        .info-card h4 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
-        .info-card p {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--dark);
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 40px;
-            color: #e74c3c;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
+        /* مؤشر التحميل */
         .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 1000;
+            justify-content: center; align-items: center;
         }
+        .spinner-box { text-align: center; background: white; padding: 35px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .spinner { width: 50px; height: 50px; border: 4px solid var(--gray-200); border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .spinner-box {
-            text-align: center;
-            background: white;
-            padding: 40px;
-            border-radius: 25px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        .main-footer { background: linear-gradient(135deg, #2c3e50, #34495e); padding: 20px; text-align: center; color: white; margin-top: 40px; font-size: 14px; }
+        .main-footer i { color: #e74c3c; margin: 0 4px; animation: heartbeat 1.5s infinite; }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+        /* عرض الجدول على الشاشات الكبيرة والبطاقات على الموبايل */
+        @media (min-width: 769px) {
+            .desktop-table { display: block; }
+            .mobile-cards { display: none; }
         }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid var(--gray-200);
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .main-footer {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            padding: 25px;
-            text-align: center;
-            color: white;
-            margin-top: 50px;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .main-footer i {
-            color: #e74c3c;
-            margin: 0 5px;
-            animation: heartbeat 1.5s infinite;
-        }
-
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-
         @media (max-width: 768px) {
-            .title-line-1 { font-size: 2em; }
-            .title-line-2 { font-size: 1.6em; }
-            .hospital-name { font-size: 1.2em; }
-            .hospital-logo { font-size: 50px; }
-            .section-header { flex-direction: column; align-items: flex-start; padding: 20px; }
-            .search-container { width: 100%; min-width: auto; }
-            .nav-btn { padding: 12px 20px; font-size: 14px; }
-            th, td { padding: 10px 8px; font-size: 12px; }
-            table { min-width: 700px; }
-            .stat-badge { padding: 10px 20px; font-size: 13px; }
+            .desktop-table { display: none; }
+            .mobile-cards { display: block; }
+            .title-line-1 { font-size: 1.8em; }
+            .title-line-2 { font-size: 1.4em; }
+            .hospital-name { font-size: 1.1em; }
+            .hospital-logo { font-size: 45px; }
+            .section-header { padding: 15px 20px; }
+            .nav-btn { padding: 10px 15px; font-size: 12px; }
+            .nav-btn span { font-size: 11px; }
             .student-info-cards { grid-template-columns: 1fr; }
+            .main-content { padding: 0 10px; margin: 20px auto; }
         }
-
         @media (max-width: 480px) {
-            .main-header { padding: 30px 15px; }
-            .title-line-1 { font-size: 1.5em; }
-            .title-line-2 { font-size: 1.2em; }
-            .nav-container { gap: 8px; padding: 10px; }
-            .nav-btn { padding: 10px 15px; font-size: 13px; }
-            .nav-btn span { font-size: 12px; }
+            .nav-btn { padding: 8px 10px; font-size: 11px; gap: 5px; }
+            .nav-btn i { font-size: 14px; }
+            .title-line-1 { font-size: 1.4em; }
+            .title-line-2 { font-size: 1.1em; }
         }
 
-        ::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--gray-100);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #764ba2, #667eea);
-        }
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--gray-100); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -640,49 +243,25 @@
     <header class="main-header">
         <div class="header-overlay"></div>
         <div class="header-content">
-            <div class="hospital-logo">
-                <i class="fas fa-hospital-alt"></i>
-            </div>
+            <div class="hospital-logo"><i class="fas fa-hospital-alt"></i></div>
             <h1 class="main-title">
                 <span class="title-line-1">أطباء قسم الداخلية</span>
                 <span class="title-line-2">السنة الاولى</span>
             </h1>
-            <h2 class="hospital-name">
-                <i class="fas fa-star" style="color: #ffd700; margin-left: 10px;"></i>
-                مشفى حلب الجامعي
-                <i class="fas fa-star" style="color: #ffd700; margin-right: 10px;"></i>
-            </h2>
+            <h2 class="hospital-name">🏥 مشفى حلب الجامعي 🏥</h2>
             <div class="header-stats">
-                <div class="stat-badge">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span id="currentDateHeader"></span>
-                </div>
-                <div class="stat-badge">
-                    <i class="fas fa-sync-alt fa-spin"></i>
-                    <span id="lastUpdateTime">جاري التحميل...</span>
-                </div>
+                <div class="stat-badge"><i class="fas fa-calendar-alt"></i> <span id="currentDateHeader"></span></div>
+                <div class="stat-badge"><i class="fas fa-sync-alt fa-spin"></i> <span id="lastUpdateTime">جاري التحميل...</span></div>
             </div>
         </div>
     </header>
 
     <nav class="main-nav">
         <div class="nav-container">
-            <button class="nav-btn active" data-tab="residents">
-                <i class="fas fa-user-graduate"></i>
-                <span>لائحة المقيمين</span>
-            </button>
-            <button class="nav-btn" data-tab="shifts">
-                <i class="fas fa-clipboard-list"></i>
-                <span>جدول الفروز</span>
-            </button>
-            <button class="nav-btn" data-tab="oncall">
-                <i class="fas fa-calendar-check"></i>
-                <span>جدول المناوبات</span>
-            </button>
-            <button class="nav-btn" data-tab="student-search">
-                <i class="fas fa-search"></i>
-                <span>بحث عن طالب</span>
-            </button>
+            <button class="nav-btn active" data-tab="residents"><i class="fas fa-user-graduate"></i><span>لائحة المقيمين</span></button>
+            <button class="nav-btn" data-tab="shifts"><i class="fas fa-clipboard-list"></i><span>جدول الفروز</span></button>
+            <button class="nav-btn" data-tab="oncall"><i class="fas fa-calendar-check"></i><span>جدول المناوبات</span></button>
+            <button class="nav-btn" data-tab="student-search"><i class="fas fa-search"></i><span>بحث عن طالب</span></button>
         </div>
     </nav>
 
@@ -690,10 +269,7 @@
         <!-- واجهة لائحة المقيمين -->
         <section class="tab-content active" id="residents-tab">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-users"></i>
-                    لائحة مقيمي السنة الأولى
-                </h2>
+                <h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى</h2>
                 <div class="search-container">
                     <div class="search-box">
                         <input type="text" id="residentSearch" placeholder="ابحث بالاسم أو الاختصار...">
@@ -701,7 +277,8 @@
                     </div>
                 </div>
             </div>
-            <div class="table-wrapper">
+            <!-- جدول للشاشات الكبيرة -->
+            <div class="table-wrapper desktop-table">
                 <table id="residentsTable">
                     <thead>
                         <tr>
@@ -714,32 +291,22 @@
                             <th>الحالة</th>
                         </tr>
                     </thead>
-                    <tbody id="residentsBody">
-                    </tbody>
+                    <tbody id="residentsBody"></tbody>
                 </table>
             </div>
+            <!-- بطاقات للموبايل -->
+            <div class="mobile-cards" id="residentsCards"></div>
         </section>
 
         <!-- واجهة جدول الفروز -->
         <section class="tab-content" id="shifts-tab">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-clipboard-list"></i>
-                    جدول فروز <span id="shiftMonthName"></span>
-                </h2>
+                <h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2>
             </div>
             <div class="table-wrapper">
                 <table id="shiftsTable">
-                    <thead>
-                        <tr>
-                            <th>الفرز</th>
-                            <th>عدد الأولى</th>
-                            <th>عدد الثانية</th>
-                            <th>الأسماء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="shiftsBody">
-                    </tbody>
+                    <thead><tr><th>الفرز</th><th>عدد الأولى</th><th>عدد الثانية</th><th>الأسماء</th></tr></thead>
+                    <tbody id="shiftsBody"></tbody>
                 </table>
             </div>
         </section>
@@ -747,17 +314,12 @@
         <!-- واجهة جدول المناوبات -->
         <section class="tab-content" id="oncall-tab">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-calendar-check"></i>
-                    جدول مناوبات <span id="oncallMonthName"></span>
-                </h2>
+                <h2><i class="fas fa-calendar-check"></i> جدول مناوبات <span id="oncallMonthName"></span></h2>
             </div>
             <div class="table-wrapper">
                 <table id="oncallTable">
-                    <thead id="oncallHeader">
-                    </thead>
-                    <tbody id="oncallBody">
-                    </tbody>
+                    <thead id="oncallHeader"></thead>
+                    <tbody id="oncallBody"></tbody>
                 </table>
             </div>
         </section>
@@ -765,49 +327,34 @@
         <!-- واجهة بحث عن طالب -->
         <section class="tab-content" id="student-search-tab">
             <div class="section-header">
-                <h2>
-                    <i class="fas fa-user-search"></i>
-                    بحث عن طالب ومعرفة فروزه ومناوباته
-                </h2>
+                <h2><i class="fas fa-user-search"></i> بحث عن طالب ومعرفة فروزه ومناوباته</h2>
                 <div class="search-container">
                     <div class="search-box">
-                        <input type="text" id="studentSearch" placeholder="اكتب اسم الطالب أو اختصاره...">
+                        <input type="text" id="studentSearch" placeholder="اكتب الاسم أو الاختصار...">
                         <i class="fas fa-search"></i>
                     </div>
                 </div>
             </div>
             <div id="studentResult" class="student-result">
-                <h3 style="color: #667eea; margin-bottom: 20px;">
-                    <i class="fas fa-user-check"></i> نتيجة البحث
-                </h3>
-                <div class="student-info-cards" id="studentInfoCards">
-                </div>
+                <h3 style="color: #667eea; margin-bottom: 15px;"><i class="fas fa-user-check"></i> نتيجة البحث</h3>
+                <div class="student-info-cards" id="studentInfoCards"></div>
             </div>
         </section>
 
         <div class="loading-overlay" id="loadingOverlay">
             <div class="spinner-box">
                 <div class="spinner"></div>
-                <p style="font-size: 18px; font-weight: 600; color: #2c3e50;">جاري تحديث البيانات...</p>
-                <p style="color: #7f8c8d; margin-top: 10px;">يرجى الانتظار</p>
+                <p style="font-size: 16px; font-weight: 600; color: #2c3e50;">جاري تحديث البيانات...</p>
             </div>
         </div>
     </main>
 
     <footer class="main-footer">
-        <p>
-            &copy; <span id="currentYear"></span> 
-            مشفى حلب الجامعي - قسم الداخلية 
-            <i class="fas fa-heart"></i>
-        </p>
+        <p>&copy; <span id="currentYear"></span> مشفى حلب الجامعي - قسم الداخلية <i class="fas fa-heart"></i></p>
     </footer>
 
     <script>
         const SHEET_ID = '1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
-        
-        const RESIDENTS_SHEET = 'لائحة مقيمي السنة الاولى';
-        const SHIFTS_SHEET_BASE = 'جدول فروز شهر';
-        const ONCALL_SHEET_BASE = 'جدول مناوبات';
         
         const ARABIC_MONTHS = [
             'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
@@ -821,6 +368,7 @@
                 this.allResidents = [];
                 this.allShifts = [];
                 this.allOncall = [];
+                this.sheetNames = []; // أسماء الأوراق الفعلية
                 this.init();
             }
         
@@ -836,9 +384,8 @@
         
             updateHeaderDate() {
                 const now = new Date();
-                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 document.getElementById('currentDateHeader').textContent = 
-                    now.toLocaleDateString('ar-SA', options);
+                    now.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             }
         
             updateFooterYear() {
@@ -846,67 +393,73 @@
             }
         
             setupTabs() {
-                const navBtns = document.querySelectorAll('.nav-btn');
-                const tabContents = document.querySelectorAll('.tab-content');
-        
-                navBtns.forEach(btn => {
+                document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        const targetTab = btn.dataset.tab;
-                        
-                        navBtns.forEach(b => b.classList.remove('active'));
-                        tabContents.forEach(t => t.classList.remove('active'));
-                        
+                        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                         btn.classList.add('active');
-                        document.getElementById(`${targetTab}-tab`).classList.add('active');
+                        document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
                     });
                 });
             }
         
             setupSearch() {
-                const searchInput = document.getElementById('residentSearch');
-                if (searchInput) {
-                    searchInput.addEventListener('input', (e) => {
-                        this.filterResidents(e.target.value);
-                    });
-                }
+                document.getElementById('residentSearch').addEventListener('input', (e) => {
+                    this.filterResidents(e.target.value);
+                });
             }
         
             setupStudentSearch() {
-                const studentSearch = document.getElementById('studentSearch');
-                if (studentSearch) {
-                    studentSearch.addEventListener('input', (e) => {
-                        this.searchStudent(e.target.value);
-                    });
-                }
+                document.getElementById('studentSearch').addEventListener('input', (e) => {
+                    this.searchStudent(e.target.value);
+                });
             }
         
-            async loadAllData() {
-                this.showLoading(true);
-                
+            async getAllSheetNames() {
+                // نحاول جلب أسماء الأوراق عبر Google Sheets API metadata
+                const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`;
                 try {
-                    await Promise.all([
-                        this.loadResidents(),
-                        this.loadShifts(),
-                        this.loadOncall()
-                    ]);
-                    
-                    this.updateLastUpdateTime();
-                } catch (error) {
-                    console.error('Error loading data:', error);
-                    this.useDemoData();
+                    const response = await fetch(metadataUrl);
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.sheetNames = data.sheets.map(s => s.properties.title);
+                        console.log('أسماء الأوراق:', this.sheetNames);
+                        return this.sheetNames;
+                    }
+                } catch (e) {
+                    console.log('لا يمكن جلب metadata، سنستخدم الطريقة البديلة');
                 }
                 
-                this.showLoading(false);
+                // طريقة بديلة: نجرب أسماء شائعة
+                const possibleNames = [
+                    'لائحة مقيمي السنة الاولى',
+                    'Sheet1', 'Sheet2', 'Sheet3',
+                    'لائحة مقيمي السنة الأولى',
+                    'جدول فروز شهر تموز',
+                    'جدول مناوبات تموز',
+                    'ورقة1', 'ورقة2', 'ورقة3'
+                ];
+                
+                this.sheetNames = possibleNames;
+                return possibleNames;
             }
         
-            async fetchSheetData(sheetName) {
+            async fetchSheetDataByIndex(sheetName) {
                 const publishUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-                const response = await fetch(publishUrl);
-                if (response.ok) {
-                    const csvText = await response.text();
-                    return this.parseCSV(csvText);
+                try {
+                    const response = await fetch(publishUrl);
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        // التحقق أن البيانات ليست صفحة HTML خطأ
+                        if (csvText.includes('<!DOCTYPE') || csvText.includes('<html')) {
+                            return null;
+                        }
+                        return this.parseCSV(csvText);
+                    }
+                } catch (e) {
+                    console.log(`فشل جلب: ${sheetName}`);
                 }
-                throw new Error('فشل في تحميل البيانات من: ' + sheetName);
+                return null;
             }
         
             parseCSV(csvText) {
@@ -933,158 +486,245 @@
                         rows.push(row);
                     }
                 }
-                
                 return rows;
             }
         
-            async loadResidents() {
+            // محاولة تعريف الورقة: هل هي لائحة مقيمين، فروز، أم مناوبات؟
+            identifySheetType(headers, data) {
+                if (!headers || headers.length === 0) return 'unknown';
+                
+                const headerStr = headers.join(' ').toLowerCase();
+                
+                // تحقق من كلمات مفتاحية
+                if (headerStr.includes('اسم') && (headerStr.includes('اختصاص') || headerStr.includes('هاتف') || headerStr.includes('التحاق'))) {
+                    return 'residents';
+                }
+                if (headerStr.includes('فرز') || (headerStr.includes('أولى') && headerStr.includes('ثانية'))) {
+                    return 'shifts';
+                }
+                if (headerStr.includes('مناوب') || headerStr.includes('تاريخ') || headerStr.includes('طبيب')) {
+                    return 'oncall';
+                }
+                
+                // تحقق من محتوى البيانات
+                if (data.length > 0 && data[0].length >= 5) {
+                    const rowStr = data[0].join(' ').toLowerCase();
+                    if (rowStr.includes('التحق') || rowStr.includes('طبيب') || rowStr.includes('اختصاص')) {
+                        return 'residents';
+                    }
+                    if (rowStr.includes('فرز') || rowStr.includes('أولى')) {
+                        return 'shifts';
+                    }
+                }
+                
+                return 'unknown';
+            }
+        
+            async loadAllData() {
+                this.showLoading(true);
+                
                 try {
-                    const data = await this.fetchSheetData(RESIDENTS_SHEET);
+                    // نجرب كل الأسماء الممكنة
+                    const sheetNamesToTry = this.sheetNames.length > 0 ? this.sheetNames : await this.getAllSheetNames();
                     
-                    if (data.length > 1) {
-                        const tbody = document.getElementById('residentsBody');
-                        tbody.innerHTML = '';
-                        this.allResidents = [];
-                        
-                        for (let i = 1; i < data.length; i++) {
-                            const row = data[i];
-                            if (row[1] && row[1].trim()) {
-                                const resident = {
-                                    name: row[1] || '',        // B - الاسم الثلاثي
-                                    abbreviation: row[2] || '', // C - الاختصار
-                                    specialty: row[3] || '',   // D - الاختصاص
-                                    phone: row[4] || '',       // E - رقم الهاتف
-                                    joinDate: row[9] || '',    // J - تاريخ الالتحاق
-                                    oncall: row[10] || '',     // K - المناوبات
-                                    status: row[11] || ''      // L - الحالة
-                                };
-                                
-                                this.allResidents.push(resident);
-                                
-                                const isJoined = resident.status.includes('التحق') || resident.status.includes('ملتحق');
-                                
-                                const tr = document.createElement('tr');
-                                tr.style.animationDelay = `${i * 0.03}s`;
-                                tr.innerHTML = `
-                                    <td><strong>${resident.name}</strong></td>
-                                    <td>${resident.abbreviation}</td>
-                                    <td>${resident.specialty}</td>
-                                    <td dir="ltr" style="text-align: left;">${resident.phone}</td>
-                                    <td>${resident.joinDate}</td>
-                                    <td>${resident.oncall}</td>
-                                    <td>
-                                        <span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">
-                                            ${resident.status || 'غير محدد'}
-                                        </span>
-                                    </td>
-                                `;
-                                tbody.appendChild(tr);
+                    let residentsData = null;
+                    let shiftsData = null;
+                    let oncallData = null;
+                    
+                    // نجرب كل اسم ورقة ونتعرف على نوعها
+                    for (const sheetName of sheetNamesToTry) {
+                        const data = await this.fetchSheetDataByIndex(sheetName);
+                        if (data && data.length > 0) {
+                            const headers = data[0] || [];
+                            const rows = data.slice(1);
+                            const type = this.identifySheetType(headers, rows);
+                            
+                            console.log(`ورقة "${sheetName}" تم تعريفها كـ: ${type}`);
+                            
+                            if (type === 'residents' && !residentsData) {
+                                residentsData = data;
+                            } else if (type === 'shifts' && !shiftsData) {
+                                shiftsData = data;
+                            } else if (type === 'oncall' && !oncallData) {
+                                oncallData = data;
                             }
                         }
                     }
+                    
+                    // إذا لم نجد كل الأنواع، نستخدم الترتيب: الأولى = مقيمين، الثانية = فروز، الثالثة = مناوبات
+                    const allData = [];
+                    for (const sheetName of sheetNamesToTry) {
+                        const data = await this.fetchSheetDataByIndex(sheetName);
+                        if (data && data.length > 0) {
+                            allData.push(data);
+                        }
+                    }
+                    
+                    // إذا لم يتم التعرف التلقائي، استخدم الترتيب
+                    if (!residentsData && allData.length >= 1) residentsData = allData[0];
+                    if (!shiftsData && allData.length >= 2) shiftsData = allData[1];
+                    if (!oncallData && allData.length >= 3) oncallData = allData[2];
+                    
+                    // عرض البيانات
+                    if (residentsData) this.renderResidents(residentsData);
+                    if (shiftsData) this.renderShifts(shiftsData);
+                    if (oncallData) this.renderOncall(oncallData);
+                    
+                    this.updateLastUpdateTime();
                 } catch (error) {
-                    console.error('Error loading residents:', error);
-                    this.showErrorInTable('residentsBody', 'فشل في تحميل بيانات المقيمين');
+                    console.error('Error:', error);
+                    this.useDemoData();
+                }
+                
+                this.showLoading(false);
+            }
+        
+            renderResidents(data) {
+                this.allResidents = [];
+                const tbody = document.getElementById('residentsBody');
+                const cardsDiv = document.getElementById('residentsCards');
+                tbody.innerHTML = '';
+                cardsDiv.innerHTML = '';
+                
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    // نتأكد أن الصف فيه بيانات كافية
+                    if (!row[1] || !row[1].trim()) continue;
+                    
+                    const resident = {
+                        name: row[1] || '',          // B - الاسم الثلاثي
+                        abbreviation: row[2] || '',   // C - الاختصار
+                        specialty: row[3] || '',      // D - الاختصاص
+                        phone: row[4] || '',          // E - رقم الهاتف
+                        joinDate: row[9] || '',       // J - تاريخ الالتحاق
+                        oncall: row[10] || '',        // K - المناوبات
+                        status: row[11] || ''         // L - الحالة
+                    };
+                    
+                    // تخطي إذا كان الاسم فارغاً أو أنه صف عناوين
+                    if (!resident.name || resident.name === 'الاسم الثلاثي' || resident.name === 'الاسم') continue;
+                    
+                    this.allResidents.push(resident);
+                    const isJoined = resident.status.includes('التحق') || resident.status.includes('ملتحق');
+                    
+                    // صف الجدول للشاشات الكبيرة
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="text-align:right;"><strong>${resident.name}</strong></td>
+                        <td>${resident.abbreviation}</td>
+                        <td>${resident.specialty}</td>
+                        <td>
+                            <div class="phone-cell">
+                                <span dir="ltr">${resident.phone}</span>
+                                <button class="copy-btn" onclick="copyPhone('${resident.phone}', this)" title="نسخ الرقم">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>${resident.joinDate || '-'}</td>
+                        <td>${resident.oncall || '-'}</td>
+                        <td><span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">${resident.status || 'غير محدد'}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                    
+                    // بطاقة للموبايل
+                    const card = document.createElement('div');
+                    card.className = 'resident-card';
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <span class="card-name">${resident.name}</span>
+                            <span class="card-abbr">${resident.abbreviation}</span>
+                        </div>
+                        <div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${resident.specialty}</span></div>
+                        <div class="card-row">
+                            <span class="card-label">رقم الهاتف</span>
+                            <span class="card-value" style="display:flex;align-items:center;gap:8px;">
+                                <span dir="ltr">${resident.phone}</span>
+                                <button class="copy-btn" onclick="copyPhone('${resident.phone}', this)" title="نسخ"><i class="fas fa-copy"></i></button>
+                            </span>
+                        </div>
+                        <div class="card-row"><span class="card-label">تاريخ الالتحاق</span><span class="card-value">${resident.joinDate || '-'}</span></div>
+                        <div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${resident.oncall || '-'}</span></div>
+                        <div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">${resident.status || 'غير محدد'}</span></span></div>
+                    `;
+                    cardsDiv.appendChild(card);
                 }
             }
         
-            async loadShifts() {
-                try {
-                    const sheetName = `${SHIFTS_SHEET_BASE} ${this.currentMonthName}`;
-                    document.getElementById('shiftMonthName').textContent = this.currentMonthName;
+            renderShifts(data) {
+                this.allShifts = [];
+                const tbody = document.getElementById('shiftsBody');
+                tbody.innerHTML = '';
+                document.getElementById('shiftMonthName').textContent = this.currentMonthName;
+                
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row[1] || !row[1].trim()) continue;
                     
-                    const data = await this.fetchSheetData(sheetName);
+                    const shift = {
+                        name: row[1] || '',
+                        firstCount: row[2] || '',
+                        secondCount: row[3] || '',
+                        names: row[4] || ''
+                    };
                     
-                    if (data.length > 1) {
-                        const tbody = document.getElementById('shiftsBody');
-                        tbody.innerHTML = '';
-                        this.allShifts = [];
-                        
-                        for (let i = 1; i < data.length; i++) {
-                            const row = data[i];
-                            if (row[1] && row[1].trim()) {
-                                const shift = {
-                                    name: row[1] || '',    // B - الفرز
-                                    firstCount: row[2] || '', // C - عدد الأولى
-                                    secondCount: row[3] || '', // D - عدد الثانية
-                                    names: row[4] || ''    // E - الأسماء
-                                };
-                                
-                                this.allShifts.push(shift);
-                                
-                                const tr = document.createElement('tr');
-                                tr.innerHTML = `
-                                    <td><strong>${shift.name}</strong></td>
-                                    <td>${shift.firstCount}</td>
-                                    <td>${shift.secondCount}</td>
-                                    <td>${shift.names}</td>
-                                `;
-                                tbody.appendChild(tr);
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error loading shifts:', error);
-                    document.getElementById('shiftMonthName').textContent = this.currentMonthName;
-                    this.showErrorInTable('shiftsBody', 'فشل في تحميل جدول الفروز - تأكد من وجود ورقة: ' + sheetName);
+                    this.allShifts.push(shift);
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${shift.name}</strong></td>
+                        <td>${shift.firstCount}</td>
+                        <td>${shift.secondCount}</td>
+                        <td>${shift.names}</td>
+                    `;
+                    tbody.appendChild(tr);
                 }
             }
         
-            async loadOncall() {
-                try {
-                    const sheetName = `${ONCALL_SHEET_BASE} ${this.currentMonthName}`;
-                    document.getElementById('oncallMonthName').textContent = this.currentMonthName;
+            renderOncall(data) {
+                this.allOncall = [];
+                const thead = document.getElementById('oncallHeader');
+                const tbody = document.getElementById('oncallBody');
+                document.getElementById('oncallMonthName').textContent = this.currentMonthName;
+                
+                if (data.length > 0) {
+                    thead.innerHTML = `<tr>${data[0].map(h => `<th>${h}</th>`).join('')}</tr>`;
                     
-                    const data = await this.fetchSheetData(sheetName);
-                    
-                    if (data.length > 0) {
-                        const thead = document.getElementById('oncallHeader');
-                        const tbody = document.getElementById('oncallBody');
-                        
-                        const headers = data[0];
-                        thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
-                        
-                        tbody.innerHTML = '';
-                        this.allOncall = [];
-                        
-                        for (let i = 1; i < data.length; i++) {
-                            const row = data[i];
-                            if (row.some(cell => cell && cell.trim())) {
-                                this.allOncall.push(row);
-                                
-                                const tr = document.createElement('tr');
-                                tr.innerHTML = row.map(cell => `<td>${cell || '-'}</td>`).join('');
-                                tbody.appendChild(tr);
-                            }
+                    tbody.innerHTML = '';
+                    for (let i = 1; i < data.length; i++) {
+                        const row = data[i];
+                        if (row.some(cell => cell && cell.trim())) {
+                            this.allOncall.push(row);
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = row.map(cell => `<td>${cell || '-'}</td>`).join('');
+                            tbody.appendChild(tr);
                         }
                     }
-                } catch (error) {
-                    console.error('Error loading oncall:', error);
-                    document.getElementById('oncallMonthName').textContent = this.currentMonthName;
-                    this.showErrorInTable('oncallBody', 'فشل في تحميل جدول المناوبات - تأكد من وجود ورقة: ' + sheetName);
                 }
             }
         
             filterResidents(searchTerm) {
-                const rows = document.querySelectorAll('#residentsBody tr');
                 const term = searchTerm.toLowerCase().trim();
+                const rows = document.querySelectorAll('#residentsBody tr');
+                const cards = document.querySelectorAll('#residentsCards .resident-card');
                 
                 rows.forEach((row, index) => {
-                    if (term === '') {
-                        row.style.display = '';
-                        return;
-                    }
-                    
+                    if (term === '') { row.style.display = ''; return; }
                     const resident = this.allResidents[index];
                     if (resident) {
-                        const nameMatch = resident.name.toLowerCase().includes(term);
-                        const abbrMatch = resident.abbreviation.toLowerCase().includes(term);
-                        
-                        if (nameMatch || abbrMatch) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
+                        const match = resident.name.toLowerCase().includes(term) || 
+                                      resident.abbreviation.toLowerCase().includes(term);
+                        row.style.display = match ? '' : 'none';
+                    }
+                });
+                
+                cards.forEach((card, index) => {
+                    if (term === '') { card.style.display = ''; return; }
+                    const resident = this.allResidents[index];
+                    if (resident) {
+                        const match = resident.name.toLowerCase().includes(term) || 
+                                      resident.abbreviation.toLowerCase().includes(term);
+                        card.style.display = match ? '' : 'none';
                     }
                 });
             }
@@ -1094,242 +734,155 @@
                 const infoCards = document.getElementById('studentInfoCards');
                 const term = searchTerm.toLowerCase().trim();
                 
-                if (term === '') {
+                if (term.length < 1) {
                     resultDiv.classList.remove('show');
                     return;
                 }
                 
-                // البحث عن الطالب في جميع المقيمين
-                const foundResident = this.allResidents.find(r => 
-                    r.name.toLowerCase().includes(term) || 
-                    r.abbreviation.toLowerCase().includes(term)
+                // البحث المحسن: نجرب تطابق كامل ثم جزئي
+                let foundResident = this.allResidents.find(r => 
+                    r.name.toLowerCase() === term || 
+                    r.abbreviation.toLowerCase() === term
                 );
+                
+                if (!foundResident) {
+                    foundResident = this.allResidents.find(r => 
+                        r.name.toLowerCase().includes(term) || 
+                        r.abbreviation.toLowerCase().includes(term)
+                    );
+                }
+                
+                // إذا لم نجد، نجرب البحث في كل كلمة من الاسم
+                if (!foundResident) {
+                    const words = term.split(/[\s,.]+/).filter(w => w.length > 0);
+                    foundResident = this.allResidents.find(r => {
+                        const nameWords = r.name.toLowerCase().split(/[\s]+/);
+                        const abbrClean = r.abbreviation.toLowerCase().replace(/[.\s]/g, '');
+                        return words.some(w => 
+                            nameWords.some(nw => nw.includes(w)) ||
+                            abbrClean.includes(w) ||
+                            r.name.toLowerCase().includes(w)
+                        );
+                    });
+                }
                 
                 if (!foundResident) {
                     resultDiv.classList.add('show');
                     infoCards.innerHTML = `
-                        <div class="no-results" style="grid-column: 1/-1;">
-                            <i class="fas fa-user-slash" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
-                            لا يوجد طالب بهذا الاسم أو الاختصار
+                        <div class="no-results">
+                            <i class="fas fa-user-slash" style="font-size: 45px; display: block; margin-bottom: 12px;"></i>
+                            لا يوجد طالب بهذا الاسم أو الاختصار<br>
+                            <small style="color:#7f8c8d;">تأكد من كتابة الاسم أو الاختصار بشكل صحيح</small>
                         </div>
                     `;
                     return;
                 }
                 
-                // البحث عن الطالب في جدول الفروز
+                // البحث في الفروز
                 let shiftInfo = 'غير موجود في الفروز';
                 for (let shift of this.allShifts) {
-                    if (shift.names && shift.names.includes(foundResident.name)) {
-                        shiftInfo = shift.name;
-                        break;
-                    }
-                    if (shift.names && foundResident.abbreviation && shift.names.includes(foundResident.abbreviation)) {
+                    const shiftNames = (shift.names || '').toLowerCase();
+                    if (shiftNames.includes(foundResident.name.toLowerCase()) || 
+                        (foundResident.abbreviation && shiftNames.includes(foundResident.abbreviation.toLowerCase()))) {
                         shiftInfo = shift.name;
                         break;
                     }
                 }
                 
-                // البحث عن الطالب في جدول المناوبات
-                let oncallInfo = 'غير موجود في المناوبات';
+                // البحث في المناوبات
                 let oncallDetails = [];
                 for (let row of this.allOncall) {
-                    const rowText = row.join(' ');
-                    if (rowText.includes(foundResident.name) || 
-                        (foundResident.abbreviation && rowText.includes(foundResident.abbreviation))) {
+                    const rowText = row.join(' ').toLowerCase();
+                    if (rowText.includes(foundResident.name.toLowerCase()) || 
+                        (foundResident.abbreviation && rowText.includes(foundResident.abbreviation.toLowerCase()))) {
                         oncallDetails.push(row);
                     }
                 }
                 
-                if (oncallDetails.length > 0) {
-                    oncallInfo = `موجود في ${oncallDetails.length} مناوبة`;
-                }
+                const isJoined = foundResident.status.includes('التحق') || foundResident.status.includes('ملتحق');
                 
-                // عرض النتيجة
                 resultDiv.classList.add('show');
                 infoCards.innerHTML = `
-                    <div class="info-card">
-                        <h4><i class="fas fa-user"></i> الاسم الثلاثي</h4>
-                        <p>${foundResident.name}</p>
-                    </div>
-                    <div class="info-card">
-                        <h4><i class="fas fa-tag"></i> الاختصار</h4>
-                        <p>${foundResident.abbreviation}</p>
-                    </div>
-                    <div class="info-card">
-                        <h4><i class="fas fa-stethoscope"></i> الاختصاص</h4>
-                        <p>${foundResident.specialty}</p>
-                    </div>
-                    <div class="info-card">
-                        <h4><i class="fas fa-phone"></i> رقم الهاتف</h4>
-                        <p dir="ltr">${foundResident.phone}</p>
-                    </div>
-                    <div class="info-card">
-                        <h4><i class="fas fa-calendar-plus"></i> تاريخ الالتحاق</h4>
-                        <p>${foundResident.joinDate || 'غير محدد'}</p>
-                    </div>
-                    <div class="info-card">
-                        <h4><i class="fas fa-clipboard-check"></i> الفرز</h4>
-                        <p>${shiftInfo}</p>
-                    </div>
-                    <div class="info-card">
-                        <h4><i class="fas fa-calendar-alt"></i> المناوبات</h4>
-                        <p>${oncallInfo}</p>
-                    </div>
-                    <div class="info-card">
-                        <h4><i class="fas fa-circle"></i> الحالة</h4>
-                        <p>
-                            <span class="status-badge ${foundResident.status.includes('التحق') || foundResident.status.includes('ملتحق') ? 'status-joined' : 'status-pending'}">
-                                ${foundResident.status || 'غير محدد'}
-                            </span>
-                        </p>
-                    </div>
+                    <div class="info-card"><h4><i class="fas fa-user"></i> الاسم الثلاثي</h4><p>${foundResident.name}</p></div>
+                    <div class="info-card"><h4><i class="fas fa-tag"></i> الاختصار</h4><p>${foundResident.abbreviation}</p></div>
+                    <div class="info-card"><h4><i class="fas fa-stethoscope"></i> الاختصاص</h4><p>${foundResident.specialty}</p></div>
+                    <div class="info-card"><h4><i class="fas fa-phone"></i> رقم الهاتف</h4><p dir="ltr">${foundResident.phone} <button class="copy-btn" onclick="copyPhone('${foundResident.phone}', this)"><i class="fas fa-copy"></i></button></p></div>
+                    <div class="info-card"><h4><i class="fas fa-calendar-plus"></i> تاريخ الالتحاق</h4><p>${foundResident.joinDate || 'غير محدد'}</p></div>
+                    <div class="info-card"><h4><i class="fas fa-clipboard-check"></i> الفرز</h4><p>${shiftInfo}</p></div>
+                    <div class="info-card"><h4><i class="fas fa-calendar-alt"></i> المناوبات</h4><p>${oncallDetails.length > 0 ? oncallDetails.length + ' مناوبة' : 'غير موجود'}</p></div>
+                    <div class="info-card"><h4><i class="fas fa-circle"></i> الحالة</h4><p><span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">${foundResident.status || 'غير محدد'}</span></p></div>
                 `;
                 
-                // إضافة تفاصيل المناوبات إذا وجدت
                 if (oncallDetails.length > 0) {
-                    let detailsHTML = '<div class="info-card" style="grid-column: 1/-1;"><h4><i class="fas fa-list"></i> تفاصيل المناوبات</h4>';
-                    detailsHTML += '<table style="width:100%; margin-top:10px; min-width:auto;"><thead><tr>';
-                    
-                    if (this.allOncall.length > 0 && this.allOncall[0].length > 0) {
-                        const headers = document.getElementById('oncallHeader').querySelectorAll('th');
-                        headers.forEach(th => {
-                            detailsHTML += `<th style="font-size:12px; padding:8px;">${th.textContent}</th>`;
-                        });
-                    }
-                    
+                    let detailsHTML = '<div class="info-card" style="grid-column:1/-1;"><h4><i class="fas fa-list"></i> تفاصيل المناوبات</h4>';
+                    detailsHTML += '<div style="overflow-x:auto;"><table style="width:100%;margin-top:8px;min-width:auto;font-size:11px;"><thead><tr>';
+                    const headerThs = document.querySelectorAll('#oncallHeader th');
+                    headerThs.forEach(th => detailsHTML += `<th style="font-size:10px;padding:6px;">${th.textContent}</th>`);
                     detailsHTML += '</tr></thead><tbody>';
-                    
                     oncallDetails.forEach(row => {
-                        detailsHTML += '<tr>';
-                        row.forEach(cell => {
-                            detailsHTML += `<td style="font-size:12px; padding:8px;">${cell || '-'}</td>`;
-                        });
-                        detailsHTML += '</tr>';
+                        detailsHTML += '<tr>' + row.map(cell => `<td style="font-size:10px;padding:6px;">${cell||'-'}</td>`).join('') + '</tr>';
                     });
-                    
-                    detailsHTML += '</tbody></table></div>';
+                    detailsHTML += '</tbody></table></div></div>';
                     infoCards.innerHTML += detailsHTML;
                 }
             }
         
-            showErrorInTable(tbodyId, message) {
-                const tbody = document.getElementById(tbodyId);
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="10" style="text-align: center; padding: 50px;">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 40px; color: #e74c3c; display: block; margin-bottom: 15px;"></i>
-                            <strong style="color: #e74c3c; font-size: 18px;">${message}</strong>
-                            <br>
-                            <small style="color: #7f8c8d;">يرجى التحقق من اتصال الانترنت او صلاحية الوصول للملف</small>
-                        </td>
-                    </tr>
-                `;
-            }
-        
             useDemoData() {
                 console.log('استخدام بيانات تجريبية...');
-                this.loadDemoResidents();
-                this.loadDemoShifts();
-                this.loadDemoOncall();
+                const rData = [
+                    ['', 'الاسم الثلاثي', 'الاختصار', 'الاختصاص', 'رقم الهاتف', '', '', '', '', 'تاريخ الالتحاق', 'المناوبات', 'الحالة'],
+                    ['', 'أحمد محمد علي', 'أ.م.ع', 'الباطنة', '0991234567', '', '', '', '', '2023-10-01', '15', 'ملتحق'],
+                    ['', 'فاطمة خالد حسن', 'ف.خ.ح', 'القلبية', '0992345678', '', '', '', '', '2023-10-01', '12', 'ملتحق'],
+                    ['', 'عمر محمود سعيد', 'ع.م.س', 'الصدرية', '0993456789', '', '', '', '', '2023-11-15', '10', 'ملتحق'],
+                    ['', 'سارة يوسف إبراهيم', 'س.ي.إ', 'الهضمية', '0994567890', '', '', '', '', '', '8', 'لم يلتحق بعد'],
+                    ['', 'خالد عبد الله', 'خ.ع.ا', 'الباطنة', '0995678901', '', '', '', '', '2024-01-05', '5', 'ملتحق'],
+                    ['', 'نور علي حسن', 'ن.ع.ح', 'الكلية', '0996789012', '', '', '', '', '2024-02-01', '3', 'ملتحق'],
+                ];
+                this.renderResidents(rData);
+                
+                const sData = [
+                    ['', 'الفرز', 'عدد الأولى', 'عدد الثانية', 'الأسماء'],
+                    ['', 'الفرز الأول', '10', '5', 'أحمد محمد علي، فاطمة خالد حسن، عمر محمود سعيد'],
+                    ['', 'الفرز الثاني', '8', '7', 'سارة يوسف إبراهيم، خالد عبد الله'],
+                    ['', 'الفرز الثالث', '12', '3', 'نور علي حسن، محمد علي'],
+                ];
+                this.renderShifts(sData);
+                
+                const oData = [
+                    ['اليوم', 'التاريخ', 'الطبيب المناوب', 'الطبيب الاحتياط'],
+                    ['السبت', '2024-07-01', 'أحمد محمد علي', 'فاطمة خالد حسن'],
+                    ['الأحد', '2024-07-02', 'عمر محمود سعيد', 'سارة يوسف إبراهيم'],
+                    ['الاثنين', '2024-07-03', 'خالد عبد الله', 'أحمد محمد علي'],
+                ];
+                this.renderOncall(oData);
+                
                 this.updateLastUpdateTime();
             }
         
-            loadDemoResidents() {
-                const demoData = [
-                    { name: 'أحمد محمد علي', abbreviation: 'أ.م.ع', specialty: 'الباطنة', phone: '0991234567', joinDate: '2023-10-01', oncall: '15', status: 'ملتحق' },
-                    { name: 'فاطمة خالد حسن', abbreviation: 'ف.خ.ح', specialty: 'القلبية', phone: '0992345678', joinDate: '2023-10-01', oncall: '12', status: 'ملتحق' },
-                    { name: 'عمر محمود سعيد', abbreviation: 'ع.م.س', specialty: 'الصدرية', phone: '0993456789', joinDate: '2023-11-15', oncall: '10', status: 'ملتحق' },
-                    { name: 'سارة يوسف إبراهيم', abbreviation: 'س.ي.إ', specialty: 'الهضمية', phone: '0994567890', joinDate: '', oncall: '8', status: 'لم يلتحق بعد' },
-                    { name: 'خالد عبد الله', abbreviation: 'خ.ع.ا', specialty: 'الباطنة', phone: '0995678901', joinDate: '2024-01-05', oncall: '5', status: 'ملتحق' },
-                    { name: 'نور علي حسن', abbreviation: 'ن.ع.ح', specialty: 'الكلية', phone: '0996789012', joinDate: '2024-02-01', oncall: '3', status: 'ملتحق' },
-                ];
-                
-                this.allResidents = demoData;
-                const tbody = document.getElementById('residentsBody');
-                tbody.innerHTML = '';
-                
-                demoData.forEach((resident, index) => {
-                    const isJoined = resident.status.includes('ملتحق');
-                    const tr = document.createElement('tr');
-                    tr.style.animationDelay = `${index * 0.1}s`;
-                    tr.innerHTML = `
-                        <td><strong>${resident.name}</strong></td>
-                        <td>${resident.abbreviation}</td>
-                        <td>${resident.specialty}</td>
-                        <td dir="ltr" style="text-align: left;">${resident.phone}</td>
-                        <td>${resident.joinDate}</td>
-                        <td>${resident.oncall}</td>
-                        <td>
-                            <span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">
-                                ${resident.status}
-                            </span>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-        
-            loadDemoShifts() {
-                const demoData = [
-                    { name: 'الفرز الأول', firstCount: '10', secondCount: '5', names: 'أحمد محمد علي، فاطمة خالد حسن، عمر محمود سعيد' },
-                    { name: 'الفرز الثاني', firstCount: '8', secondCount: '7', names: 'سارة يوسف إبراهيم، خالد عبد الله، محمد علي' },
-                    { name: 'الفرز الثالث', firstCount: '12', secondCount: '3', names: 'علي حسن، نور علي حسن، يوسف' },
-                    { name: 'الفرز الرابع', firstCount: '6', secondCount: '9', names: 'ليلى أحمد، مريم خالد، كريم' },
-                ];
-                
-                this.allShifts = demoData;
-                const tbody = document.getElementById('shiftsBody');
-                tbody.innerHTML = '';
-                
-                demoData.forEach(shift => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${shift.name}</strong></td>
-                        <td>${shift.firstCount}</td>
-                        <td>${shift.secondCount}</td>
-                        <td>${shift.names}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                
-                document.getElementById('shiftMonthName').textContent = this.currentMonthName;
-            }
-        
-            loadDemoOncall() {
-                const demoHeaders = ['اليوم', 'التاريخ', 'الطبيب المناوب', 'الطبيب الاحتياط', 'ملاحظات'];
-                const demoData = [
-                    ['السبت', '2024-07-01', 'أحمد محمد علي', 'فاطمة خالد حسن', 'دوام كامل'],
-                    ['الأحد', '2024-07-02', 'عمر محمود سعيد', 'سارة يوسف إبراهيم', ''],
-                    ['الاثنين', '2024-07-03', 'خالد عبد الله', 'أحمد محمد علي', 'مناوبة ليلية'],
-                    ['الثلاثاء', '2024-07-04', 'نور علي حسن', 'عمر محمود سعيد', ''],
-                    ['الأربعاء', '2024-07-05', 'فاطمة خالد حسن', 'خالد عبد الله', 'دوام كامل'],
-                ];
-                
-                this.allOncall = demoData;
-                const thead = document.getElementById('oncallHeader');
-                const tbody = document.getElementById('oncallBody');
-                
-                thead.innerHTML = `<tr>${demoHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
-                tbody.innerHTML = '';
-                
-                demoData.forEach(row => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = row.map(cell => `<td>${cell}</td>`).join('');
-                    tbody.appendChild(tr);
-                });
-                
-                document.getElementById('oncallMonthName').textContent = this.currentMonthName;
-            }
-        
             updateLastUpdateTime() {
-                const now = new Date();
                 document.getElementById('lastUpdateTime').textContent = 
-                    'آخر تحديث: ' + now.toLocaleTimeString('ar-SA');
+                    'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
             }
         
             showLoading(show) {
                 document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
             }
+        }
+        
+        // دالة نسخ رقم الهاتف (عامة)
+        function copyPhone(phone, btn) {
+            navigator.clipboard.writeText(phone).then(() => {
+                const icon = btn.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'fas fa-check';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    icon.className = originalClass;
+                    btn.classList.remove('copied');
+                }, 1500);
+            }).catch(err => {
+                console.error('فشل النسخ:', err);
+            });
         }
         
         document.addEventListener('DOMContentLoaded', () => {
