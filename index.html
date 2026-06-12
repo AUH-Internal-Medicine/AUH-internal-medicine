@@ -197,47 +197,31 @@
             <div class="section-header">
                 <h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2>
                 <div class="controls-row">
-                    <div class="search-box">
-                        <input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار...">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()">
-                        <i class="fas fa-filter"></i> الملتحقين فقط
-                    </button>
+                    <div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div>
+                    <button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button>
                 </div>
             </div>
-            <div class="table-wrapper desktop-table">
-                <table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead>
-                <tbody id="residentsBody"></tbody></table>
-            </div>
+            <div class="table-wrapper desktop-table"><table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div>
             <div class="mobile-cards" id="residentsCards"></div>
         </section>
 
         <section class="tab-content" id="shifts-tab">
-            <div class="section-header">
-                <h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2>
-                <div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div>
-            </div>
+            <div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2>
+                <div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div>
             <div class="shifts-grid" id="shiftsGrid"></div>
             <a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=1976416116#gid=1976416116" target="_blank" style="margin-top:15px;display:inline-block;">📋 لمشاهدة الفرز الكامل اضغط هنا</a>
         </section>
 
         <section class="tab-content" id="oncall-tab">
             <div class="section-header"><h2><i class="fas fa-calendar-check"></i> مناوبات <span id="oncallMonthName"></span></h2></div>
-            <div class="oncall-controls">
-                <label>📆 اختر تاريخ:</label>
-                <input type="date" id="oncallDatePicker">
-                <button onclick="app.showOncallByDate()">🔍 عرض</button>
-                <button class="btn-today" onclick="app.showTodayOncall()">📍 اليوم</button>
-            </div>
+            <div class="oncall-controls"><label>📆 اختر تاريخ:</label><input type="date" id="oncallDatePicker"><button onclick="app.showOncallByDate()">🔍 عرض</button><button class="btn-today" onclick="app.showTodayOncall()">📍 اليوم</button></div>
             <a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=238974679#gid=238974679" target="_blank">📋 لمشاهدة الجدول كامل اضغط هنا</a>
             <div id="oncallDayDisplay"></div>
         </section>
 
         <section class="tab-content" id="myinfo-tab">
             <div class="section-header"><h2><i class="fas fa-user-search"></i> معلوماتي</h2>
-                <div class="search-box"><input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك..."><i class="fas fa-search"></i></div>
-            </div>
+                <div class="search-box"><input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك..."><i class="fas fa-search"></i></div></div>
             <div id="searchResultsList" class="search-results-list"></div>
             <div id="myInfoResult" class="student-result"></div>
         </section>
@@ -246,25 +230,69 @@
     <footer class="main-footer"><p>© <span id="currentYear"></span> مشفى حلب الجامعي - قسم الداخلية <i class="fas fa-heart"></i></p></footer>
 
     <script>
-        const SHEET_ID = '1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
-        const GID_RESIDENTS = '0';
-        const GID_SHIFTS = '1976416116';
-        const GID_ONCALL = '238974679';
-        const ARABIC_MONTHS = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+        const SHEET_ID='1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
+        const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
+        const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 
         function copyPhone(p,b){navigator.clipboard.writeText(p).then(()=>{const i=b.querySelector('i');const o=i.className;i.className='fas fa-check';b.classList.add('copied');setTimeout(()=>{i.className=o;b.classList.remove('copied');},1500);}).catch(()=>{});}
 
-        // دالة البحث الذكي - تبحث عن كل كلمة على حدة ويجب أن تتطابق جميعها
-        function smartSearch(text, searchTerm) {
-            if (!searchTerm) return true;
-            const searchWords = searchTerm.trim().split(/[\s,،.]+/).filter(w => w.length > 0);
-            if (searchWords.length === 0) return true;
-            
-            const targetText = text.toLowerCase();
-            // كل كلمة يجب أن تكون موجودة في النص
-            return searchWords.every(word => targetText.includes(word));
+        // ============ نظام تطبيع النص العربي ============
+        function normalizeArabic(text) {
+            if (!text) return '';
+            let t = text.toLowerCase().trim();
+            // توحيد الهمزات
+            t = t.replace(/[أإآا]/g, 'ا');
+            // توحيد الهمزة على واو
+            t = t.replace(/ؤ/g, 'و');
+            // توحيد الهمزة على ياء
+            t = t.replace(/ئ/g, 'ي');
+            // توحيد ى مع ا
+            t = t.replace(/ى/g, 'ا');
+            // توحيد ة مع ه
+            t = t.replace(/ة/g, 'ه');
+            // إزالة ال التعريف
+            t = t.replace(/\bال/g, '');
+            t = t.replace(/^ال/, '');
+            // إزالة التشكيل
+            t = t.replace(/[\u064B-\u0652]/g, '');
+            // إزالة المسافات الزائدة
+            t = t.replace(/\s+/g, ' ').trim();
+            return t;
         }
 
+        // تجهيز النص للبحث: تطبيع + إزالة ال
+        function prepareForSearch(text) {
+            return normalizeArabic(text);
+        }
+
+        // تقسيم نص الأسماء (مفصولة بشرطة أو فاصلة أو مسافات متعددة)
+        function splitNames(namesText) {
+            if (!namesText) return [];
+            // تقسيم على: شرطة، فاصلة، فاصلة منقوطة، أو شرطة مائلة
+            return namesText.split(/[-–—,،;؛\/\\|]/).map(n => n.trim()).filter(n => n.length > 0);
+        }
+
+        // البحث الذكي: يبحث عن كل كلمة في النص
+        function smartSearch(text, searchTerm) {
+            if (!searchTerm) return true;
+            const normalizedText = prepareForSearch(text);
+            const normalizedSearch = prepareForSearch(searchTerm);
+            const searchWords = normalizedSearch.split(/\s+/).filter(w => w.length > 0);
+            if (searchWords.length === 0) return true;
+            // كل كلمة من البحث يجب أن تكون موجودة في النص
+            return searchWords.every(word => normalizedText.includes(word));
+        }
+
+        // البحث في قائمة أسماء (مثل عمود الأسماء في الفروز)
+        function searchInNamesList(namesText, searchTerm) {
+            if (!searchTerm) return true;
+            const names = splitNames(namesText);
+            if (names.length === 0) return smartSearch(namesText, searchTerm);
+            // أي اسم في القائمة يطابق البحث
+            return names.some(name => smartSearch(name, searchTerm));
+        }
+
+        // ============ التطبيق ============
         class HospitalApp{
             constructor(){
                 this.m=new Date().getMonth();this.mn=ARABIC_MONTHS[this.m];this.today=new Date().toISOString().split('T')[0];
@@ -374,8 +402,7 @@
             filterShf(term){
                 const t=term.toLowerCase().trim();
                 if(!t){this.dispShf(this.shf);return;}
-                // بحث بكل الكلمات
-                this.dispShf(this.shf.filter(s=>smartSearch(s.name+' '+s.names,t)));
+                this.dispShf(this.shf.filter(s=>smartSearch(s.name,t)||searchInNamesList(s.names,t)));
             }
             renderOnc(d){
                 this.onc=[];document.getElementById('oncallMonthName').textContent=this.mn;
@@ -383,7 +410,7 @@
             }
             getOncRow(ds){if(!this.onc.length)return null;for(let r of this.onc){for(let c of r){if(c&&this.pd(c)===ds)return r;}}return null;}
             pd(v){if(!v)return null;const d=new Date(v);if(!isNaN(d.getTime()))return d.toISOString().split('T')[0];const m=v.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;return null;}
-            findR(abbr){if(!abbr)return null;const a=abbr.toLowerCase().replace(/[.\s]/g,'');return this.res.find(r=>r.abbr.toLowerCase().replace(/[.\s]/g,'')===a)||this.res.find(r=>r.name.toLowerCase().includes(a));}
+            findR(abbr){if(!abbr)return null;const a=prepareForSearch(abbr).replace(/[.\s]/g,'');return this.res.find(r=>prepareForSearch(r.abbr).replace(/[.\s]/g,'')===a)||this.res.find(r=>smartSearch(r.name,abbr));}
             showOncallDate(ds){
                 const dp=document.getElementById('oncallDayDisplay');
                 if(!ds){dp.innerHTML='<p style="text-align:center;color:#888;padding:25px;">⚠️ الرجاء اختيار تاريخ</p>';return;}
@@ -392,61 +419,42 @@
                 if(!row){dp.innerHTML=`<div class="oncall-day-card"><h3>📅 ${ds}</h3><p style="color:#888;">لا توجد مناوبات لهذا التاريخ.</p></div>`;return;}
                 const slots=[{t:'🚑 الإسعاف النهاري',k:['الاسعاف النهاري','اسعاف نهاري']},{t:'🚪 الإسعاف النهاري (الباب)',k:['الباب','باب']},{t:'🥶 الإسعاف النهاري (بارد)',k:['بارد']},{t:'🌙 الإسعاف الليلي',k:['الاسعاف الليلي','اسعاف ليلي']},{t:'🚪🌙 الإسعاف الليلي (الباب)',k:['ليلي باب','باب ليلي']},{t:'🥶🌙 الإسعاف الليلي (بارد)',k:['ليلي بارد','بارد ليلي']},{t:'🏥 ثالث خاص',k:['ثالث']},{t:'🏢 جناح السابع',k:['سابع']},{t:'🫘 جناح الرابع (كلية)',k:['كلية']},{t:'🫁 جناح الرابع (صدرية)',k:['صدرية']},{t:'🚶 جناح الرابع (خارجيات)',k:['خارجيات']},{t:'💧 ديال',k:['ديال']},{t:'❤️ عناية قلبية',k:['قلبية','عناية قلبية']},{t:'🚨 إسعاف مركز',k:['مركز','اسعاف مركز']},{t:'🏥 عناية المركز',k:['عناية المركز','عناية مركز']},{t:'🩺 عناية داخلية',k:['داخلية','عناية داخلية']}];
                 const hd=this.oh;let h=`<div class="oncall-day-card"><h3>📅 مناوبات يوم ${ds}</h3><div class="oncall-grid">`;
-                for(let s of slots){let ab='';for(let k of s.k){const idx=hd.findIndex(h=>h&&h.toLowerCase().includes(k.toLowerCase()));if(idx>=0&&row[idx]&&row[idx].trim()){ab=row[idx].trim();break;}}const rs=this.findR(ab);const dn=rs?rs.name:(ab||'-');h+=`<div class="oncall-slot"><div class="slot-title">${s.t}</div><div class="slot-name">${dn}</div>${ab?`<div class="slot-abbr">(${ab})</div>`:''}</div>`;}
+                for(let s of slots){let ab='';for(let k of s.k){const idx=hd.findIndex(h=>prepareForSearch(h).includes(prepareForSearch(k)));if(idx>=0&&row[idx]&&row[idx].trim()){ab=row[idx].trim();break;}}const rs=this.findR(ab);const dn=rs?rs.name:(ab||'-');h+=`<div class="oncall-slot"><div class="slot-title">${s.t}</div><div class="slot-name">${dn}</div>${ab?`<div class="slot-abbr">(${ab})</div>`:''}</div>`;}
                 h+='</div></div>';dp.innerHTML=h;
             }
             showOncallByDate(){const v=document.getElementById('oncallDatePicker').value;if(v)this.showOncallDate(v);}
             showTodayOncall(){document.getElementById('oncallDatePicker').value=this.today;this.showOncallDate(this.today);}
             
-            // بحث المقيمين - يستخدم smartSearch للبحث بكل الكلمات
             filterRes(term){
                 const t=term.toLowerCase().trim();
                 const rows=document.querySelectorAll('#residentsBody tr');
                 const cards=document.querySelectorAll('#residentsCards .resident-card');
                 let list=this.res;
                 if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));
-                
                 list.forEach((r,i)=>{
-                    // نبحث في الاسم + الاختصار معاً
-                    const searchText=r.name+' '+r.abbr;
-                    const m=smartSearch(searchText,t);
+                    const m=!t||smartSearch(r.name+' '+r.abbr,t);
                     if(rows[i])rows[i].style.display=m?'':'none';
                     if(cards[i])cards[i].style.display=m?'':'none';
                 });
             }
 
-            // بحث معلوماتي - يستخدم smartSearch للبحث بكل الكلمات
             searchMe(term){
                 const t=term.toLowerCase().trim();
                 const rl=document.getElementById('searchResultsList');
                 const rd=document.getElementById('myInfoResult');
-                
                 if(t.length<1){rl.innerHTML='';rd.classList.remove('show');return;}
-
-                let mt=this.res.filter(r=>{
-                    const searchText=r.name+' '+r.abbr;
-                    return smartSearch(searchText,t);
-                });
-
-                if(mt.length===0){
-                    rl.innerHTML='<div class="no-results">🔍 لا يوجد نتائج مطابقة. جرب كتابة جزء من الاسم أو الاختصار.</div>';
-                    rd.classList.remove('show');
-                    return;
-                }
+                let mt=this.res.filter(r=>smartSearch(r.name+' '+r.abbr,t));
+                if(mt.length===0){rl.innerHTML='<div class="no-results">🔍 لا يوجد نتائج مطابقة.</div>';rd.classList.remove('show');return;}
                 if(mt.length===1){rl.innerHTML='';this.showMe(mt[0]);}
-                else{
-                    this._sm=mt;
-                    rl.innerHTML=mt.map((m,i)=>`<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#667eea;">${m.spec}</span></div>`).join('');
-                    rd.classList.remove('show');
-                }
+                else{this._sm=mt;rl.innerHTML=mt.map((m,i)=>`<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#667eea;">${m.spec}</span></div>`).join('');rd.classList.remove('show');}
             }
             selectMe(i){if(this._sm&&this._sm[i]){document.getElementById('searchResultsList').innerHTML='';this.showMe(this._sm[i]);}}
             showMe(r){
                 const rd=document.getElementById('myInfoResult');const ok=r.st.includes('التحق')||r.st.includes('ملتحق');
-                // البحث في الفروز
+                // البحث في الفروز - استخدام البحث الذكي على قائمة الأسماء
                 let sf=null;
                 for(let s of this.shf){
-                    if(smartSearch(s.names,r.name)||(r.abbr&&smartSearch(s.names,r.abbr.replace(/[.\s]/g,'')))){sf=s;break;}
+                    if(searchInNamesList(s.names,r.name)||(r.abbr&&searchInNamesList(s.names,r.abbr))){sf=s;break;}
                 }
                 // البحث في المناوبات
                 let or=[];
