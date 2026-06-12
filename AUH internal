@@ -1,0 +1,397 @@
+// إعدادات Google Sheets
+const SHEET_ID = '1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
+const API_KEY = ''; // اتركه فارغاً إذا كانت الـ Sheet عامة
+
+// أسماء الأوراق
+const RESIDENTS_SHEET = 'لائحة مقيمي السنة الاولى';
+const SHIFTS_SHEET_BASE = 'جدول فروز شهر';
+const ONCALL_SHEET_BASE = 'جدول مناوبات';
+
+// أسماء الشهور بالعربية
+const ARABIC_MONTHS = [
+    'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
+    'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
+];
+
+class HospitalApp {
+    constructor() {
+        this.currentMonth = new Date().getMonth(); // 0-11
+        this.currentMonthName = ARABIC_MONTHS[this.currentMonth];
+        this.init();
+    }
+
+    init() {
+        // تحديث التاريخ في الهيدر
+        this.updateHeaderDate();
+        this.updateFooterYear();
+        
+        // تحميل البيانات
+        this.loadAllData();
+        
+        // إعداد التبويبات
+        this.setupTabs();
+        
+        // إعداد البحث
+        this.setupSearch();
+        
+        // تحديث تلقائي كل دقيقتين
+        setInterval(() => this.loadAllData(), 120000);
+        
+        // جزيئات الخلفية
+        this.createParticles();
+    }
+
+    updateHeaderDate() {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDateHeader').textContent = 
+            now.toLocaleDateString('ar-SA', options);
+    }
+
+    updateFooterYear() {
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    }
+
+    setupTabs() {
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+                
+                // إزالة active من جميع الأزرار والمحتويات
+                navBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(t => t.classList.remove('active'));
+                
+                // إضافة active للزر والمحتوى المختار
+                btn.classList.add('active');
+                document.getElementById(`${targetTab}-tab`).classList.add('active');
+            });
+        });
+    }
+
+    setupSearch() {
+        const searchInput = document.getElementById('residentSearch');
+        searchInput.addEventListener('input', (e) => {
+            this.filterResidents(e.target.value);
+        });
+    }
+
+    async loadAllData() {
+        this.showLoading(true);
+        
+        try {
+            await Promise.all([
+                this.loadResidents(),
+                this.loadShifts(),
+                this.loadOncall()
+            ]);
+            
+            this.updateLastUpdateTime();
+        } catch (error) {
+            console.error('Error loading data:', error);
+            this.useDemoData();
+        }
+        
+        this.showLoading(false);
+    }
+
+    async fetchSheetData(sheetName) {
+        // محاولة استخدام API أولاً
+        if (API_KEY) {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/'${sheetName}'?key=${API_KEY}`;
+            const response = await fetch(url);
+            if (response.ok) {
+                const result = await response.json();
+                return result.values || [];
+            }
+        }
+        
+        // استخدام النشر المباشر كبديل
+        const publishUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+        const response = await fetch(publishUrl);
+        if (response.ok) {
+            const csvText = await response.text();
+            return this.parseCSV(csvText);
+        }
+        
+        throw new Error('فشل في تحميل البيانات');
+    }
+
+    parseCSV(csvText) {
+        const rows = [];
+        const lines = csvText.split('\n');
+        
+        for (let line of lines) {
+            if (line.trim()) {
+                const row = [];
+                let inQuotes = false;
+                let currentValue = '';
+                
+                for (let char of line) {
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        row.push(currentValue.trim());
+                        currentValue = '';
+                    } else {
+                        currentValue += char;
+                    }
+                }
+                row.push(currentValue.trim());
+                rows.push(row);
+            }
+        }
+        
+        return rows;
+    }
+
+    async loadResidents() {
+        try {
+            const data = await this.fetchSheetData(RESIDENTS_SHEET);
+            
+            if (data.length > 1) {
+                const tbody = document.getElementById('residentsBody');
+                tbody.innerHTML = '';
+                
+                // تخطي الصف الأول (العناوين)
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    const status = row[11] || ''; // العمود L
+                    const isJoined = status.includes('التحق') || status.includes('ملتحق');
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${row[0] || '-'}</strong></td>
+                        <td>${row[1] || '-'}</td>
+                        <td>${row[3] || '-'}</td>
+                        <td dir="ltr" style="text-align: left;">${row[4] || '-'}</td>
+                        <td>${row[9] || '-'}</td>
+                        <td>${row[10] || '-'}</td>
+                        <td>
+                            <span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">
+                                ${status || 'غير محدد'}
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading residents:', error);
+            this.showErrorInTable('residentsBody', 'فشل في تحميل بيانات المقيمين');
+        }
+    }
+
+    async loadShifts() {
+        try {
+            const sheetName = `${SHIFTS_SHEET_BASE} ${this.currentMonthName}`;
+            document.getElementById('shiftMonthName').textContent = this.currentMonthName;
+            
+            const data = await this.fetchSheetData(sheetName);
+            
+            if (data.length > 1) {
+                const tbody = document.getElementById('shiftsBody');
+                tbody.innerHTML = '';
+                
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (row[1]) { // إذا كان هناك بيانات في العمود B (الفرز)
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>${row[1] || '-'}</strong></td>
+                            <td>${row[2] || '-'}</td>
+                            <td>${row[3] || '-'}</td>
+                            <td>${row[4] || '-'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading shifts:', error);
+            document.getElementById('shiftMonthName').textContent = this.currentMonthName;
+            this.showErrorInTable('shiftsBody', 'فشل في تحميل جدول الفروز');
+        }
+    }
+
+    async loadOncall() {
+        try {
+            const sheetName = `${ONCALL_SHEET_BASE} ${this.currentMonthName}`;
+            document.getElementById('oncallMonthName').textContent = this.currentMonthName;
+            
+            const data = await this.fetchSheetData(sheetName);
+            
+            if (data.length > 0) {
+                const thead = document.getElementById('oncallHeader');
+                const tbody = document.getElementById('oncallBody');
+                
+                // الصف الأول هو العناوين
+                const headers = data[0];
+                thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+                
+                tbody.innerHTML = '';
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (row.some(cell => cell)) { // إذا كان هناك بيانات في الصف
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = row.map(cell => `<td>${cell || '-'}</td>`).join('');
+                        tbody.appendChild(tr);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading oncall:', error);
+            document.getElementById('oncallMonthName').textContent = this.currentMonthName;
+            this.showErrorInTable('oncallBody', 'فشل في تحميل جدول المناوبات');
+        }
+    }
+
+    filterResidents(searchTerm) {
+        const rows = document.querySelectorAll('#residentsBody tr');
+        const term = searchTerm.toLowerCase().trim();
+        
+        rows.forEach(row => {
+            const name = row.querySelector('td:first-child')?.textContent?.toLowerCase() || '';
+            if (term === '' || name.includes(term)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    showErrorInTable(tbodyId, message) {
+        const tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 40px; color: #e74c3c;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-left: 10px;"></i>
+                    ${message}
+                </td>
+            </tr>
+        `;
+    }
+
+    useDemoData() {
+        // بيانات تجريبية للعرض عند فشل التحميل
+        this.loadDemoResidents();
+        this.loadDemoShifts();
+        this.loadDemoOncall();
+    }
+
+    loadDemoResidents() {
+        const demoData = [
+            ['أحمد محمد علي', 'أ.م.ع', 'الباطنة', '0991234567', '', '', '', '', '', '2023-10-01', '15', 'ملتحق'],
+            ['فاطمة خالد حسن', 'ف.خ.ح', 'القلبية', '0992345678', '', '', '', '', '', '2023-10-01', '12', 'ملتحق'],
+            ['عمر محمود سعيد', 'ع.م.س', 'الصدرية', '0993456789', '', '', '', '', '', '2023-11-15', '10', 'ملتحق'],
+            ['سارة يوسف إبراهيم', 'س.ي.إ', 'الهضمية', '0994567890', '', '', '', '', '', '', '8', 'لم يلتحق بعد'],
+            ['خالد عبد الله', 'خ.ع.ا', 'الباطنة', '0995678901', '', '', '', '', '', '2024-01-05', '5', 'ملتحق'],
+        ];
+        
+        const tbody = document.getElementById('residentsBody');
+        tbody.innerHTML = '';
+        
+        demoData.forEach(row => {
+            const status = row[11];
+            const isJoined = status.includes('ملتحق');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${row[0]}</strong></td>
+                <td>${row[1]}</td>
+                <td>${row[3]}</td>
+                <td dir="ltr" style="text-align: left;">${row[4]}</td>
+                <td>${row[9]}</td>
+                <td>${row[10]}</td>
+                <td>
+                    <span class="status-badge ${isJoined ? 'status-joined' : 'status-pending'}">
+                        ${status}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    loadDemoShifts() {
+        const demoData = [
+            ['', 'الفرز الأول', '10', '5', 'أحمد، فاطمة، عمر'],
+            ['', 'الفرز الثاني', '8', '7', 'سارة، خالد، محمد'],
+            ['', 'الفرز الثالث', '12', '3', 'علي، حسن، نور'],
+        ];
+        
+        const tbody = document.getElementById('shiftsBody');
+        tbody.innerHTML = '';
+        
+        demoData.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${row[1]}</strong></td>
+                <td>${row[2]}</td>
+                <td>${row[3]}</td>
+                <td>${row[4]}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        document.getElementById('shiftMonthName').textContent = this.currentMonthName;
+    }
+
+    loadDemoOncall() {
+        const demoHeaders = ['اليوم', 'التاريخ', 'الطبيب المناوب', 'الطبيب الاحتياط'];
+        const demoData = [
+            ['السبت', '2024-07-01', 'أحمد محمد', 'فاطمة خالد'],
+            ['الأحد', '2024-07-02', 'عمر محمود', 'سارة يوسف'],
+            ['الاثنين', '2024-07-03', 'خالد عبد الله', 'أحمد محمد'],
+        ];
+        
+        const thead = document.getElementById('oncallHeader');
+        const tbody = document.getElementById('oncallBody');
+        
+        thead.innerHTML = `<tr>${demoHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
+        tbody.innerHTML = '';
+        
+        demoData.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = row.map(cell => `<td>${cell}</td>`).join('');
+            tbody.appendChild(tr);
+        });
+        
+        document.getElementById('oncallMonthName').textContent = this.currentMonthName;
+    }
+
+    updateLastUpdateTime() {
+        const now = new Date();
+        document.getElementById('lastUpdateTime').textContent = 
+            'آخر تحديث: ' + now.toLocaleTimeString('ar-SA');
+    }
+
+    showLoading(show) {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
+
+    createParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.style.cssText = `
+                position: absolute;
+                width: ${Math.random() * 5 + 2}px;
+                height: ${Math.random() * 5 + 2}px;
+                background: rgba(255,255,255,${Math.random() * 0.5 + 0.1});
+                border-radius: 50%;
+                top: ${Math.random() * 100}%;
+                left: ${Math.random() * 100}%;
+                animation: float ${Math.random() * 10 + 5}s infinite ease-in-out;
+                animation-delay: ${Math.random() * 5}s;
+            `;
+            container.appendChild(particle);
+        }
+    }
+}
+
+// بدء التطبيق عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+    new HospitalApp();
+});
