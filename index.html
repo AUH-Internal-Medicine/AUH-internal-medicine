@@ -252,11 +252,8 @@
 
     <main class="main-content">
         <section class="tab-content active" id="residents-tab"><div class="section-header"><h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2><div class="controls-row"><div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div><button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button></div></div><div class="table-wrapper desktop-table"><table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div><div class="mobile-cards" id="residentsCards"></div></section>
-        
         <section class="tab-content" id="shifts-tab"><div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2><div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div><div class="shifts-grid" id="shiftsGrid"></div><a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=1976416116#gid=1976416116" target="_blank" style="margin-top:12px;display:inline-block;">📋 لمشاهدة الفرز الكامل اضغط هنا</a></section>
-        
         <section class="tab-content" id="oncall-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> مناوبات <span id="oncallMonthName"></span></h2></div><div class="oncall-controls"><label>📆 اختر تاريخ:</label><input type="date" id="oncallDatePicker" onchange="app.selectDayFromCalendar()"><span style="color:var(--text-secondary);font-size:12px;">اختر اليوم لعرض التفاصيل</span></div><a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=238974679#gid=238974679" target="_blank">📋 لمشاهدة الجدول كامل اضغط هنا</a><div id="monthlyCalendar"></div><div id="oncallDayDisplay" style="margin-top:12px;"></div></section>
-        
         <section class="tab-content" id="myinfo-tab"><div class="section-header"><h2><i class="fas fa-user-search"></i> معلوماتي</h2><div class="search-box"><input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك..."><i class="fas fa-search"></i></div></div><div id="searchResultsList" class="search-results-list"></div><div id="myInfoResult" class="student-result"></div></section>
     </main>
 
@@ -266,14 +263,12 @@
         function toggleDarkMode(){document.body.classList.toggle('dark-mode');const icon=document.getElementById('darkModeIcon');if(document.body.classList.contains('dark-mode')){icon.className='fas fa-sun';localStorage.setItem('darkMode','true');}else{icon.className='fas fa-moon';localStorage.setItem('darkMode','false');}}
         if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');document.getElementById('darkModeIcon').className='fas fa-sun';}
 
-        // ============ الإعدادات النهائية للـ Google Sheets الأصلي ============
         const SHEET_ID='1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
-        const GID_RESIDENTS='0';
-        const GID_SHIFTS='1976416116';
-        const GID_ONCALL='238974679';
-        
+        const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
         const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
         const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+        const CACHE_KEY='hospital_data_cache_v1';
+        const CACHE_DURATION=5*60*1000; // 5 دقائق
 
         function copyPhone(p,b){navigator.clipboard.writeText(p).then(()=>{const i=b.querySelector('i');const o=i.className;i.className='fas fa-check';b.classList.add('copied');setTimeout(()=>{i.className=o;b.classList.remove('copied');},1500);}).catch(()=>{});}
         function normalizeArabic(text){if(!text)return'';let t=text.toLowerCase().trim();t=t.replace(/[أإآا]/g,'ا');t=t.replace(/ؤ/g,'و');t=t.replace(/ئ/g,'ي');t=t.replace(/ى/g,'ا');t=t.replace(/ة/g,'ه');t=t.replace(/\bال/g,'');t=t.replace(/^ال/,'');t=t.replace(/[\u064B-\u0652]/g,'');t=t.replace(/\s+/g,' ').trim();return t;}
@@ -299,16 +294,70 @@
                 document.getElementById('currentDateHeader').textContent=new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
                 document.getElementById('currentYear').textContent=new Date().getFullYear();
                 document.getElementById('oncallDatePicker').value=this.today;
-                this.setupTabs();this.setupSearches();this.loadAll();
-                setInterval(()=>this.loadAll(),120000);
+                this.setupTabs();this.setupSearches();
+                this.loadWithCache();
+                setInterval(()=>this.loadWithCache(),120000);
             }
             showLoading(s){if(!s)document.getElementById('loadingScreen').classList.add('hidden');}
-            updateProgress(p,txt){document.getElementById('progressBar').style.width=p+'%';document.getElementById('loaderPercentage').textContent=p+'%';if(txt)document.getElementById('loaderSubtitle').textContent=txt;if(p>=100)setTimeout(()=>this.showLoading(false),300);}
+            updateProgress(p,txt){
+                document.getElementById('progressBar').style.width=p+'%';
+                document.getElementById('loaderPercentage').textContent=p+'%';
+                if(txt)document.getElementById('loaderSubtitle').textContent=txt;
+                if(p>=100)setTimeout(()=>this.showLoading(false),200);
+            }
             setupTabs(){document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab+'-tab').classList.add('active');}));}
             setupSearches(){document.getElementById('residentSearch').addEventListener('input',e=>this.filterRes(e.target.value));document.getElementById('shiftSearch').addEventListener('input',e=>this.filterShf(e.target.value));document.getElementById('myInfoSearch').addEventListener('input',e=>this.searchMe(e.target.value));}
+
+            // ============ نظام الكاش ============
+            loadFromCache(){
+                try{
+                    const raw=localStorage.getItem(CACHE_KEY);
+                    if(!raw)return null;
+                    const data=JSON.parse(raw);
+                    if(!data.timestamp)return null;
+                    // التحقق من صلاحية الكاش
+                    if((Date.now()-data.timestamp)>CACHE_DURATION)return null;
+                    return data;
+                }catch(e){return null;}
+            }
+            saveToCache(rd,sd,od){
+                try{
+                    const data={timestamp:Date.now(),residents:rd||null,shifts:sd||null,oncall:od||null};
+                    localStorage.setItem(CACHE_KEY,JSON.stringify(data));
+                }catch(e){}
+            }
+            async loadWithCache(){
+                // محاولة التحميل من الكاش أولاً
+                const cached=this.loadFromCache();
+                if(cached){
+                    console.log('✅ تم التحميل من الكاش');
+                    if(cached.residents)this.renderRes(cached.residents);
+                    if(cached.shifts)this.renderShf(cached.shifts);
+                    if(cached.oncall){this.parseOncallData(cached.oncall);this.renderMonthlyCalendar();this.showOncallDate(this.today);}
+                    this.updateTime();this.showLoading(false);
+                    // تحديث صامت في الخلفية
+                    this.loadFresh(true);
+                    return;
+                }
+                // لا يوجد كاش، تحميل مباشر
+                await this.loadFresh(false);
+            }
+            async loadFresh(silent){
+                if(!silent)this.updateProgress(20,'جاري جلب البيانات...');
+                try{
+                    const[rd,sd,od]=await Promise.all([this.fetchSheet(GID_RESIDENTS),this.fetchSheet(GID_SHIFTS),this.fetchSheet(GID_ONCALL)]);
+                    if(!silent)this.updateProgress(70,'جاري عرض البيانات...');
+                    if(rd)this.renderRes(rd);
+                    if(sd)this.renderShf(sd);
+                    if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today);}
+                    this.saveToCache(rd,sd,od);
+                    if(!silent){this.updateProgress(100,'✓ تم التحميل');}
+                    this.updateTime();
+                }catch(e){console.error(e);if(!silent)this.updateProgress(100,'تعذر الاتصال');}
+            }
+
             async fetchSheet(gid){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;try{const r=await fetch(url);if(!r.ok)return null;const t=await r.text();if(t.includes('<!DOCTYPE')||t.includes('<html'))return null;return this.parseCSV(t);}catch(e){return null;}}
             parseCSV(t){const rows=[];const lines=t.split('\n');for(let l of lines){if(!l.trim())continue;const row=[];let q=false,v='';for(let c of l){if(c==='"')q=!q;else if(c===','&&!q){row.push(v.trim());v='';}else v+=c;}row.push(v.trim());if(row.some(c=>c!==''))rows.push(row);}return rows;}
-            async loadAll(){this.updateProgress(20,'جاري جلب البيانات...');const[rd,sd,od]=await Promise.all([this.fetchSheet(GID_RESIDENTS),this.fetchSheet(GID_SHIFTS),this.fetchSheet(GID_ONCALL)]);this.updateProgress(70,'جاري عرض البيانات...');if(rd)this.renderRes(rd);if(sd)this.renderShf(sd);if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.updateProgress(100,'✓ تم التحميل');this.updateTime();}
             renderRes(d){this.res=[];const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';if(!d||d.length<2){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return;}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;const res={name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),st:(r[11]||'').trim()};if(!res.name)continue;this.res.push(res);}this.displayResidents();}
             displayResidents(){const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));list.forEach(res=>{const ok=res.st.includes('التحق')||res.st.includes('ملتحق');const tr=document.createElement('tr');tr.innerHTML=`<td style="text-align:right;"><strong>${makeTooltip(res.name,res.phone)}</strong></td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;tb.appendChild(tr);const c=document.createElement('div');c.className='resident-card';c.innerHTML=`<div class="card-header"><span class="card-name">${res.name}</span><span class="card-abbr">${res.abbr}</span></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;cd.appendChild(c);});this.updateResCount();}
             updateResCount(){const total=this.res.length;const joined=this.res.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق')).length;document.getElementById('residentCount').textContent=this.filterJoined?`${joined} ملتحق`:`${total} مقيم`;}
@@ -332,11 +381,7 @@
                 for(let col=1;col<this.oncHeaders.length;col++){const mainCat=this.oncHeaders[col]||'أخرى';const subCat=this.oncSubHeaders[col]||'';const abbr=(oncRow.row[col]||'').trim();if(!abbr)continue;const resident=this.findR(abbr);const name=resident?resident.name:abbr;const phone=resident?resident.phone:'';if(!categories[mainCat])categories[mainCat]={subs:[],mainName:mainCat};categories[mainCat].subs.push({subName:subCat||mainCat,abbr,name,phone});}
                 const dayName=getDayName(dateStr);const weekend=isWeekend(dateStr);
                 let h=`<div class="oncall-day-card"><h3 class="${weekend?'weekend':''}">📅 ${dateStr} - ${dayName}${weekend?' <span class="day-badge weekend">عطلة</span>':''}</h3>`;
-                for(const[catName,catData]of Object.entries(categories)){
-                    h+=`<div class="oncall-category"><h4>${catName}</h4><div class="oncall-sub-slots">`;
-                    for(const sub of catData.subs){h+=`<div class="oncall-sub-slot"><div class="sub-title">${sub.subName!==catName?sub.subName:''}</div><div class="sub-name">${makeTooltip(sub.name,sub.phone)}</div><div class="sub-abbr">(${sub.abbr})</div></div>`;}
-                    h+='</div></div>';
-                }h+='</div>';dp.innerHTML=h;
+                for(const[catName,catData]of Object.entries(categories)){h+=`<div class="oncall-category"><h4>${catName}</h4><div class="oncall-sub-slots">`;for(const sub of catData.subs){h+=`<div class="oncall-sub-slot"><div class="sub-title">${sub.subName!==catName?sub.subName:''}</div><div class="sub-name">${makeTooltip(sub.name,sub.phone)}</div><div class="sub-abbr">(${sub.abbr})</div></div>`;}h+='</div></div>';}h+='</div>';dp.innerHTML=h;
             }
             showOncallByDate(){this.showOncallDate(document.getElementById('oncallDatePicker').value);this.scrollToOncallResult();}
             renderMonthlyCalendar(){
