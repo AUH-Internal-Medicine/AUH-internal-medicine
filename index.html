@@ -17,20 +17,19 @@
             --shadow-md: 0 8px 15px rgba(0,0,0,0.1); --shadow-lg: 0 15px 30px rgba(0,0,0,0.12);
             --header-bg: linear-gradient(135deg, #1a73e8 0%, #6c5ce7 50%, #00b894 100%);
             --header-text: #ffffff; --header-gold: #ffd700;
+            --weekend-color: #e74c3c;
             --radius: 16px; --radius-lg: 20px; --radius-full: 50px;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Dark Mode */
         body.dark-mode {
             --primary: #4da3ff; --secondary: #9b8eff; --accent: #00e6b8;
             --bg: #0f172a; --card-bg: #1e293b; --text: #e2e8f0; --text-secondary: #94a3b8;
             --border: #334155; --shadow: 0 4px 6px rgba(0,0,0,0.3);
             --shadow-md: 0 8px 15px rgba(0,0,0,0.4); --shadow-lg: 0 15px 30px rgba(0,0,0,0.5);
             --gray-50: #1e293b; --gray-100: #334155; --gray-200: #475569; --gray-800: #e2e8f0;
-            --dark: #e2e8f0; --white: #1e293b;
+            --dark: #e2e8f0; --white: #1e293b; --weekend-color: #ff6b6b;
             --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            --header-text: #e2e8f0; --header-gold: #fbbf24;
-            background: #0f172a;
+            --header-text: #e2e8f0; --header-gold: #fbbf24; background: #0f172a;
         }
         body.dark-mode .animated-bg{background:linear-gradient(135deg,#0f172a 0%,#1a1a2e 50%,#0f172a 100%);}
         body.dark-mode .bg-dots{background-image:radial-gradient(circle,rgba(102,126,234,0.12) 1px,transparent 1px);}
@@ -40,7 +39,6 @@
         body.dark-mode .section-header{background:var(--card-bg);}
         body.dark-mode .table-wrapper{background:var(--card-bg);}
         body.dark-mode tbody tr:nth-child(even){background:rgba(255,255,255,0.02);}
-        body.dark-mode tbody tr:hover{background:rgba(102,126,234,0.08);}
         body.dark-mode .search-box input{background:var(--gray-100);border-color:var(--border);color:var(--text);}
         body.dark-mode .filter-btn{background:var(--card-bg);border-color:var(--border);color:var(--text);}
         body.dark-mode .shift-card-full{background:var(--card-bg);}
@@ -48,7 +46,9 @@
         body.dark-mode .oncall-controls{background:var(--card-bg);}
         body.dark-mode .oncall-controls input[type="date"]{background:var(--gray-100);color:var(--text);border-color:var(--border);}
         body.dark-mode .oncall-day-card{background:var(--card-bg);}
-        body.dark-mode .oncall-slot{background:var(--gray-100);}
+        body.dark-mode .oncall-category{background:var(--gray-100);}
+        body.dark-mode .oncall-sub-slot{background:var(--card-bg);}
+        body.dark-mode .oncall-sub-slot:hover{background:rgba(102,126,234,0.1);}
         body.dark-mode .student-result{background:var(--card-bg);}
         body.dark-mode .info-item{background:var(--gray-100);}
         body.dark-mode .search-result-item{background:var(--card-bg);border-color:var(--border);}
@@ -58,11 +58,15 @@
         body.dark-mode .calendar-day{background:var(--gray-100);color:var(--text);}
         body.dark-mode .calendar-day.has-oncall{background:#064e3b;color:#6ee7b7;border-color:#10b981;}
         body.dark-mode .monthly-calendar{background:var(--card-bg);}
-        body.dark-mode .shift-names{color:var(--text);}
-        body.dark-mode .oncall-slot .slot-name{color:var(--text);}
-        body.dark-mode .card-name{color:var(--text);}
-        body.dark-mode .card-value{color:var(--text);}
-
+        body.dark-mode .names-dropdown-btn{background:var(--gray-100);color:var(--text);border-color:var(--border);}
+        body.dark-mode .names-dropdown-content{background:var(--card-bg);border-color:var(--border);}
+        body.dark-mode .names-dropdown-content li{color:var(--text);}
+        body.dark-mode .names-dropdown-content li:hover{background:rgba(102,126,234,0.1);}
+        body.dark-mode .oncall-info-row{background:var(--gray-100);}
+        body.dark-mode .colleague-row{background:rgba(102,126,234,0.05);}
+        body.dark-mode .stat-card{background:var(--gray-100);}
+        body.dark-mode .tooltip-pop{background:var(--card-bg);color:var(--text);border-color:#667eea;box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+        body.dark-mode .weekend{color:var(--weekend-color)!important;}
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:var(--transition);}
         .animated-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;background:linear-gradient(135deg,#e8eaf6 0%,#f3e5f5 30%,#e0f2f1 60%,#e8eaf6 100%);background-size:400% 400%;animation:bgMove 15s ease infinite;}
@@ -73,270 +77,203 @@
         .bg-orb-2{width:250px;height:250px;background:#f093fb;bottom:-80px;left:-30px;animation-delay:-8s;}
         .bg-orb-3{width:280px;height:280px;background:#00b894;top:50%;left:60%;animation-delay:-16s;}
         @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-50px,-80px) scale(1.1);}}
-
         .loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#00b894 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.6s ease,visibility 0.6s ease;}
         .loading-screen.hidden{opacity:0;visibility:hidden;}
         .loader-icon{font-size:70px;margin-bottom:20px;animation:bounce 1s infinite;}
         @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-25px);}}
-        .loader-title{font-size:1.8em;font-weight:900;margin-bottom:30px;color:white;text-shadow:2px 2px 4px rgba(0,0,0,0.2);}
+        .loader-title{font-size:1.8em;font-weight:900;margin-bottom:30px;color:white;}
         .progress-bar-container{width:280px;height:8px;background:rgba(255,255,255,0.3);border-radius:50px;overflow:hidden;margin:0 auto 15px;}
         .progress-bar{height:100%;background:linear-gradient(90deg,#ffd700,#ffed4a);border-radius:50px;transition:width 0.3s ease;width:0%;}
         .loader-percentage{font-size:2.5em;font-weight:900;color:#ffd700;}
         .loader-subtitle{font-size:0.9em;color:rgba(255,255,255,0.8);margin-top:5px;}
-
         .main-header{background:var(--header-bg);padding:30px 20px;text-align:center;color:var(--header-text);box-shadow:0 15px 50px rgba(0,0,0,0.25);position:relative;overflow:hidden;transition:var(--transition);}
         .header-content{position:relative;z-index:1;}
         .header-top-row{display:flex;justify-content:flex-end;max-width:1300px;margin:0 auto 10px;}
         .dark-mode-toggle{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:var(--header-text);padding:8px 16px;border-radius:var(--radius-full);cursor:pointer;font-size:18px;transition:var(--transition);}
-        .dark-mode-toggle:hover{background:rgba(255,255,255,0.35);}
         .hospital-logo{font-size:60px;margin-bottom:12px;display:inline-block;filter:drop-shadow(0 5px 15px rgba(0,0,0,0.3));}
-        .main-title .title-line1{font-size:2.3em;font-weight:900;display:block;text-shadow:3px 3px 6px rgba(0,0,0,0.25);}
+        .main-title .title-line1{font-size:2.3em;font-weight:900;display:block;}
         .main-title .title-line2{font-size:1.7em;font-weight:800;display:block;margin-top:8px;color:var(--header-gold);}
         .hospital-name{font-size:1.2em;margin-top:12px;opacity:0.95;}
         .header-stats{display:flex;justify-content:center;gap:14px;margin-top:18px;flex-wrap:wrap;}
         .stat-badge{background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);padding:10px 22px;border-radius:var(--radius-full);font-size:14px;border:1px solid rgba(255,255,255,0.3);}
-
         .main-nav{background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200;box-shadow:0 5px 30px rgba(0,0,0,0.1);padding:12px 10px;transition:var(--transition);}
         .nav-container{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;max-width:900px;margin:0 auto;}
         .nav-btn{padding:12px 22px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:8px;white-space:nowrap;}
         .nav-btn:hover{border-color:#667eea;color:#667eea;transform:translateY(-3px);box-shadow:var(--shadow-md);}
         .nav-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-color:transparent;box-shadow:0 8px 25px rgba(102,126,234,0.4);}
-
-        .main-content{max-width:1300px;margin:30px auto;padding:0 20px;}
+        .main-content{max-width:1300px;margin:30px auto;padding:0 15px;}
         .tab-content{display:none;animation:fadeSlideIn 0.5s ease;}
         .tab-content.active{display:block;}
         @keyframes fadeSlideIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-
-        .section-header{background:var(--card-bg);padding:20px 28px;border-radius:var(--radius-lg);margin-bottom:20px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;border-right:5px solid #667eea;transition:var(--transition);}
-        .section-header h2{font-size:1.5em;font-weight:800;display:flex;align-items:center;gap:10px;color:var(--text);}
-        .section-header h2 i{color:#667eea;font-size:24px;}
-
-        .controls-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-        .search-box{position:relative;min-width:260px;}
-        .search-box input{width:100%;padding:12px 45px 12px 18px;border:2px solid var(--border);border-radius:var(--radius-full);font-size:15px;font-family:'Tajawal',sans-serif;transition:var(--transition);background:var(--gray-100);color:var(--text);}
-        .search-box input:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 4px rgba(102,126,234,0.08);}
-        .search-box i{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#667eea;font-size:18px;pointer-events:none;}
-
-        .filter-btn{padding:12px 22px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:8px;white-space:nowrap;}
+        .section-header{background:var(--card-bg);padding:18px 22px;border-radius:var(--radius-lg);margin-bottom:18px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-right:5px solid #667eea;transition:var(--transition);}
+        .section-header h2{font-size:1.4em;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--text);}
+        .section-header h2 i{color:#667eea;}
+        .controls-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+        .search-box{position:relative;min-width:240px;}
+        .search-box input{width:100%;padding:11px 40px 11px 14px;border:2px solid var(--border);border-radius:var(--radius-full);font-size:14px;font-family:'Tajawal',sans-serif;transition:var(--transition);background:var(--gray-100);color:var(--text);}
+        .search-box input:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.08);}
+        .search-box i{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#667eea;font-size:16px;pointer-events:none;}
+        .filter-btn{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:6px;white-space:nowrap;}
         .filter-btn:hover{border-color:#667eea;color:#667eea;}
         .filter-btn.active-filter{background:#667eea;color:white;border-color:#667eea;}
-
-        .view-toggle{display:flex;gap:5px;}
-        .view-btn{padding:8px 16px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-size:13px;font-weight:700;color:var(--text-secondary);transition:var(--transition);}
-        .view-btn.active-view{background:#667eea;color:white;border-color:#667eea;}
-
         .desktop-table{display:block;}.mobile-cards{display:none;}
         .table-wrapper{background:var(--card-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow-x:auto;}
-        table{width:100%;border-collapse:collapse;min-width:700px;font-size:14px;}
-        thead{background:linear-gradient(135deg,#667eea,#764ba2);position:sticky;top:0;z-index:5;}
-        th{padding:14px 10px;text-align:center;color:white;font-weight:700;font-size:13px;white-space:nowrap;}
-        td{padding:12px 10px;border-bottom:1px solid var(--border);font-size:13px;text-align:center;color:var(--text);}
+        table{width:100%;border-collapse:collapse;min-width:700px;font-size:13px;}
+        thead{background:linear-gradient(135deg,#667eea,#764ba2);}
+        th{padding:12px 8px;text-align:center;color:white;font-weight:700;font-size:12px;white-space:nowrap;}
+        td{padding:10px 8px;border-bottom:1px solid var(--border);font-size:12px;text-align:center;color:var(--text);}
         td:first-child,th:first-child{text-align:right;}
-        tbody tr{transition:var(--transition);}
         tbody tr:hover{background:rgba(102,126,234,0.05);}
         tbody tr:nth-child(even){background:rgba(102,126,234,0.02);}
-
-        .status-badge{padding:5px 14px;border-radius:var(--radius-full);font-size:12px;font-weight:700;display:inline-block;}
+        .status-badge{padding:4px 12px;border-radius:var(--radius-full);font-size:11px;font-weight:700;display:inline-block;}
         .status-joined{background:#dcfce7;color:#166534;border:1px solid #86efac;}
-        .status-pending{background:#fef9c3;color:#854d0e;border:1px solid #fde047;animation:glowPulse 2s infinite;}
-        @keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(250,204,21,0.3);}50%{box-shadow:0 0 20px rgba(250,204,21,0.6);}}
-
-        .copy-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:5px 12px;border-radius:var(--radius-full);cursor:pointer;font-size:11px;margin-right:6px;transition:var(--transition);font-family:'Tajawal',sans-serif;}
-        .copy-btn:hover{transform:scale(1.1);box-shadow:0 4px 12px rgba(102,126,234,0.4);}
+        .status-pending{background:#fef9c3;color:#854d0e;border:1px solid #fde047;}
+        .copy-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:4px 10px;border-radius:var(--radius-full);cursor:pointer;font-size:10px;margin-right:4px;transition:var(--transition);font-family:'Tajawal',sans-serif;}
+        .copy-btn:hover{transform:scale(1.1);}
         .copy-btn.copied{background:#28a745;}
-
-        .count-badge{background:rgba(102,126,234,0.15);color:#667eea;padding:6px 14px;border-radius:var(--radius-full);font-size:13px;font-weight:700;}
-
-        .resident-card{background:var(--card-bg);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border-right:4px solid #667eea;}
-        .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);}
-        .card-name{font-size:16px;font-weight:800;color:var(--text);}.card-abbr{font-size:13px;color:#667eea;font-weight:700;background:rgba(102,126,234,0.15);padding:4px 10px;border-radius:var(--radius-full);}
-        .card-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;}
+        .count-badge{background:rgba(102,126,234,0.15);color:#667eea;padding:5px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:700;}
+        .resident-card{background:var(--card-bg);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);border-right:4px solid #667eea;}
+        .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+        .card-name{font-size:15px;font-weight:800;color:var(--text);}.card-abbr{font-size:12px;color:#667eea;font-weight:700;background:rgba(102,126,234,0.15);padding:3px 8px;border-radius:var(--radius-full);}
+        .card-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;}
         .card-label{color:var(--text-secondary);}.card-value{font-weight:600;text-align:left;color:var(--text);}
-
-        .shifts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
-        .shift-card-full{background:var(--card-bg);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow);border-top:5px solid #667eea;transition:var(--transition);}
-        .shift-card-full:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
-        .shift-card-full h3{color:#667eea;font-size:1.2em;margin-bottom:14px;}
-        .shift-stats{display:flex;gap:20px;margin-bottom:14px;}
-        .shift-stat{text-align:center;flex:1;background:var(--gray-100);padding:12px;border-radius:var(--radius);}
-        .shift-stat .num{font-size:2em;font-weight:900;color:#667eea;}
-        .shift-stat .lbl{font-size:12px;color:var(--text-secondary);margin-top:4px;}
-        .shift-names{font-size:13px;color:var(--text);line-height:1.8;padding-top:12px;border-top:1px solid var(--border);}
-
-        .oncall-controls{background:var(--card-bg);padding:18px 22px;border-radius:var(--radius-lg);margin-bottom:18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-        .oncall-controls label{font-weight:700;font-size:15px;color:var(--text);}
-        .oncall-controls input[type="date"]{padding:10px 16px;border:2px solid var(--border);border-radius:var(--radius);font-family:'Tajawal',sans-serif;font-size:15px;background:var(--gray-100);color:var(--text);}
-        .oncall-controls button{padding:10px 20px;border:none;border-radius:var(--radius);cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:700;font-size:14px;color:white;background:#667eea;transition:var(--transition);}
-        .oncall-controls button:hover{background:#5a6fd6;transform:translateY(-2px);}
-        .oncall-controls .btn-today{background:#00b894;}
-        .oncall-link{display:inline-block;margin:8px 0 15px;color:#667eea;text-decoration:underline;font-size:14px;font-weight:600;cursor:pointer;}
-        .oncall-day-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow);margin-top:15px;}
-        .oncall-day-card h3{color:#667eea;margin-bottom:18px;font-size:1.3em;}
-        .oncall-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
-        .oncall-slot{background:var(--gray-100);padding:14px 16px;border-radius:var(--radius);border-right:4px solid #667eea;transition:var(--transition);}
-        .oncall-slot:hover{background:rgba(102,126,234,0.08);}
-        .oncall-slot .slot-title{font-size:12px;color:var(--text-secondary);margin-bottom:6px;}
-        .oncall-slot .slot-name{font-size:15px;font-weight:700;color:var(--text);}
-        .oncall-slot .slot-abbr{font-size:11px;color:#667eea;margin-top:2px;}
-
-        /* تقويم */
-        .monthly-calendar{background:var(--card-bg);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);margin-top:15px;}
-        .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
-        .calendar-header h3{color:#667eea;font-size:1.2em;}
-        .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-        .calendar-day-header{text-align:center;font-weight:700;color:var(--text-secondary);font-size:12px;padding:8px;}
-        .calendar-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600;transition:var(--transition);background:var(--gray-100);color:var(--text);position:relative;}
-        .calendar-day:hover{background:#667eea;color:white;}
-        .calendar-day.today{background:#667eea;color:white;font-weight:900;}
+        .shifts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+        .shift-card-full{background:var(--card-bg);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);border-top:5px solid #667eea;transition:var(--transition);}
+        .shift-card-full:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+        .shift-card-full h3{color:#667eea;font-size:1.1em;margin-bottom:12px;}
+        .shift-stats{display:flex;gap:15px;margin-bottom:12px;}
+        .shift-stat{text-align:center;flex:1;background:var(--gray-100);padding:10px;border-radius:var(--radius);}
+        .shift-stat .num{font-size:1.8em;font-weight:900;color:#667eea;}
+        .shift-stat .lbl{font-size:11px;color:var(--text-secondary);margin-top:3px;}
+        .names-dropdown{margin-top:10px;position:relative;}
+        .names-dropdown-btn{width:100%;padding:10px 14px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition);}
+        .names-dropdown-btn:hover{border-color:#667eea;}
+        .names-dropdown-content{display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:2px solid #667eea;border-top:none;border-radius:0 0 var(--radius) var(--radius);list-style:none;max-height:180px;overflow-y:auto;z-index:10;}
+        .names-dropdown-content.show{display:block;}
+        .names-dropdown-content li{padding:8px 14px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+        .names-dropdown-content li:hover{background:rgba(102,126,234,0.05);}
+        .name-hover{position:relative;cursor:pointer;display:inline-block;}
+        .name-hover .tooltip-pop{display:none;position:absolute;bottom:calc(100% + 8px);right:50%;transform:translateX(50%);background:var(--card-bg);color:var(--text);padding:10px 14px;border-radius:12px;border:2px solid #667eea;box-shadow:0 10px 30px rgba(0,0,0,0.2);z-index:500;white-space:nowrap;font-size:13px;min-width:160px;text-align:center;}
+        .name-hover:hover .tooltip-pop,.name-hover:active .tooltip-pop{display:block;}
+        .tooltip-pop .tt-name{font-weight:700;color:#667eea;margin-bottom:4px;}
+        .tooltip-pop .tt-phone{font-weight:600;margin-bottom:6px;direction:ltr;}
+        .tooltip-pop .tt-copy-btn{background:#667eea;color:white;border:none;padding:4px 14px;border-radius:var(--radius-full);cursor:pointer;font-size:11px;font-family:'Tajawal',sans-serif;}
+        .oncall-controls{background:var(--card-bg);padding:16px 20px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+        .oncall-controls label{font-weight:700;font-size:14px;color:var(--text);}
+        .oncall-controls input[type="date"]{padding:10px 14px;border:2px solid var(--border);border-radius:var(--radius);font-family:'Tajawal',sans-serif;font-size:14px;background:var(--gray-100);color:var(--text);}
+        .oncall-link{display:inline-block;margin:6px 0 12px;color:#667eea;text-decoration:underline;font-size:13px;font-weight:600;cursor:pointer;}
+        .oncall-day-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow);margin-top:12px;animation:fadeSlideIn 0.4s ease;}
+        .oncall-day-card h3{color:#667eea;margin-bottom:16px;font-size:1.2em;display:flex;align-items:center;gap:8px;}
+        .oncall-day-card h3 .day-badge{padding:4px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:700;}
+        .oncall-day-card h3 .day-badge.weekend{background:rgba(231,76,60,0.1);color:var(--weekend-color);}
+        .oncall-category{margin-bottom:16px;background:var(--gray-100);border-radius:var(--radius);padding:16px;border-right:4px solid #667eea;transition:var(--transition);}
+        .oncall-category:hover{box-shadow:var(--shadow-md);}
+        .oncall-category h4{color:#667eea;font-size:1em;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+        .oncall-sub-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;}
+        .oncall-sub-slot{background:var(--card-bg);padding:12px 14px;border-radius:10px;transition:var(--transition);border:1px solid transparent;}
+        .oncall-sub-slot:hover{background:rgba(102,126,234,0.05);border-color:#667eea;transform:translateY(-2px);}
+        .oncall-sub-slot .sub-title{font-size:10px;color:var(--text-secondary);margin-bottom:4px;}
+        .oncall-sub-slot .sub-name{font-size:14px;font-weight:700;color:var(--text);}
+        .oncall-sub-slot .sub-abbr{font-size:10px;color:#667eea;margin-top:2px;}
+        .monthly-calendar{background:var(--card-bg);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);}
+        .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+        .calendar-header h3{color:#667eea;font-size:1.1em;}
+        .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+        .calendar-day-header{text-align:center;font-weight:700;color:var(--text-secondary);font-size:11px;padding:6px;}
+        .calendar-day-header.weekend{color:var(--weekend-color);}
+        .calendar-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;transition:var(--transition);background:var(--gray-100);color:var(--text);position:relative;}
+        .calendar-day:hover{background:#667eea;color:white;transform:scale(1.1);z-index:2;}
+        .calendar-day.today{background:#667eea;color:white;font-weight:900;box-shadow:0 0 0 3px rgba(102,126,234,0.3);}
         .calendar-day.has-oncall{background:#dcfce7;color:#166534;border:2px solid #86efac;}
         .calendar-day.has-oncall.today{background:#667eea;color:white;border-color:#667eea;}
         .calendar-day.empty{background:transparent;cursor:default;}
-        .calendar-day.empty:hover{background:transparent;}
-
-        .student-result{background:var(--card-bg);border-radius:var(--radius-lg);padding:24px;margin-top:15px;box-shadow:var(--shadow);display:none;}
+        .calendar-day.empty:hover{background:transparent;transform:none;}
+        .calendar-day.weekend{color:var(--weekend-color);}
+        .student-result{background:var(--card-bg);border-radius:var(--radius-lg);padding:22px;margin-top:14px;box-shadow:var(--shadow);display:none;}
         .student-result.show{display:block;animation:fadeSlideIn 0.5s ease;}
-        .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-top:18px;}
-        .info-item{background:var(--gray-100);padding:16px;border-radius:var(--radius);border-right:4px solid #667eea;}
-        .info-item .info-label{font-size:12px;color:var(--text-secondary);margin-bottom:6px;}
-        .info-item .info-value{font-size:16px;font-weight:700;color:var(--text);}
-        .search-results-list{margin-top:12px;}
-        .search-result-item{background:var(--card-bg);padding:14px 18px;margin-bottom:8px;border-radius:var(--radius);cursor:pointer;border:2px solid var(--border);transition:var(--transition);display:flex;justify-content:space-between;align-items:center;}
-        .search-result-item:hover{border-color:#667eea;background:rgba(102,126,234,0.05);}
-        .no-results{text-align:center;padding:35px;color:#e74c3c;font-size:16px;font-weight:600;}
-
-        .main-footer{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;text-align:center;color:white;margin-top:50px;font-size:14px;}
-        .main-footer i{color:#e74c3c;margin:0 5px;animation:heartbeat 1.5s infinite;}
-        @keyframes heartbeat{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
-
+        .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:16px;}
+        .info-item{background:var(--gray-100);padding:14px;border-radius:var(--radius);border-right:4px solid #667eea;transition:var(--transition);}
+        .info-item:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+        .info-item .info-label{font-size:11px;color:var(--text-secondary);margin-bottom:4px;}
+        .info-item .info-value{font-size:14px;font-weight:700;color:var(--text);}
+        .stat-card{background:var(--gray-100);padding:14px 16px;border-radius:var(--radius-sm);text-align:center;transition:var(--transition);border:1px solid transparent;}
+        .stat-card:hover{border-color:#667eea;transform:translateY(-2px);}
+        .stat-card .stat-num{font-size:2em;font-weight:900;color:#667eea;}
+        .stat-card .stat-lbl{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+        .oncall-info-row{background:var(--gray-100);padding:14px 16px;border-radius:var(--radius);margin-bottom:8px;transition:var(--transition);border-right:3px solid transparent;}
+        .oncall-info-row:hover{border-right-color:#667eea;box-shadow:var(--shadow-md);}
+        .oncall-info-row .oc-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+        .oncall-info-row .oc-date{font-weight:700;color:#667eea;font-size:14px;display:flex;align-items:center;gap:6px;}
+        .oncall-info-row .oc-date .day-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+        .oncall-info-row .oc-date .day-dot.weekend{background:var(--weekend-color);}
+        .oncall-info-row .oc-type{color:var(--text-secondary);font-size:12px;background:rgba(102,126,234,0.1);padding:4px 12px;border-radius:var(--radius-full);font-weight:600;}
+        .colleague-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;font-size:12px;}
+        .colleague-row .cl-label{color:var(--text-secondary);font-size:11px;font-weight:600;}
+        .colleague-row .cl-names{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+        .colleague-row .cl-sep{color:var(--text-secondary);font-weight:700;}
+        .search-results-list{margin-top:10px;}
+        .search-result-item{background:var(--card-bg);padding:12px 16px;margin-bottom:6px;border-radius:var(--radius);cursor:pointer;border:2px solid var(--border);transition:var(--transition);display:flex;justify-content:space-between;align-items:center;}
+        .search-result-item:hover{border-color:#667eea;background:rgba(102,126,234,0.05);transform:translateX(-3px);}
+        .no-results{text-align:center;padding:30px;color:#e74c3c;font-size:15px;font-weight:600;}
+        .main-footer{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:18px;text-align:center;color:white;margin-top:40px;font-size:13px;}
+        .main-footer i{color:#e74c3c;margin:0 4px;}
         @media(max-width:768px){
             .desktop-table{display:none;}.mobile-cards{display:block;}
-            .main-title .title-line1{font-size:1.6em;}.main-title .title-line2{font-size:1.2em;}
-            .nav-btn{padding:10px 15px;font-size:13px;}
-            .shifts-grid{grid-template-columns:1fr;}.info-grid{grid-template-columns:1fr 1fr;}.oncall-grid{grid-template-columns:1fr;}
-            .section-header{flex-direction:column;align-items:flex-start;}
+            .main-title .title-line1{font-size:1.5em;}.main-title .title-line2{font-size:1.1em;}
+            .nav-btn{padding:9px 13px;font-size:12px;}
+            .shifts-grid{grid-template-columns:1fr;}.info-grid{grid-template-columns:1fr 1fr;}
+            .oncall-sub-slots{grid-template-columns:1fr;}
+            .section-header{flex-direction:column;align-items:flex-start;padding:14px 16px;}
             .controls-row{flex-direction:column;width:100%;}.search-box{min-width:100%;}
-            .calendar-grid{grid-template-columns:repeat(7,1fr);gap:3px;}
-            .calendar-day{font-size:11px;}
+            .calendar-grid{gap:2px;}.calendar-day{font-size:10px;border-radius:6px;aspect-ratio:auto;padding:6px 2px;}
+            .calendar-day-header{font-size:9px;padding:4px;}
+            .calendar-header h3{font-size:1em;}.monthly-calendar{padding:10px;}
+            .oncall-controls{flex-direction:column;align-items:flex-start;}
+            .oncall-controls input[type="date"]{width:100%;}
+            .names-dropdown-content{position:static;max-height:150px;}
         }
-        @media(max-width:480px){.info-grid{grid-template-columns:1fr;}.nav-btn span{font-size:11px;}}
-        ::-webkit-scrollbar{height:6px;width:6px;}
-        ::-webkit-scrollbar-track{background:var(--gray-100);border-radius:8px;}
-        ::-webkit-scrollbar-thumb{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:8px;}
+        @media(max-width:480px){.info-grid{grid-template-columns:1fr;}.nav-btn span{font-size:10px;}.calendar-day{font-size:9px;padding:4px 1px;}.calendar-day-header{font-size:8px;}}
+        ::-webkit-scrollbar{height:5px;width:5px;}
+        ::-webkit-scrollbar-track{background:var(--gray-100);border-radius:6px;}
+        ::-webkit-scrollbar-thumb{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:6px;}
     </style>
 </head>
 <body>
     <div class="animated-bg"></div><div class="bg-dots"></div>
     <div class="bg-orb bg-orb-1"></div><div class="bg-orb bg-orb-2"></div><div class="bg-orb bg-orb-3"></div>
-
-    <div class="loading-screen" id="loadingScreen">
-        <div class="loader-container">
-            <div class="loader-icon">🏥</div>
-            <div class="loader-title">مشفى حلب الجامعي</div>
-            <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
-            <div class="loader-percentage" id="loaderPercentage">0%</div>
-            <div class="loader-subtitle" id="loaderSubtitle">جاري تحميل البيانات...</div>
-        </div>
-    </div>
+    <div class="loading-screen" id="loadingScreen"><div class="loader-container"><div class="loader-icon">🏥</div><div class="loader-title">مشفى حلب الجامعي</div><div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div><div class="loader-percentage" id="loaderPercentage">0%</div><div class="loader-subtitle" id="loaderSubtitle">جاري تحميل البيانات...</div></div></div>
 
     <header class="main-header">
-        <div class="header-top-row">
-            <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="تبديل الوضع الليلي">
-                <i class="fas fa-moon" id="darkModeIcon"></i>
-            </button>
-        </div>
-        <div class="header-content">
-            <div class="hospital-logo">🏥</div>
-            <h1 class="main-title"><span class="title-line1">أطباء قسم الداخلية</span><span class="title-line2">السنة الاولى</span></h1>
-            <p class="hospital-name">مشفى حلب الجامعي</p>
-            <div class="header-stats">
-                <span class="stat-badge">📅 <span id="currentDateHeader"></span></span>
-                <span class="stat-badge">🔄 <span id="lastUpdateTime">تحميل...</span></span>
-            </div>
-        </div>
+        <div class="header-top-row"><button class="dark-mode-toggle" onclick="toggleDarkMode()" title="تبديل الوضع الليلي"><i class="fas fa-moon" id="darkModeIcon"></i></button></div>
+        <div class="header-content"><div class="hospital-logo">🏥</div><h1 class="main-title"><span class="title-line1">أطباء قسم الداخلية</span><span class="title-line2">السنة الاولى</span></h1><p class="hospital-name">مشفى حلب الجامعي</p><div class="header-stats"><span class="stat-badge">📅 <span id="currentDateHeader"></span></span><span class="stat-badge">🔄 <span id="lastUpdateTime">تحميل...</span></span></div></div>
     </header>
 
-    <nav class="main-nav">
-        <div class="nav-container">
-            <button class="nav-btn active" data-tab="residents">👨‍⚕️ <span>لائحة المقيمين</span></button>
-            <button class="nav-btn" data-tab="shifts">📋 <span>جدول الفروز</span></button>
-            <button class="nav-btn" data-tab="oncall">📅 <span>المناوبات</span></button>
-            <button class="nav-btn" data-tab="myinfo">🔍 <span>معلوماتي</span></button>
-        </div>
-    </nav>
+    <nav class="main-nav"><div class="nav-container"><button class="nav-btn active" data-tab="residents">👨‍⚕️ <span>لائحة المقيمين</span></button><button class="nav-btn" data-tab="shifts">📋 <span>جدول الفروز</span></button><button class="nav-btn" data-tab="oncall">📅 <span>المناوبات</span></button><button class="nav-btn" data-tab="myinfo">🔍 <span>معلوماتي</span></button></div></nav>
 
     <main class="main-content">
-        <section class="tab-content active" id="residents-tab">
-            <div class="section-header">
-                <h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2>
-                <div class="controls-row">
-                    <div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div>
-                    <button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button>
-                </div>
-            </div>
-            <div class="table-wrapper desktop-table"><table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div>
-            <div class="mobile-cards" id="residentsCards"></div>
-        </section>
-
-        <section class="tab-content" id="shifts-tab">
-            <div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2>
-                <div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div>
-            <div class="shifts-grid" id="shiftsGrid"></div>
-            <a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=1976416116#gid=1976416116" target="_blank" style="margin-top:15px;display:inline-block;">📋 لمشاهدة الفرز الكامل اضغط هنا</a>
-        </section>
-
-        <section class="tab-content" id="oncall-tab">
-            <div class="section-header">
-                <h2><i class="fas fa-calendar-check"></i> مناوبات <span id="oncallMonthName"></span></h2>
-                <div class="view-toggle">
-                    <button class="view-btn active-view" onclick="app.setView('day')">📅 يوم</button>
-                    <button class="view-btn" onclick="app.setView('month')">🗓️ شهر</button>
-                </div>
-            </div>
-            <div id="oncallDayView">
-                <div class="oncall-controls">
-                    <label>📆 اختر تاريخ:</label>
-                    <input type="date" id="oncallDatePicker">
-                    <button onclick="app.showOncallByDate()">🔍 عرض</button>
-                    <button class="btn-today" onclick="app.showTodayOncall()">📍 اليوم</button>
-                </div>
-                <a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=238974679#gid=238974679" target="_blank">📋 لمشاهدة الجدول كامل اضغط هنا</a>
-                <div id="oncallDayDisplay"></div>
-            </div>
-            <div id="oncallMonthView" style="display:none;">
-                <div id="monthlyCalendar"></div>
-            </div>
-        </section>
-
-        <section class="tab-content" id="myinfo-tab">
-            <div class="section-header"><h2><i class="fas fa-user-search"></i> معلوماتي</h2>
-                <div class="search-box"><input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك..."><i class="fas fa-search"></i></div></div>
-            <div id="searchResultsList" class="search-results-list"></div>
-            <div id="myInfoResult" class="student-result"></div>
-        </section>
+        <section class="tab-content active" id="residents-tab"><div class="section-header"><h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2><div class="controls-row"><div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div><button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button></div></div><div class="table-wrapper desktop-table"><table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div><div class="mobile-cards" id="residentsCards"></div></section>
+        
+        <section class="tab-content" id="shifts-tab"><div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2><div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div><div class="shifts-grid" id="shiftsGrid"></div><a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=1976416116#gid=1976416116" target="_blank" style="margin-top:12px;display:inline-block;">📋 لمشاهدة الفرز الكامل اضغط هنا</a></section>
+        
+        <section class="tab-content" id="oncall-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> مناوبات <span id="oncallMonthName"></span></h2></div><div class="oncall-controls"><label>📆 اختر تاريخ:</label><input type="date" id="oncallDatePicker" onchange="app.selectDayFromCalendar()"><span style="color:var(--text-secondary);font-size:12px;">اختر اليوم لعرض التفاصيل</span></div><a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=238974679#gid=238974679" target="_blank">📋 لمشاهدة الجدول كامل اضغط هنا</a><div id="monthlyCalendar"></div><div id="oncallDayDisplay" style="margin-top:12px;"></div></section>
+        
+        <section class="tab-content" id="myinfo-tab"><div class="section-header"><h2><i class="fas fa-user-search"></i> معلوماتي</h2><div class="search-box"><input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك..."><i class="fas fa-search"></i></div></div><div id="searchResultsList" class="search-results-list"></div><div id="myInfoResult" class="student-result"></div></section>
     </main>
 
     <footer class="main-footer"><p>© <span id="currentYear"></span> مشفى حلب الجامعي - قسم الداخلية <i class="fas fa-heart"></i></p></footer>
 
     <script>
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const icon = document.getElementById('darkModeIcon');
-            if (document.body.classList.contains('dark-mode')) {
-                icon.className = 'fas fa-sun';
-                localStorage.setItem('darkMode', 'true');
-            } else {
-                icon.className = 'fas fa-moon';
-                localStorage.setItem('darkMode', 'false');
-            }
-        }
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('darkModeIcon').className = 'fas fa-sun';
-        }
+        function toggleDarkMode(){document.body.classList.toggle('dark-mode');const icon=document.getElementById('darkModeIcon');if(document.body.classList.contains('dark-mode')){icon.className='fas fa-sun';localStorage.setItem('darkMode','true');}else{icon.className='fas fa-moon';localStorage.setItem('darkMode','false');}}
+        if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');document.getElementById('darkModeIcon').className='fas fa-sun';}
 
+        // ============ الإعدادات النهائية للـ Google Sheets الأصلي ============
         const SHEET_ID='1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
-        const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
+        const GID_RESIDENTS='0';
+        const GID_SHIFTS='1976416116';
+        const GID_ONCALL='238974679';
+        
         const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+        const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
         function copyPhone(p,b){navigator.clipboard.writeText(p).then(()=>{const i=b.querySelector('i');const o=i.className;i.className='fas fa-check';b.classList.add('copied');setTimeout(()=>{i.className=o;b.classList.remove('copied');},1500);}).catch(()=>{});}
         function normalizeArabic(text){if(!text)return'';let t=text.toLowerCase().trim();t=t.replace(/[أإآا]/g,'ا');t=t.replace(/ؤ/g,'و');t=t.replace(/ئ/g,'ي');t=t.replace(/ى/g,'ا');t=t.replace(/ة/g,'ه');t=t.replace(/\bال/g,'');t=t.replace(/^ال/,'');t=t.replace(/[\u064B-\u0652]/g,'');t=t.replace(/\s+/g,' ').trim();return t;}
@@ -344,12 +281,19 @@
         function splitNames(namesText){if(!namesText)return[];return namesText.split(/[-–—,،;؛\/\\|]/).map(n=>n.trim()).filter(n=>n.length>0);}
         function smartSearch(text,searchTerm){if(!searchTerm)return true;const nt=prepareForSearch(text);const ns=prepareForSearch(searchTerm);const sw=ns.split(/\s+/).filter(w=>w.length>0);if(sw.length===0)return true;return sw.every(w=>nt.includes(w));}
         function searchInNamesList(namesText,searchTerm){if(!searchTerm)return true;const names=splitNames(namesText);if(names.length===0)return smartSearch(namesText,searchTerm);return names.some(name=>smartSearch(name,searchTerm));}
+        function extractDate(text){if(!text)return null;let cleaned=text.replace(/السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday/gi,'');cleaned=cleaned.replace(/[\u0660-\u0669]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x0660+0x30));cleaned=cleaned.replace(/[٠-٩]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x0660+0x30));let m=cleaned.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;m=cleaned.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;m=cleaned.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})/);if(m){const y=parseInt(m[3])<50?'20'+m[3]:'19'+m[3];return`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}return null;}
+        function getDayName(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return'';return DAY_NAMES[d.getDay()];}
+        function getDayIndex(dateStr){const d=new Date(dateStr+'T00:00:00');return isNaN(d.getTime())?-1:d.getDay();}
+        function isWeekend(dateStr){const idx=getDayIndex(dateStr);return idx===5||idx===6;}
+        function fillMergedRow(row){if(!row)return[];const filled=[...row];for(let i=1;i<filled.length;i++){if(!filled[i]||!filled[i].trim())filled[i]=filled[i-1]||'';}return filled;}
+        function mergeSubWithMain(mainRow,subRow){if(!mainRow||!subRow)return subRow?[...subRow]:[];const result=[...subRow];for(let i=0;i<result.length;i++){if(!result[i]||!result[i].trim())result[i]=mainRow[i]||'';}return result;}
+        function makeTooltip(name,phone){if(!phone)return name;return`<span class="name-hover">${name}<span class="tooltip-pop"><div class="tt-name">${name}</div><div class="tt-phone" dir="ltr">📱 ${phone}</div><button class="tt-copy-btn" onclick="event.stopPropagation();copyPhone('${phone}',this)"><i class="fas fa-copy"></i> نسخ الرقم</button></span></span>`;}
 
         class HospitalApp{
             constructor(){
                 this.m=new Date().getMonth();this.mn=ARABIC_MONTHS[this.m];this.today=new Date().toISOString().split('T')[0];
-                this.res=[];this.shf=[];this.onc=[];this.oh=[];this.filterJoined=false;this.oncallView='day';
-                this.init();
+                this.res=[];this.shf=[];this.oncRows=[];this.oncHeaders=[];this.oncSubHeaders=[];
+                this.filterJoined=false;this.init();
             }
             init(){
                 document.getElementById('currentDateHeader').textContent=new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -360,81 +304,80 @@
             }
             showLoading(s){if(!s)document.getElementById('loadingScreen').classList.add('hidden');}
             updateProgress(p,txt){document.getElementById('progressBar').style.width=p+'%';document.getElementById('loaderPercentage').textContent=p+'%';if(txt)document.getElementById('loaderSubtitle').textContent=txt;if(p>=100)setTimeout(()=>this.showLoading(false),300);}
-            setView(view){
-                this.oncallView=view;
-                document.getElementById('oncallDayView').style.display=view==='day'?'block':'none';
-                document.getElementById('oncallMonthView').style.display=view==='month'?'block':'none';
-                document.querySelectorAll('#oncall-tab .view-btn').forEach(b=>b.classList.remove('active-view'));
-                if(view==='month'){this.renderMonthlyCalendar();document.querySelector('#oncall-tab .view-btn:last-child').classList.add('active-view');}
-                else{document.querySelector('#oncall-tab .view-btn:first-child').classList.add('active-view');}
-            }
-            setupTabs(){
-                document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
-                    document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
-                    b.classList.add('active');document.getElementById(b.dataset.tab+'-tab').classList.add('active');
-                    if(b.dataset.tab==='oncall'){if(this.oncallView==='day')this.showOncallDate(this.today);else this.renderMonthlyCalendar();}
-                }));
-            }
-            setupSearches(){
-                document.getElementById('residentSearch').addEventListener('input',e=>this.filterRes(e.target.value));
-                document.getElementById('shiftSearch').addEventListener('input',e=>this.filterShf(e.target.value));
-                document.getElementById('myInfoSearch').addEventListener('input',e=>this.searchMe(e.target.value));
-            }
-            async fetchSheetByGid(gid){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;try{const r=await fetch(url);if(!r.ok)return null;const t=await r.text();if(t.includes('<!DOCTYPE')||t.includes('<html'))return null;return this.parseCSV(t);}catch(e){return null;}}
+            setupTabs(){document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab+'-tab').classList.add('active');}));}
+            setupSearches(){document.getElementById('residentSearch').addEventListener('input',e=>this.filterRes(e.target.value));document.getElementById('shiftSearch').addEventListener('input',e=>this.filterShf(e.target.value));document.getElementById('myInfoSearch').addEventListener('input',e=>this.searchMe(e.target.value));}
+            async fetchSheet(gid){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;try{const r=await fetch(url);if(!r.ok)return null;const t=await r.text();if(t.includes('<!DOCTYPE')||t.includes('<html'))return null;return this.parseCSV(t);}catch(e){return null;}}
             parseCSV(t){const rows=[];const lines=t.split('\n');for(let l of lines){if(!l.trim())continue;const row=[];let q=false,v='';for(let c of l){if(c==='"')q=!q;else if(c===','&&!q){row.push(v.trim());v='';}else v+=c;}row.push(v.trim());if(row.some(c=>c!==''))rows.push(row);}return rows;}
-            async loadAll(){this.updateProgress(20,'جاري جلب البيانات...');const[rd,sd,od]=await Promise.all([this.fetchSheetByGid(GID_RESIDENTS),this.fetchSheetByGid(GID_SHIFTS),this.fetchSheetByGid(GID_ONCALL)]);this.updateProgress(70,'جاري عرض البيانات...');if(rd)this.renderRes(rd);if(sd)this.renderShf(sd);if(od){this.renderOnc(od);this.showOncallDate(this.today);}this.updateProgress(100,'✓ تم التحميل');this.updateTime();}
+            async loadAll(){this.updateProgress(20,'جاري جلب البيانات...');const[rd,sd,od]=await Promise.all([this.fetchSheet(GID_RESIDENTS),this.fetchSheet(GID_SHIFTS),this.fetchSheet(GID_ONCALL)]);this.updateProgress(70,'جاري عرض البيانات...');if(rd)this.renderRes(rd);if(sd)this.renderShf(sd);if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.updateProgress(100,'✓ تم التحميل');this.updateTime();}
             renderRes(d){this.res=[];const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';if(!d||d.length<2){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return;}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;const res={name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),st:(r[11]||'').trim()};if(!res.name)continue;this.res.push(res);}this.displayResidents();}
-            displayResidents(){const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));list.forEach(res=>{const ok=res.st.includes('التحق')||res.st.includes('ملتحق');const tr=document.createElement('tr');tr.innerHTML=`<td style="text-align:right;"><strong>${res.name}</strong></td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;tb.appendChild(tr);const c=document.createElement('div');c.className='resident-card';c.innerHTML=`<div class="card-header"><span class="card-name">${res.name}</span><span class="card-abbr">${res.abbr}</span></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;cd.appendChild(c);});this.updateResCount();}
+            displayResidents(){const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));list.forEach(res=>{const ok=res.st.includes('التحق')||res.st.includes('ملتحق');const tr=document.createElement('tr');tr.innerHTML=`<td style="text-align:right;"><strong>${makeTooltip(res.name,res.phone)}</strong></td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;tb.appendChild(tr);const c=document.createElement('div');c.className='resident-card';c.innerHTML=`<div class="card-header"><span class="card-name">${res.name}</span><span class="card-abbr">${res.abbr}</span></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;cd.appendChild(c);});this.updateResCount();}
             updateResCount(){const total=this.res.length;const joined=this.res.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق')).length;document.getElementById('residentCount').textContent=this.filterJoined?`${joined} ملتحق`:`${total} مقيم`;}
             toggleFilter(){this.filterJoined=!this.filterJoined;const btn=document.getElementById('filterJoinedBtn');if(this.filterJoined){btn.classList.add('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> إظهار الكل';}else{btn.classList.remove('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> الملتحقين فقط';}this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
             renderShf(d){this.shf=[];const g=document.getElementById('shiftsGrid');g.innerHTML='';document.getElementById('shiftMonthName').textContent=this.mn;if(!d||d.length<2){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات فروز</p>';return;}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim())continue;const s={name:(r[1]||'').trim(),c1:(r[2]||'0').trim(),c2:(r[3]||'0').trim(),names:(r[4]||'').trim()};if(!s.name)continue;this.shf.push(s);}this.dispShf(this.shf);}
-            dispShf(arr){const g=document.getElementById('shiftsGrid');g.innerHTML='';if(arr.length===0){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد نتائج مطابقة</p>';return;}arr.forEach(s=>{const c=document.createElement('div');c.className='shift-card-full';c.innerHTML=`<h3>📋 ${s.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${s.c1}</div><div class="lbl">عدد الأولى</div></div><div class="shift-stat"><div class="num">${s.c2}</div><div class="lbl">عدد الثانية</div></div></div><div class="shift-names"><strong>الأسماء:</strong> ${s.names||'لا يوجد'}</div>`;g.appendChild(c);});}
+            dispShf(arr){const g=document.getElementById('shiftsGrid');g.innerHTML='';if(arr.length===0){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد نتائج مطابقة</p>';return;}arr.forEach(s=>{const namesList=splitNames(s.names);const c=document.createElement('div');c.className='shift-card-full';let namesHTML='';if(namesList.length>0){const namesWithTooltips=namesList.map(n=>{const r=this.findResidentByAny(n);const phone=r?r.phone:'';return`<li>${makeTooltip(n,phone)}</li>`;}).join('');namesHTML=`<div class="names-dropdown"><button class="names-dropdown-btn" onclick="event.stopPropagation();this.classList.toggle('open');this.nextElementSibling.classList.toggle('show');"><span>👥 الأسماء (${namesList.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${namesWithTooltips}</ul></div>`;}else{namesHTML=`<div class="shift-names"><strong>الأسماء:</strong> ${s.names||'لا يوجد'}</div>`;}c.innerHTML=`<h3>📋 ${s.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${s.c1}</div><div class="lbl">عدد الأولى</div></div><div class="shift-stat"><div class="num">${s.c2}</div><div class="lbl">عدد الثانية</div></div></div>${namesHTML}`;g.appendChild(c);});document.addEventListener('click',function(e){if(!e.target.closest('.names-dropdown')){document.querySelectorAll('.names-dropdown-btn.open').forEach(b=>{b.classList.remove('open');if(b.nextElementSibling)b.nextElementSibling.classList.remove('show');});}});}
             filterShf(term){const t=term.toLowerCase().trim();if(!t){this.dispShf(this.shf);return;}this.dispShf(this.shf.filter(s=>smartSearch(s.name,t)||searchInNamesList(s.names,t)));}
-            renderOnc(d){this.onc=[];document.getElementById('oncallMonthName').textContent=this.mn;if(d&&d.length>0){this.oh=d[0]||[];for(let i=1;i<d.length;i++){if(d[i]&&d[i].some(c=>c&&c.trim()))this.onc.push(d[i]);}}}
-            getOncallDates(){const dates=new Set();for(let row of this.onc){for(let cell of row){const pd=this.parseDate(cell);if(pd)dates.add(pd);}}return[...dates].sort();}
-            getOncRow(ds){if(!this.onc.length)return null;for(let r of this.onc){for(let c of r){if(c&&this.parseDate(c)===ds)return r;}}return null;}
-            parseDate(v){if(!v)return null;const d=new Date(v);if(!isNaN(d.getTime()))return d.toISOString().split('T')[0];const m=v.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;return null;}
+            parseOncallData(d){this.oncRows=[];this.oncHeaders=[];this.oncSubHeaders=[];if(!d||d.length<3)return;const rawMain=fillMergedRow(d[0]||[]);const rawSub=fillMergedRow(d[1]||[]);this.oncHeaders=rawMain;this.oncSubHeaders=mergeSubWithMain(rawMain,rawSub);document.getElementById('oncallMonthName').textContent=this.mn;for(let i=2;i<d.length;i++){const row=d[i];if(row&&row.some(c=>c&&c.trim())){const dateStr=extractDate(row[0]||'');if(dateStr){this.oncRows.push({date:dateStr,row:row});}}}}
+            getOncallDates(){return this.oncRows.map(r=>r.date);}
+            getOncRow(ds){return this.oncRows.find(r=>r.date===ds)||null;}
             findR(abbr){if(!abbr)return null;const a=prepareForSearch(abbr).replace(/[.\s]/g,'');return this.res.find(r=>prepareForSearch(r.abbr).replace(/[.\s]/g,'')===a)||this.res.find(r=>smartSearch(r.name,abbr));}
-
-            renderMonthlyCalendar(){
-                const container=document.getElementById('monthlyCalendar');
-                const oncallDates=this.getOncallDates();
-                const year=this.today.split('-')[0];const month=this.today.split('-')[1];
-                const daysInMonth=new Date(year,month,0).getDate();
-                const firstDay=new Date(year,month-1,1).getDay();
-                const adjustedFirstDay=firstDay===0?6:firstDay-1;
-                const dayNames=['اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت','أحد'];
-                let html=`<div class="monthly-calendar"><div class="calendar-header"><h3>📅 ${this.mn} ${year}</h3></div><div class="calendar-grid">`;
-                dayNames.forEach(d=>html+=`<div class="calendar-day-header">${d}</div>`);
-                for(let i=0;i<adjustedFirstDay;i++)html+='<div class="calendar-day empty"></div>';
-                for(let day=1;day<=daysInMonth;day++){
-                    const ds=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                    const isToday=ds===this.today;const hasOncall=oncallDates.includes(ds);
-                    let cls='calendar-day';if(isToday)cls+=' today';if(hasOncall)cls+=' has-oncall';
-                    html+=`<div class="${cls}" onclick="app.showOncallDate('${ds}');app.setView('day');" title="${hasOncall?'مناوبة':''}">${day}</div>`;
-                }
-                html+='</div></div>';container.innerHTML=html;
-            }
-
+            findResidentByAny(text){if(!text)return null;const t=text.trim();return this.res.find(r=>r.name===t||r.abbr===t||smartSearch(r.name,t)||smartSearch(r.abbr,t))||null;}
+            scrollToOncallResult(){setTimeout(()=>{const el=document.getElementById('oncallDayDisplay');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},200);}
+            selectDayFromCalendar(){const v=document.getElementById('oncallDatePicker').value;if(v){this.showOncallDate(v);this.scrollToOncallResult();}}
             showOncallDate(ds){
-                document.getElementById('oncallDatePicker').value=ds||this.today;
                 const dp=document.getElementById('oncallDayDisplay');const dateStr=ds||this.today;
-                if(!dateStr){dp.innerHTML='<p style="text-align:center;color:#888;padding:25px;">⚠️ الرجاء اختيار تاريخ</p>';return;}
-                if(!this.onc.length){dp.innerHTML=`<div class="oncall-day-card"><h3>📅 ${dateStr}</h3><p style="color:#888;">لا توجد بيانات مناوبات.</p></div>`;return;}
-                const row=this.getOncRow(dateStr);
-                if(!row){dp.innerHTML=`<div class="oncall-day-card"><h3>📅 ${dateStr}</h3><p style="color:#888;">لا توجد مناوبات لهذا التاريخ.</p></div>`;return;}
-                const slots=[{t:'🚑 الإسعاف النهاري',k:['الاسعاف النهاري','اسعاف نهاري']},{t:'🚪 الإسعاف النهاري (الباب)',k:['الباب','باب']},{t:'🥶 الإسعاف النهاري (بارد)',k:['بارد']},{t:'🌙 الإسعاف الليلي',k:['الاسعاف الليلي','اسعاف ليلي']},{t:'🚪🌙 الإسعاف الليلي (الباب)',k:['ليلي باب','باب ليلي']},{t:'🥶🌙 الإسعاف الليلي (بارد)',k:['ليلي بارد','بارد ليلي']},{t:'🏥 ثالث خاص',k:['ثالث']},{t:'🏢 جناح السابع',k:['سابع']},{t:'🫘 جناح الرابع (كلية)',k:['كلية']},{t:'🫁 جناح الرابع (صدرية)',k:['صدرية']},{t:'🚶 جناح الرابع (خارجيات)',k:['خارجيات']},{t:'💧 ديال',k:['ديال']},{t:'❤️ عناية قلبية',k:['قلبية','عناية قلبية']},{t:'🚨 إسعاف مركز',k:['مركز','اسعاف مركز']},{t:'🏥 عناية المركز',k:['عناية المركز','عناية مركز']},{t:'🩺 عناية داخلية',k:['داخلية','عناية داخلية']}];
-                const hd=this.oh;let h=`<div class="oncall-day-card"><h3>📅 مناوبات يوم ${dateStr}</h3><div class="oncall-grid">`;
-                for(let s of slots){let ab='';for(let k of s.k){const idx=hd.findIndex(h=>prepareForSearch(h).includes(prepareForSearch(k)));if(idx>=0&&row[idx]&&row[idx].trim()){ab=row[idx].trim();break;}}const rs=this.findR(ab);const dn=rs?rs.name:(ab||'-');h+=`<div class="oncall-slot"><div class="slot-title">${s.t}</div><div class="slot-name">${dn}</div>${ab?`<div class="slot-abbr">(${ab})</div>`:''}</div>`;}
-                h+='</div></div>';dp.innerHTML=h;
+                if(!dateStr){dp.innerHTML='';return;}if(!this.oncRows.length){dp.innerHTML='';return;}
+                const oncRow=this.getOncRow(dateStr);
+                if(!oncRow){dp.innerHTML=`<div class="oncall-day-card"><h3>📅 ${dateStr} - ${getDayName(dateStr)}</h3><p style="color:#888;">لا توجد مناوبات لهذا التاريخ.</p></div>`;return;}
+                const categories={};
+                for(let col=1;col<this.oncHeaders.length;col++){const mainCat=this.oncHeaders[col]||'أخرى';const subCat=this.oncSubHeaders[col]||'';const abbr=(oncRow.row[col]||'').trim();if(!abbr)continue;const resident=this.findR(abbr);const name=resident?resident.name:abbr;const phone=resident?resident.phone:'';if(!categories[mainCat])categories[mainCat]={subs:[],mainName:mainCat};categories[mainCat].subs.push({subName:subCat||mainCat,abbr,name,phone});}
+                const dayName=getDayName(dateStr);const weekend=isWeekend(dateStr);
+                let h=`<div class="oncall-day-card"><h3 class="${weekend?'weekend':''}">📅 ${dateStr} - ${dayName}${weekend?' <span class="day-badge weekend">عطلة</span>':''}</h3>`;
+                for(const[catName,catData]of Object.entries(categories)){
+                    h+=`<div class="oncall-category"><h4>${catName}</h4><div class="oncall-sub-slots">`;
+                    for(const sub of catData.subs){h+=`<div class="oncall-sub-slot"><div class="sub-title">${sub.subName!==catName?sub.subName:''}</div><div class="sub-name">${makeTooltip(sub.name,sub.phone)}</div><div class="sub-abbr">(${sub.abbr})</div></div>`;}
+                    h+='</div></div>';
+                }h+='</div>';dp.innerHTML=h;
             }
-            showOncallByDate(){const v=document.getElementById('oncallDatePicker').value;if(v)this.showOncallDate(v);}
-            showTodayOncall(){document.getElementById('oncallDatePicker').value=this.today;this.showOncallDate(this.today);}
+            showOncallByDate(){this.showOncallDate(document.getElementById('oncallDatePicker').value);this.scrollToOncallResult();}
+            renderMonthlyCalendar(){
+                const container=document.getElementById('monthlyCalendar');const oncallDates=this.getOncallDates();
+                const year=this.today.split('-')[0];const month=this.today.split('-')[1];
+                const daysInMonth=new Date(year,month,0).getDate();const firstDay=new Date(year,month-1,1).getDay();const adjustedFirstDay=firstDay===0?6:firstDay-1;
+                const dayNames=['اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت','أحد'];
+                let h=`<div class="monthly-calendar"><div class="calendar-header"><h3>📅 ${this.mn} ${year}</h3></div><div class="calendar-grid">`;
+                dayNames.forEach((d,i)=>{let cls='calendar-day-header';if(i===4||i===5)cls+=' weekend';h+=`<div class="${cls}">${d}</div>`;});
+                for(let i=0;i<adjustedFirstDay;i++)h+='<div class="calendar-day empty"></div>';
+                for(let day=1;day<=daysInMonth;day++){const ds=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const d=new Date(ds+'T00:00:00');const dayIdx=d.getDay();const isToday=ds===this.today;const hasOncall=oncallDates.includes(ds);let cls='calendar-day';if(isToday)cls+=' today';if(hasOncall)cls+=' has-oncall';if(dayIdx===5||dayIdx===6)cls+=' weekend';h+=`<div class="${cls}" onclick="app.clickCalendarDay('${ds}')" title="${hasOncall?'مناوبة':''}">${day}</div>`;}h+='</div></div>';container.innerHTML=h;
+            }
+            clickCalendarDay(ds){document.getElementById('oncallDatePicker').value=ds;this.showOncallDate(ds);this.scrollToOncallResult();}
             filterRes(term){const t=term.toLowerCase().trim();const rows=document.querySelectorAll('#residentsBody tr');const cards=document.querySelectorAll('#residentsCards .resident-card');let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));list.forEach((r,i)=>{const m=!t||smartSearch(r.name+' '+r.abbr,t);if(rows[i])rows[i].style.display=m?'':'none';if(cards[i])cards[i].style.display=m?'':'none';});}
             searchMe(term){const t=term.toLowerCase().trim();const rl=document.getElementById('searchResultsList');const rd=document.getElementById('myInfoResult');if(t.length<1){rl.innerHTML='';rd.classList.remove('show');return;}let mt=this.res.filter(r=>smartSearch(r.name+' '+r.abbr,t));if(mt.length===0){rl.innerHTML='<div class="no-results">🔍 لا يوجد نتائج مطابقة.</div>';rd.classList.remove('show');return;}if(mt.length===1){rl.innerHTML='';this.showMe(mt[0]);}else{this._sm=mt;rl.innerHTML=mt.map((m,i)=>`<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#667eea;">${m.spec}</span></div>`).join('');rd.classList.remove('show');}}
             selectMe(i){if(this._sm&&this._sm[i]){document.getElementById('searchResultsList').innerHTML='';this.showMe(this._sm[i]);}}
-            showMe(r){const rd=document.getElementById('myInfoResult');const ok=r.st.includes('التحق')||r.st.includes('ملتحق');let sf=null;for(let s of this.shf){if(searchInNamesList(s.names,r.name)||(r.abbr&&searchInNamesList(s.names,r.abbr))){sf=s;break;}}let or=[];for(let row of this.onc){const rt=row.join(' ');if(smartSearch(rt,r.name)||(r.abbr&&smartSearch(rt,r.abbr.replace(/[.\s]/g,'')))){or.push(row);}}let h=`<h3 style="color:#667eea;">👤 ${r.name}</h3><div class="info-grid">`;h+=`<div class="info-item"><div class="info-label">الاختصار</div><div class="info-value">${r.abbr}</div></div>`;h+=`<div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div>`;h+=`<div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div>`;h+=`<div class="info-item"><div class="info-label">الالتحاق</div><div class="info-value">${r.join||'-'}</div></div>`;h+=`<div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${r.st||'غير محدد'}</span></div></div>`;h+=`<div class="info-item"><div class="info-label">المناوبات الكلية</div><div class="info-value">${r.onc||'0'}</div></div>`;h+='</div><h4 style="color:#667eea;margin-top:20px;">📋 الفرز</h4>';if(sf)h+=`<div class="shift-card-full"><h3>${sf.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${sf.c1}</div><div class="lbl">أولى</div></div><div class="shift-stat"><div class="num">${sf.c2}</div><div class="lbl">ثانية</div></div></div><div class="shift-names"><strong>الزملاء:</strong> ${sf.names}</div></div>`;else h+='<p style="color:#888;">لم يتم العثور على فرز.</p>';h+='<h4 style="color:#667eea;margin-top:20px;">📅 مناوبات هذا الشهر</h4>';if(or.length>0){h+=`<p>عدد المناوبات: <strong>${or.length}</strong></p><div class="table-wrapper" style="margin-top:8px;"><table><thead><tr>`;this.oh.forEach(hd=>h+=`<th>${hd}</th>`);h+='</tr></thead><tbody>';or.forEach(row=>h+='<tr>'+row.map(c=>`<td>${c||'-'}</td>`).join('')+'</tr>');h+='</tbody></table></div>';}else h+='<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';rd.innerHTML=h;rd.classList.add('show');document.getElementById('searchResultsList').innerHTML='';}
+            showMe(r){
+                const rd=document.getElementById('myInfoResult');const ok=r.st.includes('التحق')||r.st.includes('ملتحق');
+                let sf=null;for(let s of this.shf){if(searchInNamesList(s.names,r.name)||(r.abbr&&searchInNamesList(s.names,r.abbr))){sf=s;break;}}
+                let myOncalls=[];const typeCount={};
+                for(const onc of this.oncRows){for(let col=1;col<this.oncHeaders.length;col++){const abbr=(onc.row[col]||'').trim();if(abbr&&(smartSearch(abbr,r.abbr)||smartSearch(abbr,r.name)||(r.abbr&&prepareForSearch(abbr).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,'')))){const mainCat=this.oncHeaders[col]||'';const subCat=this.oncSubHeaders[col]||'';const typeKey=mainCat+(subCat&&subCat!==mainCat?' - '+subCat:'');typeCount[typeKey]=(typeCount[typeKey]||0)+1;const colleagues=[];for(let c2=1;c2<this.oncHeaders.length;c2++){if(c2===col)continue;if(this.oncHeaders[c2]===mainCat&&this.oncSubHeaders[c2]===subCat){const cabbr=(onc.row[c2]||'').trim();if(cabbr&&cabbr!==abbr){const cr=this.findR(cabbr);if(cr)colleagues.push({name:cr.name,abbr:cabbr,phone:cr.phone});}}}myOncalls.push({date:onc.date,day:getDayName(onc.date),dayIdx:getDayIndex(onc.date),mainCat,subCat:subCat!==mainCat?subCat:'',typeKey,colleagues});break;}}}
+                myOncalls.sort((a,b)=>a.date.localeCompare(b.date));const totalOncalls=myOncalls.length;const uniqueTypes=Object.entries(typeCount).sort((a,b)=>b[1]-a[1]);
+                let h=`<h3 style="color:#667eea;">👤 ${r.name}</h3><div class="info-grid">`;
+                h+=`<div class="info-item"><div class="info-label">الاختصار</div><div class="info-value">${r.abbr}</div></div>`;
+                h+=`<div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div>`;
+                h+=`<div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div>`;
+                h+=`<div class="info-item"><div class="info-label">الالتحاق</div><div class="info-value">${r.join||'-'}</div></div>`;
+                h+=`<div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${r.st||'غير محدد'}</span></div></div>`;
+                h+=`<div class="info-item"><div class="info-label">المناوبات الكلية</div><div class="info-value">${r.onc||'0'}</div></div>`;
+                h+='</div><h4 style="color:#667eea;margin-top:20px;">📊 إحصائيات المناوبات</h4><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px;">';
+                h+=`<div class="stat-card"><div class="stat-num">${totalOncalls}</div><div class="stat-lbl">إجمالي المناوبات</div></div>`;
+                uniqueTypes.forEach(([type,count])=>h+=`<div class="stat-card"><div class="stat-num">${count}</div><div class="stat-lbl">${type}</div></div>`);
+                h+='</div><h4 style="color:#667eea;margin-top:20px;">📋 الفرز</h4>';
+                if(sf)h+=`<div class="shift-card-full"><h3>${sf.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${sf.c1}</div><div class="lbl">أولى</div></div><div class="shift-stat"><div class="num">${sf.c2}</div><div class="lbl">ثانية</div></div></div><div class="shift-names"><strong>الزملاء:</strong> ${sf.names}</div></div>`;
+                else h+='<p style="color:#888;">لم يتم العثور على فرز.</p>';
+                h+='<h4 style="color:#667eea;margin-top:20px;">📅 مناوباتي</h4>';
+                if(myOncalls.length>0){h+=`<p style="margin-bottom:8px;">عدد المناوبات: <strong>${totalOncalls}</strong></p>`;
+                    myOncalls.forEach(o=>{const weekend=o.dayIdx===5||o.dayIdx===6;h+=`<div class="oncall-info-row"><div class="oc-header"><span class="oc-date ${weekend?'weekend':''}">${weekend?'<span class="day-dot weekend"></span>':''}📅 ${o.date} - ${o.day}</span><span class="oc-type">${o.mainCat}${o.subCat?' - '+o.subCat:''}</span></div>`;if(o.colleagues.length>0){const namesWithSep=o.colleagues.map((c,i)=>`${i>0?'<span class="cl-sep"> - </span>':''}${makeTooltip(c.name,c.phone)}`).join('');h+=`<div class="colleague-row"><span class="cl-label">👥 الزملاء:</span><span class="cl-names">${namesWithSep}</span></div>`;}h+='</div>';});}
+                else h+='<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';
+                rd.innerHTML=h;rd.classList.add('show');document.getElementById('searchResultsList').innerHTML='';
+            }
             updateTime(){document.getElementById('lastUpdateTime').textContent='آخر تحديث: '+new Date().toLocaleTimeString('ar-SA');}
         }
         let app;document.addEventListener('DOMContentLoaded',()=>{app=new HospitalApp();window.app=app;});
