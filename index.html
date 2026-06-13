@@ -41,6 +41,7 @@
         body.dark-mode tbody tr:nth-child(even){background:rgba(255,255,255,0.02);}
         body.dark-mode .search-box input{background:var(--gray-100);border-color:var(--border);color:var(--text);}
         body.dark-mode .filter-btn{background:var(--card-bg);border-color:var(--border);color:var(--text);}
+        body.dark-mode .specialty-filter{background:var(--card-bg);border-color:var(--border);color:var(--text);}
         body.dark-mode .shift-card-full{background:var(--card-bg);}
         body.dark-mode .shift-stat{background:var(--gray-100);}
         body.dark-mode .oncall-controls{background:var(--card-bg);}
@@ -116,6 +117,9 @@
         .filter-btn{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:6px;white-space:nowrap;}
         .filter-btn:hover{border-color:#667eea;color:#667eea;}
         .filter-btn.active-filter{background:#667eea;color:white;border-color:#667eea;}
+        .specialty-filter{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;color:var(--text);transition:var(--transition);min-width:160px;}
+        .specialty-filter:hover{border-color:#667eea;}
+        .specialty-filter:focus{outline:none;border-color:#667eea;}
         .desktop-table{display:block;}.mobile-cards{display:none;}
         .table-wrapper{background:var(--card-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow-x:auto;}
         table{width:100%;border-collapse:collapse;min-width:700px;font-size:13px;}
@@ -224,7 +228,7 @@
             .shifts-grid{grid-template-columns:1fr;}.info-grid{grid-template-columns:1fr 1fr;}
             .oncall-sub-slots{grid-template-columns:1fr;}
             .section-header{flex-direction:column;align-items:flex-start;padding:14px 16px;}
-            .controls-row{flex-direction:column;width:100%;}.search-box{min-width:100%;}
+            .controls-row{flex-direction:column;width:100%;}.search-box{min-width:100%;}.specialty-filter{min-width:100%;}
             .calendar-grid{gap:2px;}.calendar-day{font-size:10px;border-radius:6px;aspect-ratio:auto;padding:6px 2px;}
             .calendar-day-header{font-size:9px;padding:4px;}
             .calendar-header h3{font-size:1em;}.monthly-calendar{padding:10px;}
@@ -251,7 +255,20 @@
     <nav class="main-nav"><div class="nav-container"><button class="nav-btn active" data-tab="residents">👨‍⚕️ <span>لائحة المقيمين</span></button><button class="nav-btn" data-tab="shifts">📋 <span>جدول الفروز</span></button><button class="nav-btn" data-tab="oncall">📅 <span>المناوبات</span></button><button class="nav-btn" data-tab="myinfo">🔍 <span>معلوماتي</span></button></div></nav>
 
     <main class="main-content">
-        <section class="tab-content active" id="residents-tab"><div class="section-header"><h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2><div class="controls-row"><div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div><button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button></div></div><div class="table-wrapper desktop-table"><table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div><div class="mobile-cards" id="residentsCards"></div></section>
+        <section class="tab-content active" id="residents-tab">
+            <div class="section-header">
+                <h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2>
+                <div class="controls-row">
+                    <select class="specialty-filter" id="specialtyFilter" onchange="app.filterBySpecialty()">
+                        <option value="">جميع الاختصاصات</option>
+                    </select>
+                    <div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div>
+                    <button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button>
+                </div>
+            </div>
+            <div class="table-wrapper desktop-table"><table><thead><tr><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div>
+            <div class="mobile-cards" id="residentsCards"></div>
+        </section>
         <section class="tab-content" id="shifts-tab"><div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2><div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div><div class="shifts-grid" id="shiftsGrid"></div><a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=1976416116#gid=1976416116" target="_blank" style="margin-top:12px;display:inline-block;">📋 لمشاهدة الفرز الكامل اضغط هنا</a></section>
         <section class="tab-content" id="oncall-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> مناوبات <span id="oncallMonthName"></span></h2></div><div class="oncall-controls"><label>📆 اختر تاريخ:</label><input type="date" id="oncallDatePicker" onchange="app.selectDayFromCalendar()"><span style="color:var(--text-secondary);font-size:12px;">اختر اليوم لعرض التفاصيل</span></div><a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=238974679#gid=238974679" target="_blank">📋 لمشاهدة الجدول كامل اضغط هنا</a><div id="monthlyCalendar"></div><div id="oncallDayDisplay" style="margin-top:12px;"></div></section>
         <section class="tab-content" id="myinfo-tab"><div class="section-header"><h2><i class="fas fa-user-search"></i> معلوماتي</h2><div class="search-box"><input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك..."><i class="fas fa-search"></i></div></div><div id="searchResultsList" class="search-results-list"></div><div id="myInfoResult" class="student-result"></div></section>
@@ -268,7 +285,7 @@
         const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
         const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
         const CACHE_KEY='hospital_data_cache_v1';
-        const CACHE_DURATION=5*60*1000; // 5 دقائق
+        const CACHE_DURATION=5*60*1000;
 
         function copyPhone(p,b){navigator.clipboard.writeText(p).then(()=>{const i=b.querySelector('i');const o=i.className;i.className='fas fa-check';b.classList.add('copied');setTimeout(()=>{i.className=o;b.classList.remove('copied');},1500);}).catch(()=>{});}
         function normalizeArabic(text){if(!text)return'';let t=text.toLowerCase().trim();t=t.replace(/[أإآا]/g,'ا');t=t.replace(/ؤ/g,'و');t=t.replace(/ئ/g,'ي');t=t.replace(/ى/g,'ا');t=t.replace(/ة/g,'ه');t=t.replace(/\bال/g,'');t=t.replace(/^ال/,'');t=t.replace(/[\u064B-\u0652]/g,'');t=t.replace(/\s+/g,' ').trim();return t;}
@@ -288,7 +305,7 @@
             constructor(){
                 this.m=new Date().getMonth();this.mn=ARABIC_MONTHS[this.m];this.today=new Date().toISOString().split('T')[0];
                 this.res=[];this.shf=[];this.oncRows=[];this.oncHeaders=[];this.oncSubHeaders=[];
-                this.filterJoined=false;this.init();
+                this.filterJoined=false;this.filterSpecialty='';this.init();
             }
             init(){
                 document.getElementById('currentDateHeader').textContent=new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -307,39 +324,18 @@
             }
             setupTabs(){document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab+'-tab').classList.add('active');}));}
             setupSearches(){document.getElementById('residentSearch').addEventListener('input',e=>this.filterRes(e.target.value));document.getElementById('shiftSearch').addEventListener('input',e=>this.filterShf(e.target.value));document.getElementById('myInfoSearch').addEventListener('input',e=>this.searchMe(e.target.value));}
-
-            // ============ نظام الكاش ============
-            loadFromCache(){
-                try{
-                    const raw=localStorage.getItem(CACHE_KEY);
-                    if(!raw)return null;
-                    const data=JSON.parse(raw);
-                    if(!data.timestamp)return null;
-                    // التحقق من صلاحية الكاش
-                    if((Date.now()-data.timestamp)>CACHE_DURATION)return null;
-                    return data;
-                }catch(e){return null;}
-            }
-            saveToCache(rd,sd,od){
-                try{
-                    const data={timestamp:Date.now(),residents:rd||null,shifts:sd||null,oncall:od||null};
-                    localStorage.setItem(CACHE_KEY,JSON.stringify(data));
-                }catch(e){}
-            }
+            loadFromCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return null;const data=JSON.parse(raw);if(!data.timestamp)return null;if((Date.now()-data.timestamp)>CACHE_DURATION)return null;return data;}catch(e){return null;}}
+            saveToCache(rd,sd,od){try{const data={timestamp:Date.now(),residents:rd||null,shifts:sd||null,oncall:od||null};localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch(e){}}
             async loadWithCache(){
-                // محاولة التحميل من الكاش أولاً
                 const cached=this.loadFromCache();
                 if(cached){
                     console.log('✅ تم التحميل من الكاش');
-                    if(cached.residents)this.renderRes(cached.residents);
+                    if(cached.residents){this.renderRes(cached.residents);this.buildSpecialtyFilter();}
                     if(cached.shifts)this.renderShf(cached.shifts);
                     if(cached.oncall){this.parseOncallData(cached.oncall);this.renderMonthlyCalendar();this.showOncallDate(this.today);}
                     this.updateTime();this.showLoading(false);
-                    // تحديث صامت في الخلفية
-                    this.loadFresh(true);
-                    return;
+                    this.loadFresh(true);return;
                 }
-                // لا يوجد كاش، تحميل مباشر
                 await this.loadFresh(false);
             }
             async loadFresh(silent){
@@ -347,7 +343,7 @@
                 try{
                     const[rd,sd,od]=await Promise.all([this.fetchSheet(GID_RESIDENTS),this.fetchSheet(GID_SHIFTS),this.fetchSheet(GID_ONCALL)]);
                     if(!silent)this.updateProgress(70,'جاري عرض البيانات...');
-                    if(rd)this.renderRes(rd);
+                    if(rd){this.renderRes(rd);this.buildSpecialtyFilter();}
                     if(sd)this.renderShf(sd);
                     if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today);}
                     this.saveToCache(rd,sd,od);
@@ -355,12 +351,13 @@
                     this.updateTime();
                 }catch(e){console.error(e);if(!silent)this.updateProgress(100,'تعذر الاتصال');}
             }
-
             async fetchSheet(gid){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;try{const r=await fetch(url);if(!r.ok)return null;const t=await r.text();if(t.includes('<!DOCTYPE')||t.includes('<html'))return null;return this.parseCSV(t);}catch(e){return null;}}
             parseCSV(t){const rows=[];const lines=t.split('\n');for(let l of lines){if(!l.trim())continue;const row=[];let q=false,v='';for(let c of l){if(c==='"')q=!q;else if(c===','&&!q){row.push(v.trim());v='';}else v+=c;}row.push(v.trim());if(row.some(c=>c!==''))rows.push(row);}return rows;}
             renderRes(d){this.res=[];const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';if(!d||d.length<2){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return;}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;const res={name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),st:(r[11]||'').trim()};if(!res.name)continue;this.res.push(res);}this.displayResidents();}
-            displayResidents(){const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));list.forEach(res=>{const ok=res.st.includes('التحق')||res.st.includes('ملتحق');const tr=document.createElement('tr');tr.innerHTML=`<td style="text-align:right;"><strong>${makeTooltip(res.name,res.phone)}</strong></td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;tb.appendChild(tr);const c=document.createElement('div');c.className='resident-card';c.innerHTML=`<div class="card-header"><span class="card-name">${res.name}</span><span class="card-abbr">${res.abbr}</span></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;cd.appendChild(c);});this.updateResCount();}
-            updateResCount(){const total=this.res.length;const joined=this.res.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق')).length;document.getElementById('residentCount').textContent=this.filterJoined?`${joined} ملتحق`:`${total} مقيم`;}
+            displayResidents(){const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));if(this.filterSpecialty)list=list.filter(r=>r.spec===this.filterSpecialty);list.forEach(res=>{const ok=res.st.includes('التحق')||res.st.includes('ملتحق');const tr=document.createElement('tr');tr.innerHTML=`<td style="text-align:right;"><strong>${makeTooltip(res.name,res.phone)}</strong></td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;tb.appendChild(tr);const c=document.createElement('div');c.className='resident-card';c.innerHTML=`<div class="card-header"><span class="card-name">${res.name}</span><span class="card-abbr">${res.abbr}</span></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;cd.appendChild(c);});this.updateResCount();}
+            updateResCount(){const total=this.res.length;let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));if(this.filterSpecialty)list=list.filter(r=>r.spec===this.filterSpecialty);const joined=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق')).length;document.getElementById('residentCount').textContent=this.filterJoined?`${joined} ملتحق`:`${list.length} مقيم`;}
+            buildSpecialtyFilter(){const select=document.getElementById('specialtyFilter');if(!select)return;const specs=[...new Set(this.res.map(r=>r.spec).filter(s=>s))].sort();select.innerHTML='<option value="">جميع الاختصاصات</option>';specs.forEach(s=>{select.innerHTML+=`<option value="${s}">${s}</option>`;});select.value=this.filterSpecialty||'';}
+            filterBySpecialty(){this.filterSpecialty=document.getElementById('specialtyFilter').value;this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
             toggleFilter(){this.filterJoined=!this.filterJoined;const btn=document.getElementById('filterJoinedBtn');if(this.filterJoined){btn.classList.add('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> إظهار الكل';}else{btn.classList.remove('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> الملتحقين فقط';}this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
             renderShf(d){this.shf=[];const g=document.getElementById('shiftsGrid');g.innerHTML='';document.getElementById('shiftMonthName').textContent=this.mn;if(!d||d.length<2){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات فروز</p>';return;}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim())continue;const s={name:(r[1]||'').trim(),c1:(r[2]||'0').trim(),c2:(r[3]||'0').trim(),names:(r[4]||'').trim()};if(!s.name)continue;this.shf.push(s);}this.dispShf(this.shf);}
             dispShf(arr){const g=document.getElementById('shiftsGrid');g.innerHTML='';if(arr.length===0){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد نتائج مطابقة</p>';return;}arr.forEach(s=>{const namesList=splitNames(s.names);const c=document.createElement('div');c.className='shift-card-full';let namesHTML='';if(namesList.length>0){const namesWithTooltips=namesList.map(n=>{const r=this.findResidentByAny(n);const phone=r?r.phone:'';return`<li>${makeTooltip(n,phone)}</li>`;}).join('');namesHTML=`<div class="names-dropdown"><button class="names-dropdown-btn" onclick="event.stopPropagation();this.classList.toggle('open');this.nextElementSibling.classList.toggle('show');"><span>👥 الأسماء (${namesList.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${namesWithTooltips}</ul></div>`;}else{namesHTML=`<div class="shift-names"><strong>الأسماء:</strong> ${s.names||'لا يوجد'}</div>`;}c.innerHTML=`<h3>📋 ${s.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${s.c1}</div><div class="lbl">عدد الأولى</div></div><div class="shift-stat"><div class="num">${s.c2}</div><div class="lbl">عدد الثانية</div></div></div>${namesHTML}`;g.appendChild(c);});document.addEventListener('click',function(e){if(!e.target.closest('.names-dropdown')){document.querySelectorAll('.names-dropdown-btn.open').forEach(b=>{b.classList.remove('open');if(b.nextElementSibling)b.nextElementSibling.classList.remove('show');});}});}
@@ -395,7 +392,7 @@
                 for(let day=1;day<=daysInMonth;day++){const ds=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const d=new Date(ds+'T00:00:00');const dayIdx=d.getDay();const isToday=ds===this.today;const hasOncall=oncallDates.includes(ds);let cls='calendar-day';if(isToday)cls+=' today';if(hasOncall)cls+=' has-oncall';if(dayIdx===5||dayIdx===6)cls+=' weekend';h+=`<div class="${cls}" onclick="app.clickCalendarDay('${ds}')" title="${hasOncall?'مناوبة':''}">${day}</div>`;}h+='</div></div>';container.innerHTML=h;
             }
             clickCalendarDay(ds){document.getElementById('oncallDatePicker').value=ds;this.showOncallDate(ds);this.scrollToOncallResult();}
-            filterRes(term){const t=term.toLowerCase().trim();const rows=document.querySelectorAll('#residentsBody tr');const cards=document.querySelectorAll('#residentsCards .resident-card');let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));list.forEach((r,i)=>{const m=!t||smartSearch(r.name+' '+r.abbr,t);if(rows[i])rows[i].style.display=m?'':'none';if(cards[i])cards[i].style.display=m?'':'none';});}
+            filterRes(term){const t=term.toLowerCase().trim();const rows=document.querySelectorAll('#residentsBody tr');const cards=document.querySelectorAll('#residentsCards .resident-card');let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));if(this.filterSpecialty)list=list.filter(r=>r.spec===this.filterSpecialty);list.forEach((r,i)=>{const m=!t||smartSearch(r.name+' '+r.abbr,t);if(rows[i])rows[i].style.display=m?'':'none';if(cards[i])cards[i].style.display=m?'':'none';});}
             searchMe(term){const t=term.toLowerCase().trim();const rl=document.getElementById('searchResultsList');const rd=document.getElementById('myInfoResult');if(t.length<1){rl.innerHTML='';rd.classList.remove('show');return;}let mt=this.res.filter(r=>smartSearch(r.name+' '+r.abbr,t));if(mt.length===0){rl.innerHTML='<div class="no-results">🔍 لا يوجد نتائج مطابقة.</div>';rd.classList.remove('show');return;}if(mt.length===1){rl.innerHTML='';this.showMe(mt[0]);}else{this._sm=mt;rl.innerHTML=mt.map((m,i)=>`<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#667eea;">${m.spec}</span></div>`).join('');rd.classList.remove('show');}}
             selectMe(i){if(this._sm&&this._sm[i]){document.getElementById('searchResultsList').innerHTML='';this.showMe(this._sm[i]);}}
             showMe(r){
