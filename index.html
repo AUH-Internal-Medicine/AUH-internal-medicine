@@ -321,7 +321,7 @@
         const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
         const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
         const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-        const CACHE_KEY='hospital_cache_v17';
+        const CACHE_KEY='hospital_cache_v18';
         const CACHE_DURATION=5*60*1000;
 
         class HospitalApp{
@@ -372,15 +372,30 @@
                     vcf+=`TEL;TYPE=MOBILE:${r.phone}\n`;
                     vcf+='END:VCARD\n';
                 }
+                const timestamp=new Date().getTime();
                 const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});
                 const url=URL.createObjectURL(blob);
+                
+                // طريقة 1: رابط تحميل
                 const a=document.createElement('a');
                 a.setAttribute('href',url);
-                a.setAttribute('download','contacts.vcf');
+                a.setAttribute('download',`contacts_${timestamp}.vcf`);
                 a.style.display='none';
                 document.body.appendChild(a);
                 a.click();
-                setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+                
+                // طريقة 2: iframe للموبايل (احتياط)
+                setTimeout(()=>{
+                    const iframe=document.createElement('iframe');
+                    iframe.style.display='none';
+                    iframe.src=url;
+                    document.body.appendChild(iframe);
+                    setTimeout(()=>{
+                        document.body.removeChild(a);
+                        document.body.removeChild(iframe);
+                        URL.revokeObjectURL(url);
+                    },1500);
+                },100);
             }
 
             renderRes(d){
