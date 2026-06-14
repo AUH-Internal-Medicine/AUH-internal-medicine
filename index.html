@@ -321,7 +321,7 @@
         const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
         const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
         const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-        const CACHE_KEY='hospital_cache_v19';
+        const CACHE_KEY='hospital_cache_v20';
         const CACHE_DURATION=5*60*1000;
 
         class HospitalApp{
@@ -359,6 +359,7 @@
             exportToContacts(){
                 const selected=this.res.filter(r=>this.selectedResidents.has(r.name)&&r.phone);
                 if(selected.length===0)return;
+                
                 let vcf='';
                 for(const r of selected){
                     const nameParts=r.name.split(' ');
@@ -372,21 +373,34 @@
                     vcf+=`TEL;TYPE=MOBILE:${r.phone}\n`;
                     vcf+='END:VCARD\n';
                 }
-                // اسم فريد بالتاريخ والوقت
-                const now=new Date();
-                const date=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-                const time=String(now.getHours()).padStart(2,'0')+'-'+String(now.getMinutes()).padStart(2,'0')+'-'+String(now.getSeconds()).padStart(2,'0');
-                const fileName='contacts_'+date+'_'+time+'.vcf';
                 
+                const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
                 const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});
                 const url=URL.createObjectURL(blob);
-                const a=document.createElement('a');
-                a.setAttribute('href',url);
-                a.setAttribute('download',fileName);
-                a.style.display='none';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);this.refreshSelectionUI();},1000);
+                
+                if(isMobile){
+                    // للموبايل: فتح في نافذة جديدة مع زر تحميل واضح
+                    const w=window.open('','_blank');
+                    if(w){
+                        w.document.write('<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>تحميل جهات الاتصال</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f0f4ff;}.card{background:white;padding:30px;border-radius:20px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.1);max-width:350px;}.card h2{color:#00b894;margin-bottom:10px;}.card p{color:#64748b;margin-bottom:20px;font-size:14px;}.card a{display:inline-block;padding:14px 30px;background:#00b894;color:white;text-decoration:none;border-radius:50px;font-weight:700;font-size:16px;}.card .count{color:#667eea;font-weight:700;}</style></head><body><div class="card"><h2>📱 جهات الاتصال</h2><p>عدد جهات الاتصال: <span class="count">' + selected.length + '</span></p><a href="' + url + '" download="contacts.vcf">📥 اضغط هنا للتحميل</a></div></body></html>');
+                    }
+                }else{
+                    // للابتوب: تحميل مباشر
+                    const now=new Date();
+                    const date=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+                    const time=String(now.getHours()).padStart(2,'0')+'-'+String(now.getMinutes()).padStart(2,'0')+'-'+String(now.getSeconds()).padStart(2,'0');
+                    const fileName='contacts_'+date+'_'+time+'.vcf';
+                    const a=document.createElement('a');
+                    a.setAttribute('href',url);
+                    a.setAttribute('download',fileName);
+                    a.style.display='none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+                
+                setTimeout(()=>URL.revokeObjectURL(url),3000);
+                this.refreshSelectionUI();
             }
 
             renderRes(d){
