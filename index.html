@@ -43,6 +43,7 @@
         body.dark-mode .search-box input{background:var(--gray-100);border-color:var(--border);color:var(--text);}
         body.dark-mode .filter-btn{background:var(--card-bg);border-color:var(--border);color:var(--text);}
         body.dark-mode .specialty-filter{background:var(--card-bg);border-color:var(--border);color:var(--text);}
+        body.dark-mode .shift-filter{background:var(--card-bg);border-color:var(--border);color:var(--text);}
         body.dark-mode .shift-card-full{background:var(--card-bg);}
         body.dark-mode .shift-stat{background:var(--gray-100);}
         body.dark-mode .oncall-controls{background:var(--card-bg);}
@@ -122,6 +123,9 @@
         .specialty-filter{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;color:var(--text);transition:var(--transition);min-width:160px;}
         .specialty-filter:hover{border-color:#667eea;}
         .specialty-filter:focus{outline:none;border-color:#667eea;}
+        .shift-filter{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;color:var(--text);transition:var(--transition);min-width:160px;}
+        .shift-filter:hover{border-color:#667eea;}
+        .shift-filter:focus{outline:none;border-color:#667eea;}
         .contacts-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 0;}
         .contacts-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:linear-gradient(135deg,#00b894,#00a381);color:white;border:none;border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;transition:var(--transition);white-space:nowrap;}
         .contacts-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,184,148,0.3);}
@@ -132,7 +136,7 @@
         .selected-count{font-size:12px;color:var(--text-secondary);font-weight:600;}
         .desktop-table{display:block;}.mobile-cards{display:none;}
         .table-wrapper{background:var(--card-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow-x:auto;}
-        table{width:100%;border-collapse:collapse;min-width:750px;font-size:13px;}
+        table{width:100%;border-collapse:collapse;min-width:800px;font-size:13px;}
         thead{background:linear-gradient(135deg,#667eea,#764ba2);}
         th{padding:12px 8px;text-align:center;color:white;font-weight:700;font-size:12px;white-space:nowrap;}
         td{padding:10px 8px;border-bottom:1px solid var(--border);font-size:12px;text-align:center;color:var(--text);}
@@ -249,7 +253,7 @@
             .shifts-grid{grid-template-columns:1fr;}.info-grid{grid-template-columns:1fr 1fr;}
             .oncall-sub-slots{grid-template-columns:1fr;}
             .section-header{flex-direction:column;align-items:flex-start;padding:14px 16px;}
-            .controls-row{flex-direction:column;width:100%;}.search-box{min-width:100%;}.specialty-filter{min-width:100%;}
+            .controls-row{flex-direction:column;width:100%;}.search-box{min-width:100%;}.specialty-filter{min-width:100%;}.shift-filter{min-width:100%;}
             .contacts-bar{flex-direction:column;align-items:flex-start;}
             .calendar-grid{gap:2px;}.calendar-day{font-size:10px;border-radius:6px;aspect-ratio:auto;padding:6px 2px;}
             .calendar-day-header{font-size:9px;padding:4px;}
@@ -273,15 +277,24 @@
     <nav class="main-nav"><div class="nav-container"><button class="nav-btn active" data-tab="residents">👨‍⚕️ <span>لائحة المقيمين</span></button><button class="nav-btn" data-tab="shifts">📋 <span>جدول الفروز</span></button><button class="nav-btn" data-tab="oncall">📅 <span>المناوبات</span></button><button class="nav-btn" data-tab="myinfo">🔍 <span>معلوماتي</span></button></div></nav>
     <main class="main-content">
         <section class="tab-content active" id="residents-tab">
-            <div class="section-header"><h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2>
-                <div class="controls-row"><select class="specialty-filter" id="specialtyFilter" onchange="app.filterBySpecialty()"><option value="">جميع الاختصاصات</option></select><div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div><button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button></div>
+            <div class="section-header"><h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span></h2></div>
+            <!-- مربع البحث أولاً -->
+            <div class="controls-row" style="margin-bottom:12px;">
+                <div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div>
             </div>
+            <!-- الفلاتر -->
+            <div class="controls-row" style="margin-bottom:12px;">
+                <select class="specialty-filter" id="specialtyFilter" onchange="app.filterBySpecialty()"><option value="">جميع الاختصاصات</option></select>
+                <select class="shift-filter" id="shiftFilter" onchange="app.filterByShift()"><option value="">جميع الفروز</option></select>
+                <button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button>
+            </div>
+            <!-- أزرار جهات الاتصال -->
             <div class="contacts-bar">
                 <button class="select-all-btn" onclick="app.toggleSelectAll()"><i class="fas fa-check-square"></i> تحديد الكل</button>
                 <span class="selected-count" id="selectedCount">0 محدد</span>
                 <button class="contacts-btn" id="exportContactsBtn" onclick="app.exportToContacts()" disabled><i class="fas fa-address-book"></i> تحميل إلى جهات اتصالي</button>
             </div>
-            <div class="table-wrapper desktop-table"><table><thead><tr><th style="width:40px;">✓</th><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div>
+            <div class="table-wrapper desktop-table"><table><thead><tr><th style="width:40px;">✓</th><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الفرز</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div>
             <div class="mobile-cards" id="residentsCards"></div>
         </section>
         <section class="tab-content" id="shifts-tab"><div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span></h2><div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div><div class="shifts-grid" id="shiftsGrid"></div><a class="oncall-link" href="https://docs.google.com/spreadsheets/d/1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4/edit?gid=1976416116#gid=1976416116" target="_blank" style="margin-top:12px;display:inline-block;">📋 لمشاهدة الفرز الكامل اضغط هنا</a></section>
@@ -321,7 +334,7 @@
         const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
         const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
         const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-        const CACHE_KEY='hospital_cache_v21';
+        const CACHE_KEY='hospital_cache_v22';
         const CACHE_DURATION=5*60*1000;
 
         class HospitalApp{
@@ -330,7 +343,7 @@
                 const now=new Date();
                 this.today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
                 this.res=[];this.shf=[];this.oncRows=[];this.oncHeaders=[];this.oncSubHeaders=[];
-                this.filterJoined=false;this.filterSpecialty='';this.currentMyInfo=null;
+                this.filterJoined=false;this.filterSpecialty='';this.filterShift='';this.currentMyInfo=null;
                 this.selectedResidents=new Set();this.init();
             }
             init(){
@@ -346,14 +359,31 @@
             setupSearches(){document.getElementById('residentSearch').addEventListener('input',e=>this.filterRes(e.target.value));document.getElementById('shiftSearch').addEventListener('input',e=>this.filterShf(e.target.value));document.getElementById('myInfoSearch').addEventListener('input',e=>this.searchMe(e.target.value));}
             loadFromCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return null;const data=JSON.parse(raw);if(!data.timestamp)return null;if((Date.now()-data.timestamp)>CACHE_DURATION)return null;return data;}catch(e){return null;}}
             saveToCache(rd,sd,od){try{const data={timestamp:Date.now(),residents:rd||null,shifts:sd||null,oncall:od||null};localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch(e){}}
-            async loadWithCache(){const cached=this.loadFromCache();if(cached){if(cached.residents){this.renderRes(cached.residents);this.buildSpecialtyFilter();}if(cached.shifts)this.renderShf(cached.shifts);if(cached.oncall){this.parseOncallData(cached.oncall);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.updateTime();this.showLoading(false);this.loadFresh(true);return;}await this.loadFresh(false);}
-            async loadFresh(silent){if(!silent)this.updateProgress(20,'جاري جلب البيانات...');try{const[rd,sd,od]=await Promise.all([this.fetchSheet(GID_RESIDENTS),this.fetchSheet(GID_SHIFTS),this.fetchSheet(GID_ONCALL)]);if(!silent)this.updateProgress(70,'جاري عرض البيانات...');if(rd){this.renderRes(rd);this.buildSpecialtyFilter();}if(sd)this.renderShf(sd);if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.saveToCache(rd,sd,od);if(!silent){this.updateProgress(100,'✓ تم التحميل');}this.updateTime();}catch(e){console.error(e);if(!silent)this.updateProgress(100,'تعذر الاتصال');}}
+            async loadWithCache(){const cached=this.loadFromCache();if(cached){if(cached.residents){this.renderRes(cached.residents);this.buildFilters();}if(cached.shifts)this.renderShf(cached.shifts);if(cached.oncall){this.parseOncallData(cached.oncall);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.updateTime();this.showLoading(false);this.loadFresh(true);return;}await this.loadFresh(false);}
+            async loadFresh(silent){if(!silent)this.updateProgress(20,'جاري جلب البيانات...');try{const[rd,sd,od]=await Promise.all([this.fetchSheet(GID_RESIDENTS),this.fetchSheet(GID_SHIFTS),this.fetchSheet(GID_ONCALL)]);if(!silent)this.updateProgress(70,'جاري عرض البيانات...');if(rd){this.renderRes(rd);this.buildFilters();}if(sd)this.renderShf(sd);if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.saveToCache(rd,sd,od);if(!silent){this.updateProgress(100,'✓ تم التحميل');}this.updateTime();}catch(e){console.error(e);if(!silent)this.updateProgress(100,'تعذر الاتصال');}}
             async fetchSheet(gid){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;try{const r=await fetch(url);if(!r.ok)return null;const t=await r.text();if(t.includes('<!DOCTYPE')||t.includes('<html'))return null;return this.parseCSV(t);}catch(e){return null;}}
             parseCSV(t){const rows=[];const lines=t.split('\n');for(let l of lines){if(!l.trim())continue;const row=[];let q=false,v='';for(let c of l){if(c==='"')q=!q;else if(c===','&&!q){row.push(v.trim());v='';}else v+=c;}row.push(v.trim());if(row.some(c=>c!==''))rows.push(row);}return rows;}
 
+            getMonthlyShiftFromRow(r){
+                const currentMonth=this.m+1;
+                const monthKeys=['m6','m7','m8','m9','m10','m11','m12'];
+                const colIndices=[12,13,14,15,16,17,18]; // M,N,O,P,Q,R,S
+                const keyIndex=currentMonth-6;
+                if(keyIndex>=0&&keyIndex<monthKeys.length){
+                    return (r[colIndices[keyIndex]]||'').trim();
+                }
+                return '';
+            }
+
             toggleSelectAll(){const list=this.getFilteredList();if(this.selectedResidents.size===list.length&&list.length>0){this.selectedResidents.clear();}else{list.forEach(r=>this.selectedResidents.add(r.name));}this.refreshSelectionUI();}
             toggleResident(name){if(this.selectedResidents.has(name))this.selectedResidents.delete(name);else this.selectedResidents.add(name);this.refreshSelectionUI();}
-            getFilteredList(){let list=this.res;if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));if(this.filterSpecialty)list=list.filter(r=>r.spec===this.filterSpecialty);return list;}
+            getFilteredList(){
+                let list=this.res;
+                if(this.filterJoined)list=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق'));
+                if(this.filterSpecialty)list=list.filter(r=>r.spec===this.filterSpecialty);
+                if(this.filterShift)list=list.filter(r=>r.monthlyShift===this.filterShift);
+                return list;
+            }
             refreshSelectionUI(){const list=this.getFilteredList();document.getElementById('selectedCount').textContent=this.selectedResidents.size+' محدد';const btn=document.getElementById('exportContactsBtn');btn.disabled=this.selectedResidents.size===0;const selectAllBtn=document.querySelector('.select-all-btn');if(this.selectedResidents.size===list.length&&list.length>0){selectAllBtn.innerHTML='<i class="fas fa-square"></i> إلغاء الكل';}else{selectAllBtn.innerHTML='<i class="fas fa-check-square"></i> تحديد الكل';}document.querySelectorAll('.contact-checkbox').forEach(cb=>{cb.checked=this.selectedResidents.has(cb.dataset.name);});}
 
             exportToContacts(){
@@ -362,32 +392,31 @@
                 let vcf='';
                 for(const r of selected){
                     const nameParts=r.name.split(' ');
-                    const lastName=nameParts.pop()||'';
-                    const firstName=nameParts.shift()||'';
-                    const middleName=nameParts.join(' ');
-                    vcf+='BEGIN:VCARD\n';
-                    vcf+='VERSION:3.0\n';
-                    vcf+=`FN:${r.name}\n`;
-                    vcf+=`N:${lastName};${firstName};${middleName};;\n`;
-                    vcf+=`TEL;TYPE=MOBILE:${r.phone}\n`;
-                    vcf+='END:VCARD\n';
+                    const lastName=nameParts.pop()||'';const firstName=nameParts.shift()||'';const middleName=nameParts.join(' ');
+                    vcf+='BEGIN:VCARD\nVERSION:3.0\n';
+                    vcf+=`FN:${r.name}\nN:${lastName};${firstName};${middleName};;\n`;
+                    vcf+=`TEL;TYPE=MOBILE:${r.phone}\nEND:VCARD\n`;
                 }
                 const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});
                 const url=URL.createObjectURL(blob);
-                const a=document.createElement('a');
-                a.setAttribute('href',url);
-                a.setAttribute('download','contacts.vcf');
-                a.style.display='none';
-                document.body.appendChild(a);
-                a.click();
+                const a=document.createElement('a');a.setAttribute('href',url);a.setAttribute('download','contacts.vcf');a.style.display='none';
+                document.body.appendChild(a);a.click();
                 setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);this.refreshSelectionUI();},1000);
             }
 
             renderRes(d){
                 this.res=[];const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');
                 tb.innerHTML='';cd.innerHTML='';
-                if(!d||d.length<2){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return;}
-                for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;const res={name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),st:(r[11]||'').trim()};if(!res.name)continue;this.res.push(res);}
+                if(!d||d.length<2){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return;}
+                for(let i=1;i<d.length;i++){
+                    const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;
+                    const res={
+                        name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),
+                        phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),st:(r[11]||'').trim(),
+                        monthlyShift:this.getMonthlyShiftFromRow(r)
+                    };
+                    if(!res.name)continue;this.res.push(res);
+                }
                 this.displayResidents();
             }
             displayResidents(){
@@ -396,17 +425,31 @@
                 list.forEach(res=>{
                     const ok=res.st.includes('التحق')||res.st.includes('ملتحق');const checked=this.selectedResidents.has(res.name)?'checked':'';
                     const tr=document.createElement('tr');
-                    tr.innerHTML=`<td><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"></td><td style="text-align:right;">${makeClickableName(res.name,res.phone)}</td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;
+                    tr.innerHTML=`<td><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"></td><td style="text-align:right;">${makeClickableName(res.name,res.phone)}</td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.monthlyShift||'-'}</td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;
                     tb.appendChild(tr);
                     const c=document.createElement('div');c.className='resident-card';
-                    c.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"><div class="card-header" style="flex:1;margin:0;padding:0;border:none;"><span class="card-name">${makeClickableName(res.name,res.phone)}</span><span class="card-abbr">${res.abbr}</span></div></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;
+                    c.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"><div class="card-header" style="flex:1;margin:0;padding:0;border:none;"><span class="card-name">${makeClickableName(res.name,res.phone)}</span><span class="card-abbr">${res.abbr}</span></div></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${res.monthlyShift||'-'}</span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;
                     cd.appendChild(c);
                 });
                 this.updateResCount();this.refreshSelectionUI();
             }
             updateResCount(){let list=this.getFilteredList();const total=list.length;const joined=list.filter(r=>r.st.includes('التحق')||r.st.includes('ملتحق')).length;document.getElementById('residentCount').textContent=this.filterJoined?`${joined} ملتحق`:`${total} مقيم`;}
-            buildSpecialtyFilter(){const select=document.getElementById('specialtyFilter');if(!select)return;const specs=[...new Set(this.res.map(r=>r.spec).filter(s=>s))].sort();select.innerHTML='<option value="">جميع الاختصاصات</option>';specs.forEach(s=>{select.innerHTML+=`<option value="${s}">${s}</option>`;});select.value=this.filterSpecialty||'';}
+
+            buildFilters(){
+                const specialtySelect=document.getElementById('specialtyFilter');
+                const shiftSelect=document.getElementById('shiftFilter');
+                if(!specialtySelect||!shiftSelect)return;
+                const specs=[...new Set(this.res.map(r=>r.spec).filter(s=>s))].sort();
+                const shifts=[...new Set(this.res.map(r=>r.monthlyShift).filter(s=>s))].sort();
+                specialtySelect.innerHTML='<option value="">جميع الاختصاصات</option>';
+                specs.forEach(s=>{specialtySelect.innerHTML+=`<option value="${s}">${s}</option>`;});
+                specialtySelect.value=this.filterSpecialty||'';
+                shiftSelect.innerHTML='<option value="">جميع الفروز</option>';
+                shifts.forEach(s=>{shiftSelect.innerHTML+=`<option value="${s}">${s}</option>`;});
+                shiftSelect.value=this.filterShift||'';
+            }
             filterBySpecialty(){this.filterSpecialty=document.getElementById('specialtyFilter').value;this.selectedResidents.clear();this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
+            filterByShift(){this.filterShift=document.getElementById('shiftFilter').value;this.selectedResidents.clear();this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
             toggleFilter(){this.filterJoined=!this.filterJoined;const btn=document.getElementById('filterJoinedBtn');if(this.filterJoined){btn.classList.add('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> إظهار الكل';}else{btn.classList.remove('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> الملتحقين فقط';}this.selectedResidents.clear();this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
             findResidentByAny(text){if(!text)return null;const t=text.trim();return this.res.find(r=>r.name===t||r.abbr===t||smartSearch(r.name,t)||smartSearch(r.abbr,t))||null;}
 
