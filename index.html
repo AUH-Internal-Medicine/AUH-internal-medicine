@@ -72,6 +72,9 @@
         body.dark-mode .capture-timestamp{background:var(--gray-100);color:var(--text);}
         body.dark-mode .collapsible-btn{background:var(--gray-100);color:var(--text);border-color:var(--border);}
         body.dark-mode .cumulative-box{background:var(--gray-100);border-color:var(--border);}
+        body.dark-mode .download-progress-overlay{background:rgba(0,0,0,0.85);}
+        body.dark-mode .download-progress-box{background:#1e293b;border-color:#667eea;}
+        body.dark-mode .download-progress-text{color:#e2e8f0;}
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:var(--transition);}
         .animated-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;background:linear-gradient(135deg,#e8eaf6 0%,#f3e5f5 30%,#e0f2f1 60%,#e8eaf6 100%);background-size:400% 400%;animation:bgMove 15s ease infinite;}
@@ -90,6 +93,15 @@
         @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
         .loader-percentage{font-size:3em;font-weight:900;color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,0.4);}
         .loader-subtitle{font-size:1em;color:rgba(255,255,255,0.9);margin-top:5px;font-weight:500;}
+        /* ========== شريط تقدم التحميل الجديد ========== */
+        .download-progress-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:20000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;transition:opacity 0.3s ease;}
+        .download-progress-overlay.hidden{opacity:0;pointer-events:none;}
+        .download-progress-box{background:var(--card-bg);padding:30px 40px;border-radius:var(--radius-lg);text-align:center;border:3px solid #667eea;box-shadow:0 20px 60px rgba(0,0,0,0.5);min-width:300px;}
+        .download-progress-box .dp-title{font-size:1.2em;font-weight:700;color:#667eea;margin-bottom:16px;}
+        .download-progress-box .dp-bar-container{width:100%;height:12px;background:var(--gray-200);border-radius:50px;overflow:hidden;margin-bottom:10px;}
+        .download-progress-box .dp-bar{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:50px;transition:width 0.3s ease;width:0%;}
+        .download-progress-box .dp-percent{font-size:2em;font-weight:900;color:#667eea;}
+        .download-progress-box .dp-sub{font-size:0.9em;color:var(--text-secondary);margin-top:4px;}
         .main-header{background:var(--header-bg);padding:40px 20px;text-align:center;color:var(--header-text);box-shadow:0 15px 50px rgba(0,0,0,0.25);position:relative;overflow:hidden;transition:var(--transition);}
         .header-bg-image{position:absolute;top:0;left:0;width:100%;height:100%;background-image:var(--header-image);background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0.1;z-index:0;transition:var(--transition);}
         body.dark-mode .header-bg-image{opacity:0.06;}
@@ -286,6 +298,7 @@
     <div class="animated-bg"></div><div class="bg-dots"></div>
     <div class="bg-orb bg-orb-1"></div><div class="bg-orb bg-orb-2"></div><div class="bg-orb bg-orb-3"></div>
     <div class="loading-screen" id="loadingScreen"><div class="loader-container"><div class="loader-title">مشفى حلب الجامعي</div><div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div><div class="loader-percentage" id="loaderPercentage">0%</div><div class="loader-subtitle" id="loaderSubtitle">جاري تحميل البيانات...</div></div></div>
+    <div class="download-progress-overlay hidden" id="downloadProgressOverlay"><div class="download-progress-box"><div class="dp-title" id="dpTitle">جاري توليد الصورة...</div><div class="dp-bar-container"><div class="dp-bar" id="dpBar"></div></div><div class="dp-percent" id="dpPercent">0%</div><div class="dp-sub" id="dpSub"></div></div></div>
 
     <header class="main-header"><div class="header-bg-image"></div><div class="header-top-row"><button class="dark-mode-toggle" onclick="toggleDarkMode()"><i class="fas fa-moon" id="darkModeIcon"></i></button></div><div class="header-content"><h1 class="main-title"><span class="title-line1">أطباء قسم الداخلية</span><span class="title-line2">السنة الاولى</span></h1><p class="hospital-name">مشفى حلب الجامعي</p><div class="header-stats"><span class="stat-badge">📅 <span id="currentDateHeader"></span></span><span class="stat-badge">🔄 <span id="lastUpdateTime">تحميل...</span></span></div></div></header>
     <nav class="main-nav"><div class="nav-container"><button class="nav-btn active" data-tab="residents">👨‍⚕️ <span>لائحة المقيمين</span></button><button class="nav-btn" data-tab="shifts">📋 <span>جدول الفروز</span></button><button class="nav-btn" data-tab="oncall">📅 <span>المناوبات</span></button><button class="nav-btn" data-tab="myinfo">🔍 <span>معلوماتي</span></button></div></nav>
@@ -319,26 +332,23 @@
         function hideTooltip(){document.getElementById('nameTooltip').classList.remove('show');}
         function copyTooltipPhone(){if(tooltipPhone){navigator.clipboard.writeText(tooltipPhone);const btn=document.getElementById('ttCopyBtn');btn.textContent='✓ تم النسخ';setTimeout(()=>{btn.textContent='📋 نسخ الرقم';},1500);}}
         document.addEventListener('click',function(e){if(!e.target.closest('.name-clickable')&&!e.target.closest('.name-tooltip')){hideTooltip();}});
-        function setBtnLoading(btn,loading){if(loading){btn.classList.add('loading');btn.disabled=true;}else{btn.classList.remove('loading');btn.disabled=false;}}
         function copyPhone(p,b){navigator.clipboard.writeText(p).then(()=>{const i=b.querySelector('i');const o=i.className;i.className='fas fa-check';b.classList.add('copied');setTimeout(()=>{i.className=o;b.classList.remove('copied');},1500);}).catch(()=>{});}
         function toggleCollapsible(btn){btn.classList.toggle('open');const content=btn.nextElementSibling;if(content)content.classList.toggle('show');}
+        
+        // ========== دالة عرض شريط تقدم التحميل ==========
+        function showDownloadProgress(title){const o=document.getElementById('downloadProgressOverlay');document.getElementById('dpTitle').textContent=title||'جاري توليد الصورة...';document.getElementById('dpBar').style.width='0%';document.getElementById('dpPercent').textContent='0%';document.getElementById('dpSub').textContent='';o.classList.remove('hidden');}
+        function updateDownloadProgress(percent,sub){document.getElementById('dpBar').style.width=percent+'%';document.getElementById('dpPercent').textContent=Math.round(percent)+'%';if(sub)document.getElementById('dpSub').textContent=sub;}
+        function hideDownloadProgress(){document.getElementById('downloadProgressOverlay').classList.add('hidden');}
+        
+        function setBtnLoading(btn,loading){
+            if(!btn)return;
+            if(loading){btn.classList.add('loading');btn.disabled=true;}
+            else{btn.classList.remove('loading');btn.disabled=false;}
+        }
+        
         function normalizeArabic(text){if(!text)return'';let t=text.toLowerCase().trim();t=t.replace(/[أإآا]/g,'ا');t=t.replace(/ؤ/g,'و');t=t.replace(/ئ/g,'ي');t=t.replace(/ى/g,'ا');t=t.replace(/ة/g,'ه');t=t.replace(/\bال/g,'');t=t.replace(/^ال/,'');t=t.replace(/[\u064B-\u0652]/g,'');t=t.replace(/\s+/g,' ').trim();return t;}
         function prepareForSearch(text){return normalizeArabic(text);}
-        function splitNames(namesText){
-            if(!namesText)return[];
-            let lines=namesText.split(/[\n\r]+/);
-            let result=[];
-            for(let line of lines){
-                line=line.trim();
-                if(line.length===0)continue;
-                let subParts=line.split(/[-–—,،;؛\/\\|]+/);
-                for(let sp of subParts){
-                    sp=sp.trim();
-                    if(sp.length>0)result.push(sp);
-                }
-            }
-            return result;
-        }
+        function splitNames(namesText){if(!namesText)return[];let lines=namesText.split(/[\n\r]+/);let result=[];for(let line of lines){line=line.trim();if(line.length===0)continue;let subParts=line.split(/[-–—,،;؛\/\\|]+/);for(let sp of subParts){sp=sp.trim();if(sp.length>0)result.push(sp);}}return result;}
         function smartSearch(text,searchTerm){if(!searchTerm)return true;const nt=prepareForSearch(text);const ns=prepareForSearch(searchTerm);const sw=ns.split(/\s+/).filter(w=>w.length>0);if(sw.length===0)return true;return sw.every(w=>nt.includes(w));}
         function searchInNamesList(namesText,searchTerm){if(!searchTerm)return true;const names=splitNames(namesText);if(names.length===0)return smartSearch(namesText,searchTerm);return names.some(name=>smartSearch(name,searchTerm));}
         function extractDate(text){if(!text)return null;let cleaned=text.replace(/السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday/gi,'');cleaned=cleaned.replace(/[\u0660-\u0669]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x0660+0x30));cleaned=cleaned.replace(/[٠-٩]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x0660+0x30));let m=cleaned.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;m=cleaned.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;m=cleaned.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})/);if(m){const y=parseInt(m[3])<50?'20'+m[3]:'19'+m[3];return`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}return null;}
@@ -352,7 +362,7 @@
         const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
         const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
         const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-        const CACHE_KEY='hospital_cache_v39';
+        const CACHE_KEY='hospital_cache_v40';
         const CACHE_DURATION=5*60*1000;
 
         class HospitalApp{
@@ -363,6 +373,7 @@
                 this.res=[];this.shf=[];this.oncRows=[];this.oncHeaders=[];
                 this.filterJoined=false;this.filterSpecialty='';this.filterShift='';this.currentMyInfo=null;
                 this.selectedResidents=new Set();this.currentDisplayMonth=this.m;
+                this._isDownloading=false;
                 this.init();
             }
             init(){
@@ -383,105 +394,13 @@
             async loadWithCache(){const cached=this.loadFromCache();if(cached){if(cached.residents){this.renderRes(cached.residents);this.buildFilters();}if(cached.shifts)this.renderShf(cached.shifts);if(cached.oncall){this.parseOncallData(cached.oncall);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.updateTime();this.showLoading(false);this.loadFresh(true);return;}await this.loadFresh(false);}
             async loadFresh(silent){if(!silent)this.updateProgress(20,'جاري جلب البيانات...');try{const[rd,sd,od]=await Promise.all([this.fetchCSV(GID_RESIDENTS),this.fetchCSV(GID_SHIFTS),this.fetchOncallJSON()]);if(!silent)this.updateProgress(70,'جاري عرض البيانات...');if(rd){this.renderRes(rd);this.buildFilters();}if(sd)this.renderShf(sd);if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today);}this.saveToCache(rd,sd,od);if(!silent){this.updateProgress(100,'✓ تم التحميل');}this.updateTime();}catch(e){console.error(e);if(!silent)this.updateProgress(100,'تعذر الاتصال');}}
             
-            async fetchCSV(gid){
-                const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
-                try{
-                    const r=await fetch(url);
-                    if(!r.ok)return null;
-                    const buffer=await r.arrayBuffer();
-                    const decoder=new TextDecoder('utf-8');
-                    const t=decoder.decode(buffer);
-                    if(t.includes('<!DOCTYPE')||t.includes('<html'))return null;
-                    return this.parseCSV(t);
-                }catch(e){return null;}
-            }
+            async fetchCSV(gid){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;try{const r=await fetch(url);if(!r.ok)return null;const buffer=await r.arrayBuffer();const decoder=new TextDecoder('utf-8');const t=decoder.decode(buffer);if(t.includes('<!DOCTYPE')||t.includes('<html'))return null;return this.parseCSV(t);}catch(e){return null;}}
             
-            async fetchOncallJSON(){
-                const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID_ONCALL}`;
-                try{
-                    const r=await fetch(url);
-                    if(!r.ok)return null;
-                    const raw=await r.text();
-                    const start=raw.indexOf('{');
-                    const end=raw.lastIndexOf('}')+1;
-                    if(start===-1||end===0)return null;
-                    const json=JSON.parse(raw.substring(start,end));
-                    if(!json||!json.table)return null;
-                    
-                    const cols=json.table.cols||[];
-                    const rows=json.table.rows||[];
-                    
-                    const result=[];
-                    const headers=[];
-                    for(const col of cols){headers.push(col.label||'');}
-                    result.push(headers);
-                    
-                    for(const row of rows){
-                        const cells=row.c||[];
-                        const rowData=[];
-                        for(const cell of cells){
-                            if(cell&&cell.v!==null&&cell.v!==undefined){
-                                rowData.push(String(cell.v));
-                            }else{
-                                rowData.push('');
-                            }
-                        }
-                        if(rowData.some(v=>v!=='')){result.push(rowData);}
-                    }
-                    return result;
-                }catch(e){console.error('فشل جلب المناوبات:',e);return null;}
-            }
+            async fetchOncallJSON(){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID_ONCALL}`;try{const r=await fetch(url);if(!r.ok)return null;const raw=await r.text();const start=raw.indexOf('{');const end=raw.lastIndexOf('}')+1;if(start===-1||end===0)return null;const json=JSON.parse(raw.substring(start,end));if(!json||!json.table)return null;const cols=json.table.cols||[];const rows=json.table.rows||[];const result=[];const headers=[];for(const col of cols){headers.push(col.label||'');}result.push(headers);for(const row of rows){const cells=row.c||[];const rowData=[];for(const cell of cells){if(cell&&cell.v!==null&&cell.v!==undefined){rowData.push(String(cell.v));}else{rowData.push('');}}if(rowData.some(v=>v!=='')){result.push(rowData);}}return result;}catch(e){console.error(e);return null;}}
             
-            parseCSV(text){
-                const result=[];
-                const lines=text.split(/\r?\n/);
-                let currentRow=[];
-                let currentField='';
-                let inQuotes=false;
-                let consecutiveEmpty=0;
-                for(let i=0;i<lines.length;i++){
-                    const line=lines[i];
-                    if(inQuotes){
-                        const quoteIdx=line.indexOf('"');
-                        if(quoteIdx!==-1){
-                            currentField+='\n'+line.substring(0,quoteIdx);
-                            inQuotes=false;
-                            currentRow.push(currentField);
-                            currentField='';
-                            const rest=line.substring(quoteIdx+1);
-                            if(rest.startsWith(',')){
-                                const restFields=this.parseCSVLine(rest.substring(1));
-                                for(const f of restFields)currentRow.push(f);
-                            }
-                            const hasData=currentRow.some(c=>c!=='');
-                            if(hasData){result.push(currentRow);consecutiveEmpty=0;}
-                            else{consecutiveEmpty++;if(consecutiveEmpty>=10)break;}
-                            currentRow=[];
-                        }else{currentField+='\n'+line;}
-                        continue;
-                    }
-                    const fields=this.parseCSVLine(line);
-                    const hasData=fields.some(c=>c!=='');
-                    if(hasData){result.push(fields);consecutiveEmpty=0;}
-                    else{consecutiveEmpty++;if(consecutiveEmpty>=10)break;}
-                }
-                if(currentRow.length>0){const hasData=currentRow.some(c=>c!=='');if(hasData)result.push(currentRow);}
-                return result;
-            }
+            parseCSV(text){const result=[];const lines=text.split(/\r?\n/);let currentRow=[];let currentField='';let inQuotes=false;let consecutiveEmpty=0;for(let i=0;i<lines.length;i++){const line=lines[i];if(inQuotes){const quoteIdx=line.indexOf('"');if(quoteIdx!==-1){currentField+='\n'+line.substring(0,quoteIdx);inQuotes=false;currentRow.push(currentField);currentField='';const rest=line.substring(quoteIdx+1);if(rest.startsWith(',')){const restFields=this.parseCSVLine(rest.substring(1));for(const f of restFields)currentRow.push(f);}const hasData=currentRow.some(c=>c!=='');if(hasData){result.push(currentRow);consecutiveEmpty=0;}else{consecutiveEmpty++;if(consecutiveEmpty>=10)break;}currentRow=[];}else{currentField+='\n'+line;}continue;}const fields=this.parseCSVLine(line);const hasData=fields.some(c=>c!=='');if(hasData){result.push(fields);consecutiveEmpty=0;}else{consecutiveEmpty++;if(consecutiveEmpty>=10)break;}}if(currentRow.length>0){const hasData=currentRow.some(c=>c!=='');if(hasData)result.push(currentRow);}return result;}
             
-            parseCSVLine(line){
-                const fields=[];
-                let current='';
-                let inQuotes=false;
-                for(let i=0;i<line.length;i++){
-                    const ch=line[i];
-                    if(ch==='"'){if(inQuotes){if(i+1<line.length&&line[i+1]==='"'){current+='"';i++;}else inQuotes=false;}else inQuotes=true;}
-                    else if(ch===','&&!inQuotes){fields.push(current);current='';}
-                    else current+=ch;
-                }
-                fields.push(current);
-                return fields;
-            }
+            parseCSVLine(line){const fields=[];let current='';let inQuotes=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(inQuotes){if(i+1<line.length&&line[i+1]==='"'){current+='"';i++;}else inQuotes=false;}else inQuotes=true;}else if(ch===','&&!inQuotes){fields.push(current);current='';}else current+=ch;}fields.push(current);return fields;}
 
             getMonthlyShiftFromRow(r){const currentMonth=this.m+1;const colIndices=[12,13,14,15,16,17,18];const keyIndex=currentMonth-6;if(keyIndex>=0&&keyIndex<7){return(r[colIndices[keyIndex]]||'').trim();}return'';}
 
@@ -491,13 +410,15 @@
             refreshSelectionUI(){const list=this.getFilteredList();document.getElementById('selectedCount').textContent=this.selectedResidents.size+' محدد';const btn=document.getElementById('exportContactsBtn');btn.disabled=this.selectedResidents.size===0;const selectAllBtn=document.querySelector('.select-all-btn');if(this.selectedResidents.size===list.length&&list.length>0){selectAllBtn.innerHTML='<i class="fas fa-square"></i> إلغاء الكل';}else{selectAllBtn.innerHTML='<i class="fas fa-check-square"></i> تحديد الكل';}document.querySelectorAll('.contact-checkbox').forEach(cb=>{cb.checked=this.selectedResidents.has(cb.dataset.name);});}
 
             exportToContacts(){
+                if(this._isDownloading)return;
+                this._isDownloading=true;
                 const selected=this.res.filter(r=>this.selectedResidents.has(r.name)&&r.phone);
-                if(selected.length===0)return;
+                if(selected.length===0){this._isDownloading=false;return;}
                 let vcf='';for(const r of selected){const np=r.name.split(' ');const ln=np.pop()||'';const fn=np.shift()||'';const mn=np.join(' ');vcf+='BEGIN:VCARD\nVERSION:3.0\n';vcf+=`FN:${r.name}\nN:${ln};${fn};${mn};;\n`;vcf+=`TEL;TYPE=MOBILE:${r.phone}\nEND:VCARD\n`;}
                 const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});const url=URL.createObjectURL(blob);
                 const a=document.createElement('a');a.setAttribute('href',url);a.setAttribute('download','contacts.vcf');a.style.display='none';
                 document.body.appendChild(a);a.click();
-                setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);this.refreshSelectionUI();},1000);
+                setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);this.refreshSelectionUI();this._isDownloading=false;},500);
             }
 
             renderRes(d){this.res=[];const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';if(!d||d.length<2){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return;}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;const res={name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),cumulativeOnc:(r[10]||'').trim(),st:(r[11]||'').trim(),monthlyShift:this.getMonthlyShiftFromRow(r)};if(!res.name)continue;this.res.push(res);}this.displayResidents();}
@@ -505,13 +426,7 @@
                 const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';let list=this.getFilteredList();
                 list.forEach(res=>{const ok=isJoined(res.st);const checked=this.selectedResidents.has(res.name)?'checked':'';const tr=document.createElement('tr');tr.innerHTML=`<td><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"></td><td style="text-align:right;">${makeClickableName(res.name,res.phone)}</td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.monthlyShift||'-'}</td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></td>`;tb.appendChild(tr);const c=document.createElement('div');c.className='resident-card';c.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"><div class="card-header" style="flex:1;margin:0;padding:0;border:none;"><span class="card-name">${makeClickableName(res.name,res.phone)}</span><span class="card-abbr">${res.abbr}</span></div></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${res.monthlyShift||'-'}</span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${res.st||'غير محدد'}</span></span></div>`;cd.appendChild(c);});this.updateResCount();this.refreshSelectionUI();}
             updateResCount(){let list=this.getFilteredList();const total=list.length;const joined=list.filter(r=>isJoined(r.st)).length;document.getElementById('residentCount').textContent=this.filterJoined?`${joined} ملتحق`:`${total} مقيم`;}
-            buildFilters(){
-                const ss=document.getElementById('specialtyFilter');const sf=document.getElementById('shiftFilter');if(!ss||!sf)return;
-                const specs=[...new Set(this.res.map(r=>r.spec).filter(s=>s))].sort();
-                const shifts=[...new Set(this.res.map(r=>r.monthlyShift).filter(s=>s))].sort();
-                ss.innerHTML='<option value="">جميع الاختصاصات</option>';specs.forEach(s=>{ss.innerHTML+=`<option value="${s}">${s}</option>`;});ss.value=this.filterSpecialty||'';
-                sf.innerHTML='<option value="">جميع الفروز</option>';shifts.forEach(s=>{sf.innerHTML+=`<option value="${s}">${s}</option>`;});sf.value=this.filterShift||'';
-            }
+            buildFilters(){const ss=document.getElementById('specialtyFilter');const sf=document.getElementById('shiftFilter');if(!ss||!sf)return;const specs=[...new Set(this.res.map(r=>r.spec).filter(s=>s))].sort();const shifts=[...new Set(this.res.map(r=>r.monthlyShift).filter(s=>s))].sort();ss.innerHTML='<option value="">جميع الاختصاصات</option>';specs.forEach(s=>{ss.innerHTML+=`<option value="${s}">${s}</option>`;});ss.value=this.filterSpecialty||'';sf.innerHTML='<option value="">جميع الفروز</option>';shifts.forEach(s=>{sf.innerHTML+=`<option value="${s}">${s}</option>`;});sf.value=this.filterShift||'';}
             filterBySpecialty(){this.filterSpecialty=document.getElementById('specialtyFilter').value;this.selectedResidents.clear();this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
             filterByShift(){this.filterShift=document.getElementById('shiftFilter').value;this.selectedResidents.clear();this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
             toggleFilter(){this.filterJoined=!this.filterJoined;const btn=document.getElementById('filterJoinedBtn');if(this.filterJoined){btn.classList.add('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> إظهار الكل';}else{btn.classList.remove('active-filter');btn.innerHTML='<i class="fas fa-filter"></i> الملتحقين فقط';}this.selectedResidents.clear();this.displayResidents();this.filterRes(document.getElementById('residentSearch').value);}
@@ -521,75 +436,23 @@
             dispShf(arr){const g=document.getElementById('shiftsGrid');g.innerHTML='';if(arr.length===0){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد نتائج مطابقة</p>';return;}arr.forEach(s=>{const nl=splitNames(s.names);const c=document.createElement('div');c.className='shift-card-full';let nh='';if(nl.length>0){const nwc=nl.map(n=>{const r=this.findResidentByAny(n);const p=r?r.phone:'';const a=r?r.abbr:'';return`<li>${makeClickableName(n,p,a)}</li>`;}).join('');nh=`<div class="names-dropdown"><button class="names-dropdown-btn" onclick="event.stopPropagation();this.classList.toggle('open');this.nextElementSibling.classList.toggle('show');"><span>👥 الأسماء (${nl.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${nwc}</ul></div>`;}else{nh=`<div class="shift-names"><strong>الأسماء:</strong> ${s.names||'لا يوجد'}</div>`;}c.innerHTML=`<h3>📋 ${s.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${s.c1}</div><div class="lbl">عدد الأولى</div></div><div class="shift-stat"><div class="num">${s.c2}</div><div class="lbl">عدد الثانية</div></div></div>${nh}`;g.appendChild(c);});document.addEventListener('click',function(e){if(!e.target.closest('.names-dropdown')){document.querySelectorAll('.names-dropdown-btn.open').forEach(b=>{b.classList.remove('open');if(b.nextElementSibling)b.nextElementSibling.classList.remove('show');});}});}
             filterShf(term){const t=term.toLowerCase().trim();if(!t){this.dispShf(this.shf);return;}this.dispShf(this.shf.filter(s=>smartSearch(s.name,t)||searchInNamesList(s.names,t)));}
 
-            parseOncallData(d){
-                this.oncRows=[];
-                this.oncHeaders=[];
-                if(!d||d.length<2)return;
-                this.oncHeaders=d[0]||[];
-                document.getElementById('oncallMonthTitle').textContent=this.currentDisplayMonth+1;
-                for(let i=1;i<d.length;i++){
-                    const row=d[i];
-                    if(!row||row.length===0)continue;
-                    let dateStr=row[0]||'';
-                    // معالجة صيغة Date(2026,6,1)
-                    const dateMatch=dateStr.match(/Date\((\d+),\s*(\d+),\s*(\d+)\)/);
-                    if(dateMatch){
-                        const year=parseInt(dateMatch[1]);
-                        const month=parseInt(dateMatch[2])+1;
-                        const day=parseInt(dateMatch[3]);
-                        dateStr=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                    }else{
-                        dateStr=extractDate(dateStr)||'';
-                    }
-                    if(dateStr){this.oncRows.push({date:dateStr,day:row[1]||'',row:row});}
-                }
-            }
+            parseOncallData(d){this.oncRows=[];this.oncHeaders=[];if(!d||d.length<2)return;this.oncHeaders=d[0]||[];document.getElementById('oncallMonthTitle').textContent=this.currentDisplayMonth+1;for(let i=1;i<d.length;i++){const row=d[i];if(!row||row.length===0)continue;let dateStr=row[0]||'';const dateMatch=dateStr.match(/Date\((\d+),\s*(\d+),\s*(\d+)\)/);if(dateMatch){const year=parseInt(dateMatch[1]);const month=parseInt(dateMatch[2])+1;const day=parseInt(dateMatch[3]);dateStr=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;}else{dateStr=extractDate(dateStr)||'';}if(dateStr){this.oncRows.push({date:dateStr,day:row[1]||'',row:row});}}}
             getOncallDates(){return this.oncRows.map(r=>r.date);}
             getOncRow(ds){return this.oncRows.find(r=>r.date===ds)||null;}
             findR(abbr){if(!abbr)return null;const a=prepareForSearch(abbr).replace(/[.\s]/g,'');return this.res.find(r=>prepareForSearch(r.abbr).replace(/[.\s]/g,'')===a)||this.res.find(r=>smartSearch(r.name,abbr));}
 
-            changeMonth(){
-                this.currentDisplayMonth=parseInt(document.getElementById('monthSelector').value);
-                const yr=parseInt(this.today.split('-')[0]);
-                document.getElementById('oncallDatePicker').value=`${yr}-${String(this.currentDisplayMonth+1).padStart(2,'0')}-01`;
-                document.getElementById('oncallMonthTitle').textContent=this.currentDisplayMonth+1;
-                this.renderMonthlyCalendar();
-                document.getElementById('oncallDayDisplay').innerHTML='';
-            }
-
+            changeMonth(){this.currentDisplayMonth=parseInt(document.getElementById('monthSelector').value);const yr=parseInt(this.today.split('-')[0]);document.getElementById('oncallDatePicker').value=`${yr}-${String(this.currentDisplayMonth+1).padStart(2,'0')}-01`;document.getElementById('oncallMonthTitle').textContent=this.currentDisplayMonth+1;this.renderMonthlyCalendar();document.getElementById('oncallDayDisplay').innerHTML='';}
             scrollToOncallResult(){setTimeout(()=>{const el=document.getElementById('oncallDayDisplay');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},200);}
             selectDayFromCalendar(){const v=document.getElementById('oncallDatePicker').value;if(v){const m=parseInt(v.split('-')[1])-1;if(m!==this.currentDisplayMonth){this.currentDisplayMonth=m;document.getElementById('monthSelector').value=m;document.getElementById('oncallMonthTitle').textContent=m+1;this.renderMonthlyCalendar();}this.showOncallDate(v);this.scrollToOncallResult();}}
 
             showOncallDate(ds){
-                const dp=document.getElementById('oncallDayDisplay');
-                const dstr=ds||this.today;
-                if(!dstr){dp.innerHTML='';return;}
-                if(!this.oncRows.length){dp.innerHTML='';return;}
+                const dp=document.getElementById('oncallDayDisplay');const dstr=ds||this.today;
+                if(!dstr){dp.innerHTML='';return;}if(!this.oncRows.length){dp.innerHTML='';return;}
                 const oncRow=this.getOncRow(dstr);
                 if(!oncRow){dp.innerHTML=`<div class="oncall-day-card"><h3>📅 ${dstr} - ${getDayName(dstr)}</h3><p style="color:#888;">لا توجد مناوبات لهذا التاريخ.</p></div>`;return;}
-
-                const now=new Date();
-                const timestamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-
+                const now=new Date();const timestamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
                 const categories={};
-                for(let col=2;col<this.oncHeaders.length;col++){
-                    const catName=this.oncHeaders[col]||'أخرى';
-                    const cellContent=(oncRow.row[col]||'').trim();
-                    if(!cellContent)continue;
-                    const names=splitNames(cellContent);
-                    if(names.length===0)continue;
-                    if(!categories[catName])categories[catName]=[];
-                    for(const n of names){
-                        const resident=this.findR(n);
-                        const fullName=resident?resident.name:n;
-                        const phone=resident?resident.phone:'';
-                        const abbr=resident?resident.abbr:'';
-                        if(!categories[catName].find(x=>x.abbr===n)){
-                            categories[catName].push({abbr:n,name:fullName,phone:phone,resAbbr:abbr});
-                        }
-                    }
-                }
-
+                for(let col=2;col<this.oncHeaders.length;col++){const catName=this.oncHeaders[col]||'أخرى';const cellContent=(oncRow.row[col]||'').trim();if(!cellContent)continue;const names=splitNames(cellContent);if(names.length===0)continue;if(!categories[catName])categories[catName]=[];for(const n of names){const resident=this.findR(n);const fullName=resident?resident.name:n;const phone=resident?resident.phone:'';const abbr=resident?resident.abbr:'';if(!categories[catName].find(x=>x.abbr===n)){categories[catName].push({abbr:n,name:fullName,phone:phone,resAbbr:abbr});}}}
                 const dn=getDayName(dstr);const we=isWeekend(dstr);
                 let h=`<div class="oncall-day-card" id="oncallCardContent"><h3 class="${we?'weekend':''}">📅 ${dstr} - ${dn}${we?' <span class="day-badge weekend">عطلة</span>':''}</h3>`;
                 h+=`<div class="capture-timestamp"><i class="fas fa-clock"></i> تاريخ ووقت العرض: ${timestamp}</div>`;
@@ -598,38 +461,71 @@
                 h+=`<button class="download-btn" onclick="app.downloadOncallImage()"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل المناوبات كصورة</button>`;
                 h+='</div>';dp.innerHTML=h;
             }
-            showOncallByDate(){this.showOncallDate(document.getElementById('oncallDatePicker').value);this.scrollToOncallResult();}
-            async downloadOncallImage(){
-                const el=document.getElementById('oncallCardContent');const btn=document.querySelector('#oncallDayDisplay .download-btn');
-                if(!el||!btn)return;setBtnLoading(btn,true);
+            
+            // ========== تحميل الصور مع شريط تقدم ==========
+            async _captureImage(el,filename,bgColor){
+                if(this._isDownloading)return;
+                this._isDownloading=true;
+                showDownloadProgress('جاري توليد الصورة...');
+                updateDownloadProgress(5,'جاري تحضير المحتوى...');
+                
                 try{
-                    const canvas=await html2canvas(el,{backgroundColor:document.body.classList.contains('dark-mode')?'#1e293b':'#ffffff',scale:2});
-                    const padding=20;const nc=document.createElement('canvas');nc.width=canvas.width+padding*2;nc.height=canvas.height+padding*2;
-                    const ctx=nc.getContext('2d');ctx.fillStyle=document.body.classList.contains('dark-mode')?'#1e293b':'#ffffff';
-                    ctx.fillRect(0,0,nc.width,nc.height);ctx.drawImage(canvas,padding,padding);
-                    const link=document.createElement('a');link.download=`مناوبات_${document.getElementById('oncallDatePicker').value||this.today}.png`;
-                    link.href=nc.toDataURL('image/png');link.click();
-                }catch(e){console.error(e);}setBtnLoading(btn,false);
+                    // استخدام requestAnimationFrame للتحديث التدريجي
+                    await new Promise(r=>requestAnimationFrame(r));
+                    updateDownloadProgress(15,'جاري رسم الصورة...');
+                    
+                    const canvas=await html2canvas(el,{
+                        backgroundColor:bgColor,
+                        scale:3,
+                        useCORS:true,
+                        allowTaint:true,
+                        logging:false
+                    });
+                    
+                    updateDownloadProgress(70,'جاري معالجة الصورة...');
+                    
+                    const padding=30;
+                    const nc=document.createElement('canvas');
+                    nc.width=canvas.width+padding*2;
+                    nc.height=canvas.height+padding*2;
+                    const ctx=nc.getContext('2d');
+                    ctx.fillStyle=bgColor;
+                    ctx.fillRect(0,0,nc.width,nc.height);
+                    ctx.drawImage(canvas,padding,padding);
+                    
+                    updateDownloadProgress(90,'جاري التنزيل...');
+                    
+                    const link=document.createElement('a');
+                    link.download=filename;
+                    link.href=nc.toDataURL('image/png');
+                    link.click();
+                    
+                    updateDownloadProgress(100,'✓ تم بنجاح!');
+                    await new Promise(r=>setTimeout(r,500));
+                    hideDownloadProgress();
+                }catch(e){
+                    console.error(e);
+                    hideDownloadProgress();
+                }
+                this._isDownloading=false;
+            }
+            
+            downloadOncallImage(){
+                const el=document.getElementById('oncallCardContent');
+                if(!el)return;
+                const bg=document.body.classList.contains('dark-mode')?'#1e293b':'#ffffff';
+                const ds=document.getElementById('oncallDatePicker').value||this.today;
+                this._captureImage(el,`مناوبات_${ds}.png`,bg);
+            }
+            
+            downloadMyInfoImage(){
+                const el=document.getElementById('myInfoContent');
+                if(!el)return;
+                const bg=document.body.classList.contains('dark-mode')?'#1e293b':'#ffffff';
+                this._captureImage(el,`${this.currentMyInfo?.name||'معلوماتي'}.png`,bg);
             }
 
-            renderMonthlyCalendar(){
-                const container=document.getElementById('monthlyCalendar');
-                const ods=this.getOncallDates();
-                const yr=parseInt(this.today.split('-')[0]);const mo=this.currentDisplayMonth;
-                const dim=new Date(yr,mo+1,0).getDate();const fd=new Date(yr,mo,1).getDay();const afd=fd===0?6:fd-1;
-                const dns=['اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت','أحد'];
-                const tn=parseInt(this.today.split('-')[2]);const tm=parseInt(this.today.split('-')[1])-1;
-                let h=`<div class="monthly-calendar"><div class="calendar-header"><h3>📅 ${ARABIC_MONTHS[mo]} ${yr}</h3></div><div class="calendar-grid">`;
-                dns.forEach((d,i)=>{let cls='calendar-day-header';if(i===4||i===5)cls+=' weekend';h+=`<div class="${cls}">${d}</div>`;});
-                for(let i=0;i<afd;i++)h+='<div class="calendar-day empty"></div>';
-                for(let day=1;day<=dim;day++){
-                    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                    const d=new Date(yr,mo,day);const di=d.getDay();
-                    const it=day===tn&&mo===tm;const pa=ds<this.today;
-                    let cls='calendar-day';if(it)cls+=' today';if(pa&&!it)cls+=' past-day';if(di===5||di===6)cls+=' weekend';
-                    h+=`<div class="${cls}" onclick="app.clickCalendarDay('${ds}')">${day}</div>`;
-                }h+='</div></div>';container.innerHTML=h;
-            }
+            renderMonthlyCalendar(){const container=document.getElementById('monthlyCalendar');const ods=this.getOncallDates();const yr=parseInt(this.today.split('-')[0]);const mo=this.currentDisplayMonth;const dim=new Date(yr,mo+1,0).getDate();const fd=new Date(yr,mo,1).getDay();const afd=fd===0?6:fd-1;const dns=['اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت','أحد'];const tn=parseInt(this.today.split('-')[2]);const tm=parseInt(this.today.split('-')[1])-1;let h=`<div class="monthly-calendar"><div class="calendar-header"><h3>📅 ${ARABIC_MONTHS[mo]} ${yr}</h3></div><div class="calendar-grid">`;dns.forEach((d,i)=>{let cls='calendar-day-header';if(i===4||i===5)cls+=' weekend';h+=`<div class="${cls}">${d}</div>`;});for(let i=0;i<afd;i++)h+='<div class="calendar-day empty"></div>';for(let day=1;day<=dim;day++){const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const d=new Date(yr,mo,day);const di=d.getDay();const it=day===tn&&mo===tm;const pa=ds<this.today;let cls='calendar-day';if(it)cls+=' today';if(pa&&!it)cls+=' past-day';if(di===5||di===6)cls+=' weekend';h+=`<div class="${cls}" onclick="app.clickCalendarDay('${ds}')">${day}</div>`;}h+='</div></div>';container.innerHTML=h;}
             clickCalendarDay(ds){document.getElementById('oncallDatePicker').value=ds;this.selectDayFromCalendar();}
 
             filterRes(term){const t=term.toLowerCase().trim();const rows=document.querySelectorAll('#residentsBody tr');const cards=document.querySelectorAll('#residentsCards .resident-card');let list=this.getFilteredList();list.forEach((r,i)=>{const m=!t||smartSearch(r.name+' '+r.abbr,t);if(rows[i])rows[i].style.display=m?'':'none';if(cards[i])cards[i].style.display=m?'':'none';});}
@@ -640,25 +536,9 @@
                 let sf=null;for(let s of this.shf){if(searchInNamesList(s.names,r.name)||(r.abbr&&searchInNamesList(s.names,r.abbr))){sf=s;break;}}
                 let cis=[];if(sf&&sf.names){const an=splitNames(sf.names);cis=an.filter(n=>!smartSearch(n,r.name));}
                 let myo=[];const tc={};
-                for(const onc of this.oncRows){
-                    for(let col=2;col<this.oncHeaders.length;col++){
-                        const cellContent=(onc.row[col]||'').trim();
-                        if(!cellContent)continue;
-                        const names=splitNames(cellContent);
-                        if(names.length===0)continue;
-                        const found=names.some(n=>smartSearch(n,r.abbr)||smartSearch(n,r.name)||(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,'')));
-                        if(found){
-                            const catName=this.oncHeaders[col]||'أخرى';
-                            tc[catName]=(tc[catName]||0)+1;
-                            const colleagues=[];
-                            for(const n of names){if(!smartSearch(n,r.abbr)&&!smartSearch(n,r.name)&&!(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,''))){const cr=this.findR(n);if(cr)colleagues.push({name:cr.name,abbr:cr.abbr,phone:cr.phone});else colleagues.push({name:n,abbr:n,phone:''});}}
-                            myo.push({date:onc.date,day:onc.day||getDayName(onc.date),dayIdx:getDayIndex(onc.date),cat:catName,colleagues});
-                        }
-                    }
-                }
+                for(const onc of this.oncRows){for(let col=2;col<this.oncHeaders.length;col++){const cellContent=(onc.row[col]||'').trim();if(!cellContent)continue;const names=splitNames(cellContent);if(names.length===0)continue;const found=names.some(n=>smartSearch(n,r.abbr)||smartSearch(n,r.name)||(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,'')));if(found){const catName=this.oncHeaders[col]||'أخرى';tc[catName]=(tc[catName]||0)+1;const colleagues=[];for(const n of names){if(!smartSearch(n,r.abbr)&&!smartSearch(n,r.name)&&!(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,''))){const cr=this.findR(n);if(cr)colleagues.push({name:cr.name,abbr:cr.abbr,phone:cr.phone});else colleagues.push({name:n,abbr:n,phone:''});}}myo.push({date:onc.date,day:onc.day||getDayName(onc.date),dayIdx:getDayIndex(onc.date),cat:catName,colleagues});}}}
                 myo.sort((a,b)=>a.date.localeCompare(b.date));const tot=myo.length;
-                const now=new Date();
-                const timestamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+                const now=new Date();const timestamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
                 let h=`<div id="myInfoContent" style="padding:10px;">`;
                 h+=`<h3 style="color:#667eea;text-align:center;font-size:1.5em;margin-bottom:16px;">👤 ${r.name} (${r.abbr})</h3>`;
@@ -679,7 +559,6 @@
                 h+=`<button class="download-btn" onclick="app.downloadMyInfoImage()"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل معلوماتي كصورة</button></div>`;
                 rd.innerHTML=h;rd.classList.add('show');document.getElementById('searchResultsList').innerHTML='';
             }
-            async downloadMyInfoImage(){const el=document.getElementById('myInfoContent');const btn=document.querySelector('#myInfoResult .download-btn');if(!el||!btn)return;setBtnLoading(btn,true);try{const canvas=await html2canvas(el,{backgroundColor:document.body.classList.contains('dark-mode')?'#1e293b':'#ffffff',scale:2});const padding=24;const nc=document.createElement('canvas');nc.width=canvas.width+padding*2;nc.height=canvas.height+padding*2;const ctx=nc.getContext('2d');ctx.fillStyle=document.body.classList.contains('dark-mode')?'#1e293b':'#ffffff';ctx.fillRect(0,0,nc.width,nc.height);ctx.drawImage(canvas,padding,padding);const link=document.createElement('a');link.download=`${this.currentMyInfo?.name||'معلوماتي'}.png`;link.href=nc.toDataURL('image/png');link.click();}catch(e){console.error(e);}setBtnLoading(btn,false);}
             updateTime(){document.getElementById('lastUpdateTime').textContent='آخر تحديث: '+new Date().toLocaleTimeString('ar-SA');}
         }
         let app;document.addEventListener('DOMContentLoaded',()=>{app=new HospitalApp();window.app=app;});
