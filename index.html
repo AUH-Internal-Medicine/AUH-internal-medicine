@@ -25,7 +25,7 @@ body.dark-mode .count-badge{background:rgba(102,126,234,0.2);color:#93c5fd}
 body.dark-mode .calendar-day{background:var(--gray-100);color:var(--text)}
 body.dark-mode .monthly-calendar{background:var(--card-bg)}
 body.dark-mode .names-dropdown-btn{background:var(--gray-100);color:var(--text);border-color:var(--border)}
-body.dark-mode .names-dropdown-content{background:var(--card-bg);border-color:var(--border);position:static;max-height:250px}
+body.dark-mode .names-dropdown-content{background:var(--card-bg);border-color:var(--border)}
 body.dark-mode .names-dropdown-content li{color:var(--text)}
 body.dark-mode .oncall-info-row{background:var(--gray-100)}
 body.dark-mode .colleague-row{background:rgba(102,126,234,0.05)}
@@ -47,11 +47,6 @@ body.dark-mode .link-card{background:var(--card-bg);border-color:var(--border)}
 body.dark-mode .seq-badge{background:rgba(102,126,234,0.2);color:#93c5fd}
 body.dark-mode .status-joined{background:linear-gradient(135deg,#0d3b1a,#145c28);color:#6ee7b7;border:1px solid #27ae60}
 body.dark-mode .status-pending{background:linear-gradient(135deg,#5c4200,#7a5500);color:#fbbf24;border:1px solid #f39c12}
-body.dark-mode .qa-card{background:var(--card-bg);border-color:var(--border)}
-body.dark-mode .qa-category-header{background:var(--gray-100);border-color:#667eea}
-body.dark-mode .qa-question{color:#93c5fd}
-body.dark-mode .oncall-type-badge{background:linear-gradient(135deg,rgba(102,126,234,0.3),rgba(118,75,162,0.3));color:#e2e8f0;border-color:rgba(102,126,234,0.5);font-weight:700}
-body.dark-mode .myinfo-month-selector{background:var(--gray-100);color:var(--text);border-color:var(--border)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:var(--transition)}
 .animated-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;background:linear-gradient(135deg,#e8eaf6 0%,#f3e5f5 30%,#e0f2f1 60%,#e8eaf6 100%);background-size:400% 400%;animation:bgMove 15s ease infinite}
@@ -92,8 +87,8 @@ body.dark-mode .header-bg-image{opacity:0.3}
 .stat-badge{background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);padding:10px 22px;border-radius:var(--radius-full);font-size:14px;border:1px solid rgba(255,255,255,0.3);transition:var(--transition)}
 .stat-badge:hover{background:rgba(255,255,255,0.35);transform:translateY(-2px)}
 .main-nav{background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200;box-shadow:0 5px 30px rgba(0,0,0,0.1);padding:12px 10px;transition:var(--transition)}
-.nav-container{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;max-width:1200px;margin:0 auto}
-.nav-btn{padding:10px 16px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.nav-container{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;max-width:1100px;margin:0 auto}
+.nav-btn{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .nav-btn:hover{border-color:#667eea;color:#667eea;transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .nav-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-color:transparent;box-shadow:0 8px 25px rgba(102,126,234,0.4)}
 .main-content{max-width:1300px;margin:30px auto;padding:0 15px}
@@ -166,15 +161,13 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 .names-dropdown{margin-top:12px;position:relative}
 .names-dropdown-btn{width:100%;padding:12px 16px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:600;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
 .names-dropdown-btn:hover{border-color:#667eea;background:rgba(102,126,234,0.05)}
-.names-dropdown-content{display:none;position:static;background:var(--card-bg);border:2px solid #667eea;border-top:none;border-radius:0 0 var(--radius) var(--radius);list-style:none;max-height:250px;overflow-y:auto;z-index:10}
+.names-dropdown-content{display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:2px solid #667eea;border-top:none;border-radius:0 0 var(--radius) var(--radius);list-style:none;max-height:200px;overflow-y:auto;z-index:10}
 .names-dropdown-content.show{display:block}
 .names-dropdown-content li{padding:10px 16px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);cursor:pointer;transition:var(--transition)}
 .names-dropdown-content li:hover{background:rgba(102,126,234,0.05)}
 .month-selector{padding:11px 20px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:600;color:var(--text);transition:var(--transition);min-width:200px}
 .month-selector:hover{border-color:#667eea}
 .month-selector:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
-.myinfo-month-selector{padding:8px 14px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;color:var(--text);transition:var(--transition);min-width:180px}
-.myinfo-month-selector:hover{border-color:#667eea}
 .oncall-controls{background:var(--card-bg);padding:18px 22px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .oncall-controls label{font-weight:700;font-size:15px;color:var(--text)}
 .oncall-controls input[type="date"]{padding:11px 16px;border:2px solid var(--border);border-radius:var(--radius);font-family:'Tajawal',sans-serif;font-size:14px;background:var(--gray-100);color:var(--text);transition:var(--transition)}
@@ -221,7 +214,7 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 .oncall-info-row .oc-date{font-weight:700;color:#667eea;font-size:15px;display:flex;align-items:center;gap:8px}
 .oncall-info-row .oc-date .day-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
 .oncall-info-row .oc-date .day-dot.weekend{background:var(--weekend-color)}
-.oncall-type-badge{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(118,75,162,0.1));color:#667eea;border-radius:var(--radius-full);font-size:14px;font-weight:700;border:1px solid rgba(102,126,234,0.3)}
+.oncall-info-row .oc-type{color:var(--text-secondary);font-size:13px;background:rgba(102,126,234,0.1);padding:5px 14px;border-radius:var(--radius-full);font-weight:600}
 .colleague-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;font-size:13px}
 .colleague-row .cl-label{color:var(--text-secondary);font-size:12px;font-weight:600}
 .colleague-row .cl-names{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -238,7 +231,7 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 .download-btn.loading .btn-spinner{display:inline-block}
 .download-btn.loading .btn-icon{display:none}
 @keyframes btnSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-.collapsible-section{margin-bottom:10px;border-radius:var(--radius);overflow:visible}
+.collapsible-section{margin-bottom:10px;border-radius:var(--radius);overflow:hidden}
 .collapsible-btn{width:100%;padding:14px 18px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:700;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
 .collapsible-btn:hover{border-color:#667eea;background:rgba(102,126,234,0.05)}
 .collapsible-btn i{transition:var(--transition);color:#667eea}
@@ -261,19 +254,6 @@ body.dark-mode .example-row td{color:rgba(226,232,240,0.5)}
 .link-card .link-label{font-weight:700;color:var(--text);font-size:12px;margin-left:4px}
 .link-url{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#00b894,#00a381);color:white;border-radius:var(--radius-full);text-decoration:none;font-size:13px;font-weight:600;transition:var(--transition)}
 .link-url:hover{transform:scale(1.05);box-shadow:0 5px 15px rgba(0,184,148,0.3)}
-.qa-card{background:var(--card-bg);border-radius:var(--radius);padding:0;margin-bottom:10px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;transition:var(--transition)}
-.qa-card:hover{box-shadow:var(--shadow-md)}
-.qa-category-header{background:linear-gradient(135deg,rgba(102,126,234,0.08),rgba(118,75,162,0.05));padding:16px 18px;border-right:4px solid #667eea;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
-.qa-category-header:hover{background:linear-gradient(135deg,rgba(102,126,234,0.15),rgba(118,75,162,0.1))}
-.qa-category-header h3{font-size:1.1em;font-weight:800;color:#667eea;display:flex;align-items:center;gap:8px}
-.qa-category-header .qa-count{font-size:0.8em;color:var(--text-secondary);background:var(--gray-100);padding:4px 10px;border-radius:var(--radius-full)}
-.qa-body{padding:0 18px;display:none;transition:all 0.3s ease}
-.qa-body.open{display:block}
-.qa-item{padding:14px 0;border-bottom:1px solid var(--border)}
-.qa-item:last-child{border-bottom:none}
-.qa-question{font-weight:700;color:#667eea;margin-bottom:6px;font-size:14px;display:flex;align-items:flex-start;gap:8px}
-.qa-question i{color:#f39c12;font-size:16px;margin-top:2px;flex-shrink:0}
-.qa-answer{color:var(--text);font-size:13px;line-height:1.8;padding:12px 16px;background:var(--gray-50);border-radius:var(--radius);margin-top:4px;border-right:3px solid #00b894;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word}
 .back-to-top{position:fixed;bottom:30px;right:30px;z-index:999;width:45px;height:45px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:50%;cursor:pointer;font-size:20px;box-shadow:0 5px 20px rgba(102,126,234,0.4);transition:var(--transition);display:none;align-items:center;justify-content:center}
 .back-to-top.show{display:flex}
 .back-to-top:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(102,126,234,0.6)}
@@ -286,7 +266,7 @@ body.dark-mode .example-row td{color:rgba(226,232,240,0.5)}
 @media(max-width:768px){
 .desktop-table{display:none}.mobile-cards{display:block}
 .main-title .title-line1{font-size:1.8em}.main-title .title-line2{font-size:1.3em}
-.nav-btn{padding:8px 10px;font-size:11px}
+.nav-btn{padding:8px 12px;font-size:12px}
 .shifts-grid{grid-template-columns:1fr}.info-grid{grid-template-columns:1fr 1fr}
 .oncall-names-list{flex-direction:column}
 .section-header{flex-direction:column;align-items:flex-start;padding:16px 18px}
@@ -297,12 +277,13 @@ body.dark-mode .example-row td{color:rgba(226,232,240,0.5)}
 .calendar-header h3{font-size:1.1em}.monthly-calendar{padding:12px}
 .oncall-controls{flex-direction:column;align-items:flex-start}
 .oncall-controls input[type="date"]{width:100%}.month-selector{width:100%}
+.names-dropdown-content{position:static;max-height:160px}
 .download-progress-box{padding:20px 24px;min-width:250px}
 .download-progress-box .dp-percent{font-size:2em}
 .nav-container{gap:4px}
 .back-to-top{bottom:20px;right:20px;width:40px;height:40px;font-size:16px}
 }
-@media(max-width:480px){.info-grid{grid-template-columns:1fr}.nav-btn span{font-size:9px}.calendar-day{font-size:10px;padding:6px 2px}.calendar-day-header{font-size:9px}}
+@media(max-width:480px){.info-grid{grid-template-columns:1fr}.nav-btn span{font-size:10px}.calendar-day{font-size:10px;padding:6px 2px}.calendar-day-header{font-size:9px}}
 ::-webkit-scrollbar{height:6px;width:6px}
 ::-webkit-scrollbar-track{background:var(--gray-100);border-radius:8px}
 ::-webkit-scrollbar-thumb{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:8px}
@@ -317,7 +298,6 @@ body.dark-mode .example-row td{color:rgba(226,232,240,0.5)}
 <button class="nav-btn" data-tab="shifts">📋 <span>الفروز</span></button>
 <button class="nav-btn" data-tab="oncall">📅 <span>المناوبات</span></button>
 <button class="nav-btn" data-tab="evaluation">📊 <span>التقييم السنوي</span></button>
-<button class="nav-btn" data-tab="qa">❓ <span>Q&A</span></button>
 <button class="nav-btn" data-tab="links">🔗 <span>روابط هامة</span></button>
 <button class="nav-btn" data-tab="myinfo">🔍 <span>معلوماتي</span></button>
 </div></nav>
@@ -342,10 +322,6 @@ body.dark-mode .example-row td{color:rgba(226,232,240,0.5)}
 <div class="table-wrapper desktop-table"><table><thead id="evalHead"></thead><tbody id="evalBody"></tbody></table></div>
 <div class="mobile-cards" id="evalCards"></div>
 </section>
-<section class="tab-content" id="qa-tab">
-<div class="section-header"><h2><i class="fas fa-question-circle"></i> الأسئلة والأجوبة</h2><div class="search-box"><input type="text" id="qaSearch" placeholder="ابحث في الأسئلة والأجوبة..."><i class="fas fa-search"></i></div></div>
-<div id="qaGrid"></div>
-</section>
 <section class="tab-content" id="links-tab">
 <div class="section-header"><h2><i class="fas fa-link"></i> الروابط والقنوات الهامة</h2></div>
 <div id="linksGrid"></div>
@@ -365,7 +341,6 @@ function copyTooltipPhone(){if(tooltipPhone){navigator.clipboard.writeText(toolt
 document.addEventListener('click',function(e){if(!e.target.closest('.name-clickable')&&!e.target.closest('.name-tooltip')){hideTooltip()}});
 function copyPhone(p,b){navigator.clipboard.writeText(p).then(()=>{const i=b.querySelector('i');const o=i.className;i.className='fas fa-check';b.classList.add('copied');showToast('تم نسخ الرقم!');setTimeout(()=>{i.className=o;b.classList.remove('copied')},1500)}).catch(()=>{})}
 function toggleCollapsible(btn){btn.classList.toggle('open');const content=btn.nextElementSibling;if(content)content.classList.toggle('show')}
-function toggleQACategory(header){header.classList.toggle('open');const body=header.nextElementSibling;if(body)body.classList.toggle('open')}
 function showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2000)}
 function showDownloadProgress(title){const o=document.getElementById('downloadProgressOverlay');document.getElementById('dpTitle').textContent=title||'جاري توليد الصورة...';document.getElementById('dpBar').style.width='0%';document.getElementById('dpPercent').textContent='0%';document.getElementById('dpSub').textContent='';o.classList.remove('hidden');o.offsetHeight}
 function updateDownloadProgress(percent,sub){document.getElementById('dpBar').style.width=percent+'%';document.getElementById('dpPercent').textContent=Math.round(percent)+'%';if(sub)document.getElementById('dpSub').textContent=sub}
@@ -375,6 +350,7 @@ function normalizeArabic(text){if(!text)return'';let t=text.toLowerCase().trim()
 function prepareForSearch(text){return normalizeArabic(text)}
 function splitNames(namesText){if(!namesText)return[];let lines=namesText.split(/[\n\r]+/);let result=[];for(let line of lines){line=line.trim();if(line.length===0)continue;let subParts=line.split(/[-–—,،;؛\/\\|]+/);for(let sp of subParts){sp=sp.trim();if(sp.length>0)result.push(sp)}}return result}
 function smartSearch(text,searchTerm){if(!searchTerm)return true;const nt=prepareForSearch(text);const ns=prepareForSearch(searchTerm);const sw=ns.split(/\s+/).filter(w=>w.length>0);if(sw.length===0)return true;return sw.every(w=>nt.includes(w))}
+function searchInNamesList(namesText,searchTerm){if(!searchTerm)return true;const names=splitNames(namesText);if(names.length===0)return smartSearch(namesText,searchTerm);return names.some(name=>smartSearch(name,searchTerm))}
 function extractDate(text){if(!text)return null;let cleaned=text.replace(/السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday/gi,'');cleaned=cleaned.replace(/[\u0660-\u0669]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x0660+0x30));cleaned=cleaned.replace(/[٠-٩]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x0660+0x30));let m=cleaned.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;m=cleaned.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;m=cleaned.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})/);if(m){const y=parseInt(m[3])<50?'20'+m[3]:'19'+m[3];return`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`}return null}
 function getDayName(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return'';return DAY_NAMES[d.getDay()]}
 function getDayIndex(dateStr){const d=new Date(dateStr+'T00:00:00');return isNaN(d.getTime())?-1:d.getDay()}
@@ -383,16 +359,16 @@ function isJoined(status){const s=(status||'').toLowerCase();return s.includes('
 function makeClickableName(name,phone,abbr){let display=name;if(abbr)display+=' ('+abbr+')';if(!phone)return display;return`<span class="name-clickable" onclick="event.stopPropagation();showTooltip(event,'${name.replace(/'/g,"\\'")}','${phone}')">${display}</span>`}
 const SHEET_ID='1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
 const GID_RESIDENTS='0';const GID_SHIFTS='1976416116';const GID_ONCALL='238974679';
-const GID_EVALUATION='253629565';const GID_LINKS='1649404909';const GID_QA='680270268';
+const GID_EVALUATION='253629565';const GID_LINKS='1649404909';
 const ARABIC_MONTHS=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-const CACHE_KEY='hospital_cache_v53';const CACHE_DURATION=5*60*1000;
+const CACHE_KEY='hospital_cache_v51';const CACHE_DURATION=5*60*1000;
 class HospitalApp{
 constructor(){
 this.m=new Date().getMonth();this.mn=ARABIC_MONTHS[this.m];
 const now=new Date();
 this.today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-this.res=[];this.shf=[];this.oncRows=[];this.oncHeaders=[];this.evalData=[];this.linksData=[];this.qaData=[];this.resHeaders=[];
+this.res=[];this.shf=[];this.oncRows=[];this.oncHeaders=[];this.evalData=[];this.linksData=[];
 this.filterJoined=false;this.filterSpecialty='';this.filterShift='';this.currentMyInfo=null;
 this.selectedResidents=new Set();this.currentDisplayMonth=this.m;
 this._isDownloading=false;
@@ -419,7 +395,6 @@ const tabId=b.dataset.tab+'-tab';
 document.getElementById(tabId).classList.add('active');
 localStorage.setItem('activeTab',b.dataset.tab);
 if(b.dataset.tab==='evaluation')this.renderEval();
-if(b.dataset.tab==='qa')this.renderQA();
 if(b.dataset.tab==='links')this.renderLinks();
 }));
 const savedTab=localStorage.getItem('activeTab');
@@ -430,10 +405,9 @@ document.getElementById('residentSearch').addEventListener('input',e=>this.filte
 document.getElementById('shiftSearch').addEventListener('input',e=>this.filterShf(e.target.value));
 document.getElementById('myInfoSearch').addEventListener('input',e=>this.searchMe(e.target.value));
 document.getElementById('evalSearch').addEventListener('input',e=>this.filterEval(e.target.value));
-document.getElementById('qaSearch').addEventListener('input',e=>this.filterQA(e.target.value));
 }
 loadFromCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return null;const data=JSON.parse(raw);if(!data.timestamp)return null;if((Date.now()-data.timestamp)>CACHE_DURATION)return null;return data}catch(e){return null}}
-saveToCache(rd,sd,od,ed,ld,qd){try{const data={timestamp:Date.now(),residents:rd||null,shifts:sd||null,oncall:od||null,evaluation:ed||null,links:ld||null,qa:qd||null};localStorage.setItem(CACHE_KEY,JSON.stringify(data))}catch(e){}}
+saveToCache(rd,sd,od,ed,ld){try{const data={timestamp:Date.now(),residents:rd||null,shifts:sd||null,oncall:od||null,evaluation:ed||null,links:ld||null};localStorage.setItem(CACHE_KEY,JSON.stringify(data))}catch(e){}}
 async loadWithCache(){
 const cached=this.loadFromCache();
 if(cached){
@@ -442,7 +416,6 @@ if(cached.shifts)this.renderShf(cached.shifts);
 if(cached.oncall){this.parseOncallData(cached.oncall);this.renderMonthlyCalendar();this.showOncallDate(this.today)}
 if(cached.evaluation)this.evalData=cached.evaluation;
 if(cached.links)this.linksData=cached.links;
-if(cached.qa)this.qaData=cached.qa;
 this.updateTime();this.showLoading(false);
 return;
 }
@@ -451,15 +424,14 @@ await this.loadFresh(false);
 async loadFresh(silent){
 if(!silent)this.updateProgress(20,'جاري جلب البيانات...');
 try{
-const[rd,sd,od,ed,ld,qd]=await Promise.all([this.fetchCSV(GID_RESIDENTS),this.fetchCSV(GID_SHIFTS),this.fetchOncallJSON(),this.fetchCSV(GID_EVALUATION),this.fetchCSV(GID_LINKS),this.fetchCSV(GID_QA)]);
+const[rd,sd,od,ed,ld]=await Promise.all([this.fetchCSV(GID_RESIDENTS),this.fetchCSV(GID_SHIFTS),this.fetchOncallJSON(),this.fetchCSV(GID_EVALUATION),this.fetchCSV(GID_LINKS)]);
 if(!silent)this.updateProgress(70,'جاري عرض البيانات...');
 if(rd){this.renderRes(rd);this.buildFilters()}
 if(sd)this.renderShf(sd);
 if(od){this.parseOncallData(od);this.renderMonthlyCalendar();this.showOncallDate(this.today)}
 if(ed)this.evalData=ed;
 if(ld)this.linksData=ld;
-if(qd)this.qaData=qd;
-this.saveToCache(rd,sd,od,ed,ld,qd);
+this.saveToCache(rd,sd,od,ed,ld);
 if(!silent){this.updateProgress(100,'✓ تم التحميل')}
 this.updateTime();
 }catch(e){console.error(e);if(!silent)this.updateProgress(100,'تعذر الاتصال')}
@@ -468,13 +440,13 @@ async fetchCSV(gid){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID
 async fetchOncallJSON(){const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID_ONCALL}`;try{const r=await fetch(url);if(!r.ok)return null;const raw=await r.text();const start=raw.indexOf('{');const end=raw.lastIndexOf('}')+1;if(start===-1||end===0)return null;const json=JSON.parse(raw.substring(start,end));if(!json||!json.table)return null;const cols=json.table.cols||[];const rows=json.table.rows||[];const result=[];const headers=[];for(const col of cols){headers.push(col.label||'')}result.push(headers);for(const row of rows){const cells=row.c||[];const rowData=[];for(const cell of cells){if(cell&&cell.v!==null&&cell.v!==undefined){rowData.push(String(cell.v))}else{rowData.push('')}}if(rowData.some(v=>v!=='')){result.push(rowData)}}return result}catch(e){console.error(e);return null}}
 parseCSV(text){const result=[];const lines=text.split(/\r?\n/);let currentRow=[];let currentField='';let inQuotes=false;let consecutiveEmpty=0;for(let i=0;i<lines.length;i++){const line=lines[i];if(inQuotes){const quoteIdx=line.indexOf('"');if(quoteIdx!==-1){currentField+='\n'+line.substring(0,quoteIdx);inQuotes=false;currentRow.push(currentField);currentField='';const rest=line.substring(quoteIdx+1);if(rest.startsWith(',')){const restFields=this.parseCSVLine(rest.substring(1));for(const f of restFields)currentRow.push(f)}const hasData=currentRow.some(c=>c!=='');if(hasData){result.push(currentRow);consecutiveEmpty=0}else{consecutiveEmpty++;if(consecutiveEmpty>=10)break}currentRow=[]}else{currentField+='\n'+line}continue}const fields=this.parseCSVLine(line);const hasData=fields.some(c=>c!=='');if(hasData){result.push(fields);consecutiveEmpty=0}else{consecutiveEmpty++;if(consecutiveEmpty>=10)break}}if(currentRow.length>0){const hasData=currentRow.some(c=>c!=='');if(hasData)result.push(currentRow)}return result}
 parseCSVLine(line){const fields=[];let current='';let inQuotes=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(inQuotes){if(i+1<line.length&&line[i+1]==='"'){current+='"';i++}else inQuotes=false}else inQuotes=true}else if(ch===','&&!inQuotes){fields.push(current);current=''}else current+=ch}fields.push(current);return fields}
-getMonthlyShiftFromRow(r,headers){const currentMonth=this.m+1;if(!headers)return'';for(let i=11;i<headers.length;i++){const h=(headers[i]||'').trim();if(h==='فرز شهر '+currentMonth||(h.includes('فرز شهر')&&h.includes(String(currentMonth)))){return(r[i]||'').trim()}}return''}
+getMonthlyShiftFromRow(r){const currentMonth=this.m+1;const colIndices=[12,13,14,15,16,17,18];const keyIndex=currentMonth-6;if(keyIndex>=0&&keyIndex<7){return(r[colIndices[keyIndex]]||'').trim()}return''}
 toggleSelectAll(){const list=this.getFilteredList();if(this.selectedResidents.size===list.length&&list.length>0){this.selectedResidents.clear()}else{list.forEach(r=>this.selectedResidents.add(r.name))}this.refreshSelectionUI()}
 toggleResident(name){if(this.selectedResidents.has(name))this.selectedResidents.delete(name);else this.selectedResidents.add(name);this.refreshSelectionUI()}
 getFilteredList(){let list=this.res;if(this.filterJoined)list=list.filter(r=>isJoined(r.st));if(this.filterSpecialty)list=list.filter(r=>r.spec===this.filterSpecialty);if(this.filterShift)list=list.filter(r=>r.monthlyShift===this.filterShift);return list}
 refreshSelectionUI(){const list=this.getFilteredList();document.getElementById('selectedCount').textContent=this.selectedResidents.size+' محدد';const btn=document.getElementById('exportContactsBtn');btn.disabled=this.selectedResidents.size===0;const selectAllBtn=document.querySelector('.select-all-btn');if(this.selectedResidents.size===list.length&&list.length>0){selectAllBtn.innerHTML='<i class="fas fa-square"></i> إلغاء الكل'}else{selectAllBtn.innerHTML='<i class="fas fa-check-square"></i> تحديد الكل'}document.querySelectorAll('.contact-checkbox').forEach(cb=>{cb.checked=this.selectedResidents.has(cb.dataset.name)})}
 exportToContacts(){const selected=this.res.filter(r=>this.selectedResidents.has(r.name)&&r.phone);if(selected.length===0)return;let vcf='';for(const r of selected){const np=r.name.split(' ');const ln=np.pop()||'';const fn=np.shift()||'';const mn=np.join(' ');vcf+='BEGIN:VCARD\nVERSION:3.0\n';vcf+=`FN:${r.name}\nN:${ln};${fn};${mn};;\n`;vcf+=`TEL;TYPE=MOBILE:${r.phone}\nEND:VCARD\n`}const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.setAttribute('href',url);a.setAttribute('download','contacts.vcf');a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);this.refreshSelectionUI();showToast('تم تحميل جهات الاتصال!')},500)}
-renderRes(d){this.res=[];this.resHeaders=(d&&d.length>0)?d[0]:[];const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';if(!d||d.length<2){tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;const res={seq:i+1,name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),cumulativeOnc:(r[10]||'').trim(),st:(r[11]||'').trim(),monthlyShift:this.getMonthlyShiftFromRow(r,this.resHeaders)};if(!res.name)continue;this.res.push(res)}this.displayResidents()}
+renderRes(d){this.res=[];const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';if(!d||d.length<2){tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:40px;">لا توجد بيانات</td></tr>';this.updateResCount();return}for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim()||r[1].includes('الاسم'))continue;const res={seq:i+1,name:(r[1]||'').trim(),abbr:(r[2]||'').trim(),spec:(r[3]||'').trim(),phone:(r[4]||'').trim(),join:(r[9]||'').trim(),onc:(r[10]||'').trim(),cumulativeOnc:(r[10]||'').trim(),st:(r[11]||'').trim(),monthlyShift:this.getMonthlyShiftFromRow(r)};if(!res.name)continue;this.res.push(res)}this.displayResidents()}
 displayResidents(){const tb=document.getElementById('residentsBody');const cd=document.getElementById('residentsCards');tb.innerHTML='';cd.innerHTML='';let list=this.getFilteredList();list.forEach(res=>{const ok=isJoined(res.st);const checked=this.selectedResidents.has(res.name)?'checked':'';const tr=document.createElement('tr');tr.innerHTML=`<td class="seq-cell">${res.seq}</td><td><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"></td><td style="text-align:right;">${makeClickableName(res.name,res.phone)}</td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.monthlyShift||'-'}</td><td>${res.join||'-'}</td><td>${res.onc||'-'}</td><td><span class="status-badge ${ok?'status-joined':'status-pending'}">${ok?'✅':'⏳'} ${res.st||'غير محدد'}</span></td>`;tb.appendChild(tr);const c=document.createElement('div');c.className='resident-card';c.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;"><span class="seq-badge">${res.seq}</span><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g,'&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g,"\\'")}')"><div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;"><span class="card-name" style="word-break:break-word;">${makeClickableName(res.name,res.phone)}</span><span class="card-abbr">${res.abbr}</span></div></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></span></div><div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${res.monthlyShift||'-'}</span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join||'-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc||'-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${ok?'✅':'⏳'} ${res.st||'غير محدد'}</span></span></div>`;cd.appendChild(c)});this.updateResCount();this.refreshSelectionUI()}
 updateResCount(){let list=this.getFilteredList();const total=list.length;const joined=list.filter(r=>isJoined(r.st)).length;document.getElementById('residentCount').textContent=this.filterJoined?`${joined} ملتحق`:`${total} مقيم`}
 buildFilters(){const ss=document.getElementById('specialtyFilter');const sf=document.getElementById('shiftFilter');if(!ss||!sf)return;const specs=[...new Set(this.res.map(r=>r.spec).filter(s=>s))].sort();const shifts=[...new Set(this.res.map(r=>r.monthlyShift).filter(s=>s))].sort();ss.innerHTML='<option value="">جميع الاختصاصات</option>';specs.forEach(s=>{ss.innerHTML+=`<option value="${s}">${s}</option>`});ss.value=this.filterSpecialty||'';sf.innerHTML='<option value="">جميع الفروز</option>';shifts.forEach(s=>{sf.innerHTML+=`<option value="${s}">${s}</option>`});sf.value=this.filterShift||''}
@@ -485,8 +457,39 @@ renderShf(d){
 this.shf=[];
 document.getElementById('shiftMonthName').textContent=this.mn;
 if(!d||d.length<2){document.getElementById('shiftsGrid').innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات فروز</p>';return}
-for(let i=1;i<d.length;i++){const r=d[i];if(!r[1]||!r[1].trim())continue;const names=[];for(let j=4;j<r.length;j++){const name=(r[j]||'').trim();if(name)names.push(name)}const s={name:(r[1]||'').trim(),c1:(r[2]||'0').trim(),c2:(r[3]||'0').trim(),namesList:names};if(!s.name)continue;this.shf.push(s)}this.dispShf(this.shf)}
-dispShf(arr){const g=document.getElementById('shiftsGrid');g.innerHTML='';if(arr.length===0){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد نتائج مطابقة</p>';return}arr.forEach(s=>{const nl=s.namesList||[];const c=document.createElement('div');c.className='shift-card-full';let nh='';if(nl.length>0){const nwc=nl.map(n=>{const r=this.res.find(x=>x.abbr===n);const displayName=r?r.name:n;const p=r?r.phone:'';const a=r?r.abbr:n;return`<li>${makeClickableName(displayName,p,a)}</li>`}).join('');nh=`<div class="names-dropdown"><button class="names-dropdown-btn" onclick="event.stopPropagation();this.classList.toggle('open');this.nextElementSibling.classList.toggle('show');"><span>👥 الأسماء (${nl.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${nwc}</ul></div>`}else{nh=`<div class="shift-names"><strong>الأسماء:</strong> لا يوجد</div>`}c.innerHTML=`<h3>📋 ${s.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${s.c1}</div><div class="lbl">عدد الأولى</div></div><div class="shift-stat"><div class="num">${s.c2}</div><div class="lbl">عدد الثانية</div></div></div>${nh}`;g.appendChild(c)});document.addEventListener('click',function(e){if(!e.target.closest('.names-dropdown')){document.querySelectorAll('.names-dropdown-btn.open').forEach(b=>{b.classList.remove('open');if(b.nextElementSibling)b.nextElementSibling.classList.remove('show')})}})}
+for(let i=1;i<d.length;i++){
+const r=d[i];
+if(!r[1]||!r[1].trim())continue;
+const names=[];
+for(let j=4;j<r.length;j++){const name=(r[j]||'').trim();if(name)names.push(name)}
+const s={name:(r[1]||'').trim(),c1:(r[2]||'0').trim(),c2:(r[3]||'0').trim(),namesList:names};
+if(!s.name)continue;
+this.shf.push(s);
+}
+this.dispShf(this.shf);
+}
+dispShf(arr){
+const g=document.getElementById('shiftsGrid');g.innerHTML='';
+if(arr.length===0){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد نتائج مطابقة</p>';return}
+arr.forEach(s=>{
+const nl=s.namesList||[];
+const c=document.createElement('div');c.className='shift-card-full';
+let nh='';
+if(nl.length>0){
+const nwc=nl.map(n=>{
+const r=this.res.find(x=>x.abbr===n);
+const displayName=r?r.name:n;
+const p=r?r.phone:'';
+const a=r?r.abbr:n;
+return`<li>${makeClickableName(displayName,p,a)}</li>`;
+}).join('');
+nh=`<div class="names-dropdown"><button class="names-dropdown-btn" onclick="event.stopPropagation();this.classList.toggle('open');this.nextElementSibling.classList.toggle('show');"><span>👥 الأسماء (${nl.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${nwc}</ul></div>`;
+}else{nh=`<div class="shift-names"><strong>الأسماء:</strong> لا يوجد</div>`}
+c.innerHTML=`<h3>📋 ${s.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${s.c1}</div><div class="lbl">عدد الأولى</div></div><div class="shift-stat"><div class="num">${s.c2}</div><div class="lbl">عدد الثانية</div></div></div>${nh}`;
+g.appendChild(c);
+});
+document.addEventListener('click',function(e){if(!e.target.closest('.names-dropdown')){document.querySelectorAll('.names-dropdown-btn.open').forEach(b=>{b.classList.remove('open');if(b.nextElementSibling)b.nextElementSibling.classList.remove('show')})}});
+}
 filterShf(term){const t=term.toLowerCase().trim();if(!t){this.dispShf(this.shf);return}this.dispShf(this.shf.filter(s=>smartSearch(s.name,t)||s.namesList.some(n=>smartSearch(n,t))))}
 renderEval(){
 const head=document.getElementById('evalHead');const body=document.getElementById('evalBody');const cards=document.getElementById('evalCards');
@@ -500,23 +503,24 @@ for(let i=1;i<=lastCol;i++){h+=`<th>${headers[i]||''}</th>`}
 h+='</tr>';
 head.innerHTML=h;
 let bodyHtml='',cardsHtml='';
-for(let i=1;i<d.length;i++){const row=d[i];if(!row||row.length===0)continue;const isExample=(row[1]||'').trim()==='مثال توضيحي';const rowClass=isExample?' class="example-row"':'';bodyHtml+=`<tr${rowClass}>`;for(let j=1;j<=lastCol;j++){bodyHtml+=`<td>${row[j]||'-'}</td>`}bodyHtml+='</tr>';if(i>=3&&!isExample){cardsHtml+=`<div class="resident-card"><div class="card-header"><span class="card-name">${row[1]||''} (${row[2]||''})</span><span class="card-abbr">${row[3]||''}</span></div>`;for(let j=4;j<=lastCol;j++){cardsHtml+=`<div class="card-row"><span class="card-label">${headers[j]||''}</span><span class="card-value">${row[j]||'-'}</span></div>`}cardsHtml+='</div>'}}
+for(let i=1;i<d.length;i++){
+const row=d[i];
+if(!row||row.length===0)continue;
+const isExample=(row[1]||'').trim()==='مثال توضيحي';
+const rowClass=isExample?' class="example-row"':'';
+bodyHtml+=`<tr${rowClass}>`;
+for(let j=1;j<=lastCol;j++){bodyHtml+=`<td>${row[j]||'-'}</td>`}
+bodyHtml+='</tr>';
+if(i>=3&&!isExample){
+cardsHtml+=`<div class="resident-card"><div class="card-header"><span class="card-name">${row[1]||''} (${row[2]||''})</span><span class="card-abbr">${row[3]||''}</span></div>`;
+for(let j=4;j<=lastCol;j++){cardsHtml+=`<div class="card-row"><span class="card-label">${headers[j]||''}</span><span class="card-value">${row[j]||'-'}</span></div>`}
+cardsHtml+='</div>';
+}
+}
 body.innerHTML=bodyHtml;cards.innerHTML=cardsHtml;
 this.filterEval(document.getElementById('evalSearch')?.value||'');
 }
 filterEval(term){const t=(term||'').toLowerCase().trim();const rows=document.querySelectorAll('#evalBody tr');const cards=document.querySelectorAll('#evalCards .resident-card');rows.forEach(row=>{if(!t){row.style.display='';return}const text=row.textContent.toLowerCase();row.style.display=text.includes(t)?'':'none'});cards.forEach(card=>{if(!t){card.style.display='';return}const text=card.textContent.toLowerCase();card.style.display=text.includes(t)?'':'none'})}
-renderQA(){
-const grid=document.getElementById('qaGrid');grid.innerHTML='';
-const d=this.qaData;
-if(!d||d.length<2){grid.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات</p>';return}
-const categories={};let lastCategory='';
-for(let i=1;i<d.length;i++){const row=d[i];if(!row||row.length===0)continue;if(row[1]&&row[1].trim())lastCategory=row[1].trim();const cat=lastCategory||'عام';const question=(row[2]||'').trim();const answer=(row[3]||'').trim();if(!question)continue;if(!categories[cat])categories[cat]=[];categories[cat].push({question,answer})}
-let html='';const searchTerm=(document.getElementById('qaSearch')?.value||'').toLowerCase().trim();
-for(const[cat,items]of Object.entries(categories)){let filteredItems=items;if(searchTerm){filteredItems=items.filter(item=>smartSearch(item.question,searchTerm)||smartSearch(item.answer,searchTerm))}if(filteredItems.length===0)continue;html+=`<div class="qa-card"><div class="qa-category-header open" onclick="toggleQACategory(this)"><h3><i class="fas fa-folder-open"></i> ${cat} <span class="qa-count">${filteredItems.length} سؤال</span></h3><i class="fas fa-chevron-down"></i></div><div class="qa-body open">`;for(const item of filteredItems){html+=`<div class="qa-item"><div class="qa-question"><i class="fas fa-question-circle"></i> ${item.question}</div><div class="qa-answer">${item.answer}</div></div>`}html+=`</div></div>`}
-if(!html){grid.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد نتائج مطابقة</p>';return}
-grid.innerHTML=html;
-}
-filterQA(term){this.renderQA();}
 formatLink(link){if(!link||!link.trim())return'<span style="color:var(--text-secondary);">-</span>';const l=link.trim();if(l.startsWith('http://')||l.startsWith('https://')){return`<a href="${l}" target="_blank" class="link-url"><i class="fas fa-external-link-alt"></i> فتح الرابط</a>`}return`<span style="color:var(--text);font-weight:600;">${l}</span>`}
 renderLinks(){
 const grid=document.getElementById('linksGrid');grid.innerHTML='';
@@ -525,7 +529,9 @@ if(!d||d.length<2){grid.innerHTML='<p style="text-align:center;color:#888;paddin
 let tableHtml='<div class="table-wrapper desktop-table"><table><thead><tr><th>ت</th><th>الاسم</th><th>النوع</th><th>الغاية والهدف</th><th>الاعضاء</th><th>رابط الانضمام</th></tr></thead><tbody>';
 let cardsHtml='<div class="mobile-cards">';
 for(let i=1;i<d.length;i++){const row=d[i];if(!row||!row[1]||!row[1].trim())continue;const seq=row[0]||'';const name=row[1]||'';const type=row[2]||'';const purpose=row[3]||'';const members=row[4]||'';const link=row[5]||'';tableHtml+=`<tr><td style="font-weight:700;color:#667eea;">${seq}</td><td><strong>${name}</strong></td><td>${type}</td><td>${purpose}</td><td>${members}</td><td>${this.formatLink(link)}</td></tr>`;cardsHtml+=`<div class="link-card"><span style="font-size:11px;color:var(--text-secondary);">#${seq}</span><div class="link-title"><span class="link-label">الاسم:</span> ${name}</div>${type?`<div><span class="link-label">النوع:</span> <span class="link-type" style="display:inline-block;">${type}</span></div>`:''}${purpose?`<div class="link-desc"><span class="link-label">الغاية والهدف:</span> ${purpose}</div>`:''}${members?`<div class="link-members"><span class="link-label">الاعضاء:</span> ${members}</div>`:''}<div style="margin-top:8px;"><span class="link-label">رابط الانضمام:</span> ${this.formatLink(link)}</div></div>`}
-tableHtml+='</tbody></table></div>';cardsHtml+='</div>';grid.innerHTML=tableHtml+cardsHtml;
+tableHtml+='</tbody></table></div>';
+cardsHtml+='</div>';
+grid.innerHTML=tableHtml+cardsHtml;
 }
 parseOncallData(d){this.oncRows=[];this.oncHeaders=[];if(!d||d.length<2)return;this.oncHeaders=d[0]||[];document.getElementById('oncallMonthTitle').textContent=this.currentDisplayMonth+1;for(let i=1;i<d.length;i++){const row=d[i];if(!row||row.length===0)continue;let dateStr=row[0]||'';const dateMatch=dateStr.match(/Date\((\d+),\s*(\d+),\s*(\d+)\)/);if(dateMatch){const year=parseInt(dateMatch[1]);const month=parseInt(dateMatch[2])+1;const day=parseInt(dateMatch[3]);dateStr=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`}else{dateStr=extractDate(dateStr)||''}if(dateStr){this.oncRows.push({date:dateStr,day:row[1]||'',row:row})}}}
 getOncallDates(){return this.oncRows.map(r=>r.date)}
@@ -544,8 +550,7 @@ filterRes(term){const t=term.toLowerCase().trim();const rows=document.querySelec
 searchMe(term){const t=term.toLowerCase().trim();const rl=document.getElementById('searchResultsList');const rd=document.getElementById('myInfoResult');if(t.length<1){rl.innerHTML='';rd.classList.remove('show');return}let mt=this.res.filter(r=>smartSearch(r.name+' '+r.abbr,t));if(mt.length===0){rl.innerHTML='<div class="no-results">🔍 لا يوجد نتائج مطابقة.</div>';rd.classList.remove('show');return}if(mt.length===1){rl.innerHTML='';this.showMe(mt[0])}else{this._sm=mt;rl.innerHTML=mt.map((m,i)=>`<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#667eea;">${m.spec}</span></div>`).join('');rd.classList.remove('show')}}
 selectMe(i){if(this._sm&&this._sm[i]){document.getElementById('searchResultsList').innerHTML='';this.showMe(this._sm[i])}}
 getEvalForResident(name,abbr){if(!this.evalData||this.evalData.length<4)return null;for(let i=3;i<this.evalData.length;i++){const row=this.evalData[i];if(!row||row.length===0)continue;const rName=(row[1]||'').trim();const rAbbr=(row[2]||'').trim();if(smartSearch(rName,name)||smartSearch(rAbbr,abbr)||rAbbr===abbr){return{name:rName,abbr:rAbbr,spec:row[3]||'-',skills:[{label:this.evalData[0]?.[4]||'المهارات السريرية',value:row[4]||'-'},{label:this.evalData[0]?.[5]||'المعرفة الطبية',value:row[5]||'-'},{label:this.evalData[0]?.[6]||'اتخاذ القرار',value:row[6]||'-'},{label:this.evalData[0]?.[7]||'المهارات الاجرائية',value:row[7]||'-'},{label:this.evalData[0]?.[8]||'العمل ضمن فريق',value:row[8]||'-'},{label:this.evalData[0]?.[9]||'المهنية والانضباط',value:row[9]||'-'},{label:this.evalData[0]?.[10]||'التواصل مع المرضى',value:row[10]||'-'},{label:this.evalData[0]?.[11]||'النشاطات الاكاديمية',value:row[11]||'-'}],total:row[12]||'-'}}}return null}
-showMe(r){const rd=document.getElementById('myInfoResult');const ok=isJoined(r.st);this.currentMyInfo=r;let sf=null;for(let s of this.shf){if(s.namesList.some(n=>n===r.abbr)){sf=s;break}}let cis=[];if(sf&&sf.namesList){cis=sf.namesList.filter(n=>n!==r.abbr)}let myo=[];const tc={};for(const onc of this.oncRows){for(let col=2;col<this.oncHeaders.length;col++){const cellContent=(onc.row[col]||'').trim();if(!cellContent)continue;const names=splitNames(cellContent);if(names.length===0)continue;const found=names.some(n=>smartSearch(n,r.abbr)||smartSearch(n,r.name)||(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,'')));if(found){const catName=this.oncHeaders[col]||'أخرى';tc[catName]=(tc[catName]||0)+1;const colleagues=[];for(const n of names){if(!smartSearch(n,r.abbr)&&!smartSearch(n,r.name)&&!(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,''))){const cr=this.res.find(x=>x.abbr===n);if(cr)colleagues.push({name:cr.name,abbr:cr.abbr,phone:cr.phone});else colleagues.push({name:n,abbr:n,phone:''})}}myo.push({date:onc.date,day:onc.day||getDayName(onc.date),dayIdx:getDayIndex(onc.date),cat:catName,colleagues})}}}myo.sort((a,b)=>a.date.localeCompare(b.date));const tot=myo.length;const now=new Date();const timestamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;const evalInfo=this.getEvalForResident(r.name,r.abbr);let h=`<div id="myInfoContent" style="padding:10px;">`;h+=`<h3 style="color:#667eea;text-align:center;font-size:1.5em;margin-bottom:16px;">👤 ${r.name} (${r.abbr}) <span style="font-size:0.6em;color:var(--text-secondary);">#${r.seq}</span></h3>`;h+=`<div class="cumulative-box"><div class="cum-num">${r.cumulativeOnc||'0'}</div><div class="cum-lbl">إجمالي المناوبات التراكمية</div></div>`;h+=`<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span>📋 معلومات إضافية</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid">`;h+=`<div class="info-item"><div class="info-label">الرقم التسلسلي</div><div class="info-value">${r.seq}</div></div>`;h+=`<div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div>`;h+=`<div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div>`;h+=`<div class="info-item"><div class="info-label">الالتحاق</div><div class="info-value">${r.join||'-'}</div></div>`;h+=`<div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${ok?'✅':'⏳'} ${r.st||'غير محدد'}</span></div></div>`;h+=`<div class="info-item"><div class="info-label">المناوبات الكلية</div><div class="info-value">${r.onc||'0'}</div></div>`;h+='</div></div></div>';if(evalInfo){h+=`<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span>📊 التقييم السنوي</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content">`;h+=`<div class="info-grid">`;for(const skill of evalInfo.skills){h+=`<div class="info-item"><div class="info-label">${skill.label}</div><div class="info-value">${skill.value}</div></div>`}h+=`</div>`;h+=`<div class="stat-card" style="margin-top:12px;"><div class="stat-num">${evalInfo.total}</div><div class="stat-lbl">المحصلة الاجمالية</div></div>`;h+='</div></div>'}h+=`<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span>📋 الفرز</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;if(sf){h+=`<div class="shift-card-full"><h3>${sf.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${sf.c1}</div><div class="lbl">أولى</div></div><div class="shift-stat"><div class="num">${sf.c2}</div><div class="lbl">ثانية</div></div></div></div>`;if(cis.length>0){h+=`<div class="names-dropdown" style="margin-top:8px;"><button class="names-dropdown-btn" onclick="event.stopPropagation();this.classList.toggle('open');this.nextElementSibling.classList.toggle('show');"><span>👥 الزملاء في نفس الفرز (${cis.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${cis.map(c=>{const fr=this.res.find(x=>x.abbr===c);const dn=fr?fr.name+' ('+c+')':c;return`<li>${dn}</li>`}).join('')}</ul></div>`}}else h+='<p style="color:#888;">لم يتم العثور على فرز لهذا الشهر.</p>';h+='</div></div>';h+=`<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span>📅 المناوبات</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show"><div class="controls-row" style="margin-bottom:12px;"><label style="font-weight:700;font-size:14px;color:var(--text);">اختر الشهر:</label><select class="myinfo-month-selector" id="myinfoMonthSelect" onchange="app.filterMyinfoMonth()">`;for(let mi=0;mi<12;mi++){const sel=mi===this.m?' selected':'';h+=`<option value="${mi}"${sel}>${ARABIC_MONTHS[mi]}</option>`}h+=`</select></div><div id="myinfoOncallList">`;if(myo.length>0){h+=`<div class="capture-timestamp"><i class="fas fa-clock"></i> تاريخ ووقت العرض: ${timestamp}</div>`;h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px;">';h+=`<div class="stat-card"><div class="stat-num">${tot}</div><div class="stat-lbl">إجمالي المناوبات</div></div>`;for(const[type,count]of Object.entries(tc).sort((a,b)=>b[1]-a[1])){h+=`<div class="stat-card"><div class="stat-num">${count}</div><div class="stat-lbl">${type}</div></div>`}h+='</div>';myo.forEach(o=>{const we=o.dayIdx===5||o.dayIdx===6;h+=`<div class="oncall-info-row"><div class="oc-header"><span class="oc-date ${we?'weekend':''}">${we?'<span class="day-dot weekend"></span>':''}📅 ${o.date} - ${o.day}</span><span class="oncall-type-badge"><i class="fas fa-tag"></i> ${o.cat}</span></div>`;if(o.colleagues.length>0){const nws=o.colleagues.map((c,i)=>`${i>0?'<span class="cl-sep"> - </span>':''}${makeClickableName(c.name,c.phone,c.abbr)}`).join('');h+=`<div class="colleague-row"><span class="cl-label">👥 الزملاء:</span><span class="cl-names">${nws}</span></div>`}h+='</div>'})}else h+='<p style="color:#888;">لا توجد مناوبات مسجلة هذا الشهر.</p>';h+=`</div></div></div>`;h+=`<button class="download-btn" onclick="app.downloadMyInfoImage()"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل معلوماتي كصورة</button></div>`;rd.innerHTML=h;rd.classList.add('show');document.getElementById('searchResultsList').innerHTML=''}
-filterMyinfoMonth(){const sel=document.getElementById('myinfoMonthSelect');if(sel&&this.currentMyInfo){this.m=parseInt(sel.value);this.showMe(this.currentMyInfo)}}
+showMe(r){const rd=document.getElementById('myInfoResult');const ok=isJoined(r.st);this.currentMyInfo=r;let sf=null;for(let s of this.shf){if(s.namesList.some(n=>n===r.abbr)){sf=s;break}}let cis=[];if(sf&&sf.namesList){cis=sf.namesList.filter(n=>n!==r.abbr)}let myo=[];const tc={};for(const onc of this.oncRows){for(let col=2;col<this.oncHeaders.length;col++){const cellContent=(onc.row[col]||'').trim();if(!cellContent)continue;const names=splitNames(cellContent);if(names.length===0)continue;const found=names.some(n=>smartSearch(n,r.abbr)||smartSearch(n,r.name)||(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,'')));if(found){const catName=this.oncHeaders[col]||'أخرى';tc[catName]=(tc[catName]||0)+1;const colleagues=[];for(const n of names){if(!smartSearch(n,r.abbr)&&!smartSearch(n,r.name)&&!(r.abbr&&prepareForSearch(n).replace(/[.\s]/g,'')===prepareForSearch(r.abbr).replace(/[.\s]/g,''))){const cr=this.res.find(x=>x.abbr===n);if(cr)colleagues.push({name:cr.name,abbr:cr.abbr,phone:cr.phone});else colleagues.push({name:n,abbr:n,phone:''})}}myo.push({date:onc.date,day:onc.day||getDayName(onc.date),dayIdx:getDayIndex(onc.date),cat:catName,colleagues})}}}myo.sort((a,b)=>a.date.localeCompare(b.date));const tot=myo.length;const now=new Date();const timestamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;const evalInfo=this.getEvalForResident(r.name,r.abbr);let h=`<div id="myInfoContent" style="padding:10px;">`;h+=`<h3 style="color:#667eea;text-align:center;font-size:1.5em;margin-bottom:16px;">👤 ${r.name} (${r.abbr}) <span style="font-size:0.6em;color:var(--text-secondary);">#${r.seq}</span></h3>`;h+=`<div class="cumulative-box"><div class="cum-num">${r.cumulativeOnc||'0'}</div><div class="cum-lbl">إجمالي المناوبات التراكمية</div></div>`;h+=`<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span>📋 معلومات إضافية</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid">`;h+=`<div class="info-item"><div class="info-label">الرقم التسلسلي</div><div class="info-value">${r.seq}</div></div>`;h+=`<div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div>`;h+=`<div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div>`;h+=`<div class="info-item"><div class="info-label">الالتحاق</div><div class="info-value">${r.join||'-'}</div></div>`;h+=`<div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok?'status-joined':'status-pending'}">${ok?'✅':'⏳'} ${r.st||'غير محدد'}</span></div></div>`;h+=`<div class="info-item"><div class="info-label">المناوبات الكلية</div><div class="info-value">${r.onc||'0'}</div></div>`;h+='</div></div></div>';if(evalInfo){h+=`<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span>📊 التقييم السنوي</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;h+=`<div class="info-grid">`;for(const skill of evalInfo.skills){h+=`<div class="info-item"><div class="info-label">${skill.label}</div><div class="info-value">${skill.value}</div></div>`}h+=`</div>`;h+=`<div class="stat-card" style="margin-top:12px;"><div class="stat-num">${evalInfo.total}</div><div class="stat-lbl">المحصلة الاجمالية</div></div>`;h+='</div></div>'}h+=`<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span>📋 الفرز</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;if(sf){h+=`<div class="shift-card-full"><h3>${sf.name}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${sf.c1}</div><div class="lbl">أولى</div></div><div class="shift-stat"><div class="num">${sf.c2}</div><div class="lbl">ثانية</div></div></div></div>`;if(cis.length>0){h+=`<div class="names-dropdown" style="margin-top:8px;"><button class="names-dropdown-btn" onclick="event.stopPropagation();this.classList.toggle('open');this.nextElementSibling.classList.toggle('show');"><span>👥 الزملاء في نفس الفرز (${cis.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${cis.map(c=>`<li>${c}</li>`).join('')}</ul></div>`}}else h+='<p style="color:#888;">لم يتم العثور على فرز لهذا الشهر.</p>';h+='</div></div>';h+=`<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span>📅 المناوبات (${tot})</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;if(myo.length>0){h+=`<div class="capture-timestamp"><i class="fas fa-clock"></i> تاريخ ووقت العرض: ${timestamp}</div>`;h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px;">';h+=`<div class="stat-card"><div class="stat-num">${tot}</div><div class="stat-lbl">إجمالي المناوبات</div></div>`;for(const[type,count]of Object.entries(tc).sort((a,b)=>b[1]-a[1])){h+=`<div class="stat-card"><div class="stat-num">${count}</div><div class="stat-lbl">${type}</div></div>`}h+='</div>';myo.forEach(o=>{const we=o.dayIdx===5||o.dayIdx===6;h+=`<div class="oncall-info-row"><div class="oc-header"><span class="oc-date ${we?'weekend':''}">${we?'<span class="day-dot weekend"></span>':''}📅 ${o.date} - ${o.day}</span><span class="oc-type">${o.cat}</span></div>`;if(o.colleagues.length>0){const nws=o.colleagues.map((c,i)=>`${i>0?'<span class="cl-sep"> - </span>':''}${makeClickableName(c.name,c.phone,c.abbr)}`).join('');h+=`<div class="colleague-row"><span class="cl-label">👥 الزملاء:</span><span class="cl-names">${nws}</span></div>`}h+='</div>'})}else h+='<p style="color:#888;">لا توجد مناوبات مسجلة هذا الشهر.</p>';h+='</div></div>';h+=`<button class="download-btn" onclick="app.downloadMyInfoImage()"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل معلوماتي كصورة</button></div>`;rd.innerHTML=h;rd.classList.add('show');document.getElementById('searchResultsList').innerHTML=''}
 updateTime(){document.getElementById('lastUpdateTime').textContent='آخر تحديث: '+new Date().toLocaleTimeString('ar-SA')}
 }
 let app;document.addEventListener('DOMContentLoaded',()=>{app=new HospitalApp();window.app=app});
