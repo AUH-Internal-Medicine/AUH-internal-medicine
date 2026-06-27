@@ -47,6 +47,17 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-27 — Added "Hosted by Levant Host" to footer
+- **Who:** GitHub Copilot (Claude Sonnet 4.5)
+- **Type:** code
+- **What:** Added "Hosted by Levant Host" link to the footer. Added CSS styling 
+  for footer links with green color and hover effects, and modified the footer 
+  HTML to include a new line with a link to levanthost.com.
+- **Files:** index.html
+- **Docs synced:** no — minor visual change only, no behavior or contract changes.
+- **Notes / follow-ups:** Link opens in new tab with security attributes. Styled 
+  in green (#00b894) to match site theme.
+
 ## 2026-06-27 — Initial documentation set
 - **Who:** Claude Opus 4.8 (1M context)
 - **Type:** docs

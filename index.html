@@ -247,6 +247,8 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 @keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-20px)}}
 .main-footer{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:18px;text-align:center;color:white;margin-top:40px;font-size:13px;font-weight:500}
 .main-footer i{color:#e74c3c;margin:0 4px}
+.main-footer a{color:#00b894;text-decoration:none;font-weight:600;transition:var(--transition-fast)}
+.main-footer a:hover{color:#00e6b8;text-decoration:underline}
 .qa-card{background:var(--card-bg);border-radius:var(--radius-lg);margin-bottom:8px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
 .qa-card:hover{box-shadow:var(--shadow-md)}
 .qa-card-header{padding:12px 16px;background:var(--gray-100);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:6px}
@@ -298,7 +300,7 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 <nav class="main-nav"><div class="nav-container" id="navContainer"></div></nav>
 <main class="main-content" id="mainContent"></main>
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-arrow-up"></i></button>
-<footer class="main-footer"><p>© <span id="currentYear"></span> مشفى حلب الجامعي - قسم الداخلية <i class="fas fa-heart"></i></p></footer>
+<footer class="main-footer"><p>© <span id="currentYear"></span> مشفى حلب الجامعي - قسم الداخلية <i class="fas fa-heart"></i></p><p style="margin-top:8px;font-size:12px;">Hosted by <a href="https://levanthost.com" target="_blank" rel="noopener noreferrer">Levant Host</a></p></footer>
 <div class="name-tooltip" id="nameTooltip"><span class="tt-close" onclick="hideTooltip()">✕</span><div class="tt-name" id="ttName"></div><div class="tt-phone" id="ttPhone" dir="ltr"></div><button class="tt-copy-btn" id="ttCopyBtn" onclick="copyTooltipPhone()">📋 نسخ الرقم</button></div>
 <script>
 function toggleDarkMode(){document.body.classList.toggle('dark-mode');const i=document.getElementById('darkModeIcon');if(document.body.classList.contains('dark-mode')){i.className='fas fa-sun';localStorage.setItem('darkMode','true')}else{i.className='fas fa-moon';localStorage.setItem('darkMode','false')}}
