@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-29 — Fix shifts selector scaling on medium widths
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Fixed the remaining shifts month rectangle overflow that appeared while resizing between desktop and mobile breakpoints. Added responsive width rules (`clamp` + max-width 1100px behavior) so the selector shrinks progressively instead of staying oversized.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** This is scoped to the shifts tab selector only; no changes to data logic or on-call selector behavior.
+
 ## 2026-06-29 — Fix shifts dropdown overflow and header layout
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
