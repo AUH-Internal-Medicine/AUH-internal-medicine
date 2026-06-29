@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-29 — Mobile image export + early next-month shifts
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Improved PNG export logic for on-call/my-info cards to reduce quality loss after mobile sharing apps recompress very large images. Added data-aware shift month selection so the app can default to next month as soon as `فرز شهر X` has real values, instead of waiting for calendar rollover.
+- **Files:** index.html, README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, DATA-MODEL.md
+- **Notes / follow-ups:** User can still manually pick any month in the selectors; auto-preference is applied as the default only. Cache key was not bumped because the data contract is unchanged.
+
 ## 2026-06-27 — Initial documentation set
 - **Who:** Claude Opus 4.8 (1M context)
 - **Type:** docs

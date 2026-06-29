@@ -58,7 +58,9 @@ contains التحق, ملتحق, or التحاق (`isJoined()`).
 header row for cells matching the regex `فرز شهر (\d+)` (e.g. "فرز شهر 6" = shift
 for month 6). This lets you add a new month by adding a new column with that
 header; no code change needed. Cells equal to "غير محدد" (unspecified) are
-ignored.
+ignored. In UI defaults, the app now prefers showing next month if that column
+already contains real values; this supports publishing upcoming shifts before
+the month actually starts.
 
 ---
 

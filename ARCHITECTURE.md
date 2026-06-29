@@ -97,7 +97,7 @@ constructor, lines 349–357):
 |---|---|
 | `renderRes` / `displayResidents` | Roster table + mobile cards; `displayResidents` re-applies filters/search on every change. |
 | `buildFilters` | Populates specialty + shift `<select>` dropdowns from the data. |
-| `renderShiftsFromResidents` / `dispShiftsByMonth` | The "shifts" (فروز) tab — groups joined residents by their shift value for a chosen month. |
+| `renderShiftsFromResidents` / `dispShiftsByMonth` | The "shifts" (فروز) tab — groups joined residents by their shift value for a chosen month (auto-prefers next month when data is already present). |
 | `renderEval` | Evaluation table + cards (columns 13/14 are praise/penalty badges). |
 | `renderLinks` | Links table + cards; `formatLink` turns `http…` values into buttons. |
 | `renderQA` | Groups Q&A by category into collapsible sections. |
@@ -122,6 +122,10 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
   (431–433) scan header cells from column 12 onward for the pattern
   `فرز شهر <number>` to discover per-month shift columns, so new months can be
   added to the sheet without code changes.
+- **Month defaulting is data-aware**: `getPreferredShiftMonth` +
+  `hasShiftDataForMonth` prefer `فرز شهر <next month>` if it already contains
+  real values (not empty / not `غير محدد`), otherwise fall back to current month
+  or latest available populated month.
 
 ### Export features
 
@@ -129,7 +133,8 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
   residents and triggers a `contacts.vcf` download (Blob + temporary `<a>`).
 - **`_captureImage`** (505) + `downloadOncallImage` / `downloadMyInfoImage`:
   use `html2canvas` to rasterize a DOM card to PNG, add padding, and download it.
-  Uses a higher scale on mobile (`window.innerWidth < 768`) for sharper output.
+  Uses DPR-aware scaling and a maximum side cap before export to avoid oversized
+  images that messaging apps aggressively recompress on mobile share.
 
 ---
 

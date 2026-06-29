@@ -37,7 +37,8 @@ The app presents resident data across **7 tabs** (Arabic label → meaning):
 - **Dark mode** toggle (persisted in `localStorage`).
 - **Arabic-aware search** with normalization (handles أ/إ/آ/ا, ة/ه, ى/ي, the "ال" prefix, diacritics, etc.).
 - **Export to contacts**: select residents → download a `.vcf` (vCard) file.
-- **Export to image**: render the on-call card or "my info" card to a PNG using `html2canvas`.
+- **Export to image**: render the on-call card or "my info" card to a PNG using `html2canvas`, with mobile-friendly pixel limits to reduce messaging-app quality loss.
+- **Shift month auto-preference**: if next month's shift column already has real values, the shifts views default to it immediately (instead of waiting for calendar month rollover).
 - **Click-to-copy phone numbers** via tooltips.
 - **Responsive**: desktop tables collapse into mobile cards under 768px.
 
