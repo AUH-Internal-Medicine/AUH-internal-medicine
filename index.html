@@ -375,7 +375,7 @@ this.init();
 init(){
 document.getElementById('navContainer').innerHTML=buildNav();
 document.getElementById('mainContent').innerHTML=buildMainContent();
-document.getElementById('currentYear').textContent=new Date().getFullYear();
+const yel=document.getElementById('currentYear');if(yel)yel.textContent=new Date().getFullYear();
 document.getElementById('currentDateHeader').textContent=new Date().toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 document.getElementById('oncallDatePicker').value=this.today;
 document.getElementById('monthSelector').value=this.m;

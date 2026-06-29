@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-29 — Hotfix loader stuck at 0% after footer text change
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Fixed startup crash that occurred because `init()` still wrote to `#currentYear` after footer markup was simplified. Added a null-safe guard so app initialization proceeds even when that element is absent.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** This specifically resolves the loading screen freezing at 0%.
+
 ## 2026-06-29 — Immediate download feedback + higher mobile export detail
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
