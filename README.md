@@ -33,7 +33,7 @@ The app presents resident data across **7 tabs** (Arabic label → meaning):
 
 ### Notable features
 - **Live Google Sheets data** via the gviz endpoint (CSV + JSON), refreshed every 2 minutes.
-- **Offline-ish caching** in `localStorage` (2-minute TTL) so the page renders instantly from cache, then refreshes in the background.
+- **Offline-ish caching** in `localStorage` (10-minute TTL) so the page renders instantly from cache, then refreshes in the background.
 - **Dark mode** toggle (persisted in `localStorage`).
 - **Arabic-aware search** with normalization (handles أ/إ/آ/ا, ة/ه, ى/ي, the "ال" prefix, diacritics, etc.).
 - **Export to contacts**: select residents → download a `.vcf` (vCard) file.

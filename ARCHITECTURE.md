@@ -64,9 +64,10 @@ constructor, lines 349–357):
 1. **`constructor` → `init()`** (358–371): injects nav + main HTML, sets header
    date/year, wires up tabs/searches/back-to-top, starts the draggable header,
    then calls `loadData()` and schedules `loadData()` every 120 s.
-2. **`loadData()`** (372–377): renders from cache first if present
-   (`loadFromCache` → `applyCachedData`), then always calls `loadFresh()` to
-   refetch. Hides the loading screen once data is ready.
+2. **`loadData()`** (372–377): if cache exists, renders it immediately
+  (`loadFromCache` → `applyCachedData`), hides the loading screen, and triggers
+  `loadFresh()` in the background. If there is no valid cache, it waits for a
+  foreground fetch before hiding the loading screen.
 3. **`loadFresh(silent)`** (412–426): fetches all five sheet tabs in parallel
    via `Promise.all`, parses, renders, and writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).
@@ -88,7 +89,7 @@ constructor, lines 349–357):
 
 - **`loadFromCache`** (410) / **`saveToCache`** (411): JSON blob in
   `localStorage` under `CK` (`hc_v62`) with a `timestamp`; entries older than
-  `CD` (2 minutes) are treated as stale. Cache stores the **raw** resident/oncall
+  `CD` (10 minutes) are treated as stale. Cache stores the **raw** resident/oncall
   data plus the eval/links/qa arrays.
 
 ### Rendering (one method per tab area)

@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-29 — Faster mobile startup with cache-first render
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Optimized startup flow so cached data is rendered immediately and the first background refresh no longer blocks the loading screen. Increased cache TTL from 2 minutes to 10 minutes to reduce cold starts on mobile while still refreshing data in the background.
+- **Files:** index.html, README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, DATA-MODEL.md
+- **Notes / follow-ups:** Refresh interval remains 120 seconds; no data-column contract changes; cache key version unchanged.
+
 ## 2026-06-29 — Mobile image export + early next-month shifts
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

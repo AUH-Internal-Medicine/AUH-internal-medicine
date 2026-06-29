@@ -143,7 +143,7 @@ Entries are grouped by category into collapsible sections, sorted alphabetically
 
 - The full fetched dataset is cached in `localStorage` under key **`hc_v62`**
   with a timestamp.
-- Cache **TTL is 2 minutes** (`CD = 2 * 60 * 1000`). Within the TTL the page
+- Cache **TTL is 10 minutes** (`CD = 10 * 60 * 1000`). Within the TTL the page
   renders instantly from cache and still refreshes in the background.
 - The app re-fetches every **120 seconds** while open.
 - To force-invalidate every visitor's cache after a breaking change, bump the

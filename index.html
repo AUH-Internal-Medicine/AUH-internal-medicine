@@ -333,7 +333,7 @@ const SID='1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4';
 const GID_R='0';const GID_O='238974679';const GID_E='253629565';const GID_L='1649404909';const GID_Q='680270268';
 const AM=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-const CK='hc_v62';const CD=2*60*1000;
+const CK='hc_v62';const CD=10*60*1000;
 const TABS=[{id:'residents',icon:'👨‍⚕️',label:'لائحة المقيمين'},{id:'shifts',icon:'📋',label:'الفروز'},{id:'oncall',icon:'📅',label:'المناوبات'},{id:'evaluation',icon:'📊',label:'التقييم السنوي'},{id:'links',icon:'🔗',label:'روابط هامة'},{id:'myinfo',icon:'🔍',label:'معلوماتي'},{id:'qa',icon:'❓',label:'Q&A'}];
 function buildNav(){return TABS.map(t=>`<button class="nav-btn" data-tab="${t.id}">${t.icon} <span>${t.label}</span></button>`).join('')}
 function buildMainContent(){
@@ -371,8 +371,14 @@ setInterval(()=>this.loadData(),120000);
 }
 async loadData(){
 const cached=this.loadFromCache();
-if(cached){this.applyCachedData(cached);await this.loadFresh(true)}
-else{this.updateProgress(15,'جاري جلب البيانات...');await this.loadFresh(false)}
+if(cached){
+this.applyCachedData(cached);
+if(!this._dataReady){this._dataReady=true;this.showLoading(true)}
+this.loadFresh(true);
+return;
+}
+this.updateProgress(15,'جاري جلب البيانات...');
+await this.loadFresh(false);
 if(!this._dataReady){this._dataReady=true;this.showLoading(true)}
 }
 applyCachedData(c){
