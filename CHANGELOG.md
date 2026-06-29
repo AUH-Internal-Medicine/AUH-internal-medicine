@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-29 — Image quality tuning + shifts selector UI + faster header image paint
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Retuned image export scaling/canvas limits to preserve more detail on mobile before messaging-app recompression. Restyled the shifts month selector with clearer modern UI and improved spacing. Switched header hero image layer to eager-loaded `<img>` for faster first visual paint on mobile and reduced partial-loading look.
+- **Files:** index.html, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md
+- **Notes / follow-ups:** WhatsApp/Telegram still compress image sends by default; sending as document preserves maximum quality.
+
 ## 2026-06-29 — Faster mobile startup with cache-first render
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

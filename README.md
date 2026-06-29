@@ -39,6 +39,8 @@ The app presents resident data across **7 tabs** (Arabic label → meaning):
 - **Export to contacts**: select residents → download a `.vcf` (vCard) file.
 - **Export to image**: render the on-call card or "my info" card to a PNG using `html2canvas`, with mobile-friendly pixel limits to reduce messaging-app quality loss.
 - **Shift month auto-preference**: if next month's shift column already has real values, the shifts views default to it immediately (instead of waiting for calendar month rollover).
+- **Shift month control polish**: month selector in the shifts tab now has clearer modern styling and better spacing.
+- **Faster first header paint**: header background image is now eagerly loaded to reduce partial/flicker appearance on mobile.
 - **Click-to-copy phone numbers** via tooltips.
 - **Responsive**: desktop tables collapse into mobile cards under 768px.
 

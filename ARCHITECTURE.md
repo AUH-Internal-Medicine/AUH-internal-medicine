@@ -98,7 +98,7 @@ constructor, lines 349–357):
 |---|---|
 | `renderRes` / `displayResidents` | Roster table + mobile cards; `displayResidents` re-applies filters/search on every change. |
 | `buildFilters` | Populates specialty + shift `<select>` dropdowns from the data. |
-| `renderShiftsFromResidents` / `dispShiftsByMonth` | The "shifts" (فروز) tab — groups joined residents by their shift value for a chosen month (auto-prefers next month when data is already present). |
+| `renderShiftsFromResidents` / `dispShiftsByMonth` | The "shifts" (فروز) tab — groups joined residents by their shift value for a chosen month (auto-prefers next month when data is already present); month chooser is rendered with dedicated wrapper styling in the tab header. |
 | `renderEval` | Evaluation table + cards (columns 13/14 are praise/penalty badges). |
 | `renderLinks` | Links table + cards; `formatLink` turns `http…` values into buttons. |
 | `renderQA` | Groups Q&A by category into collapsible sections. |
@@ -135,7 +135,12 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
 - **`_captureImage`** (505) + `downloadOncallImage` / `downloadMyInfoImage`:
   use `html2canvas` to rasterize a DOM card to PNG, add padding, and download it.
   Uses DPR-aware scaling and a maximum side cap before export to avoid oversized
-  images that messaging apps aggressively recompress on mobile share.
+  images that messaging apps aggressively recompress on mobile share; mobile
+  scaling is biased higher to preserve detail before app-side recompression.
+
+- **Header background strategy**: the header now uses an eager-loaded `<img>`
+  layer inside `.header-bg-image` (instead of relying only on CSS background)
+  so users see the hero image faster on first paint, especially on mobile.
 
 ---
 
