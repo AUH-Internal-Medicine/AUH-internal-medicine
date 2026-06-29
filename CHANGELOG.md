@@ -47,6 +47,22 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-29 — Immediate download feedback + higher mobile export detail
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added instant button loading state for image export actions so users get immediate confirmation on tap before capture starts. Increased mobile capture scale and output limits to improve text/detail quality in downloaded images. Added clearer in-app guidance that WhatsApp/Telegram reduce quality when sent as photos and that document/file sending preserves quality.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Platform-side compression in chat apps cannot be fully bypassed by image format alone.
+
+## 2026-06-29 — Footer text simplification and bottom alignment
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Updated footer content to show only `تجربة 2026` as requested. Fixed footer vertical behavior by switching to a flex-column page layout and letting main content grow, ensuring the footer remains at the bottom even when "معلوماتي" content is short.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Removed dynamic year/footer icon text intentionally per request.
+
 ## 2026-06-29 — Fix shifts selector scaling on medium widths
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
