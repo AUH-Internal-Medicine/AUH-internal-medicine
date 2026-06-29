@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-29 — Fix shifts dropdown overflow and header layout
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Fixed responsive overflow in the shifts tab header by constraining the month selector wrapper and applying tab-scoped layout rules for desktop/mobile. This restores proper alignment inside the card and prevents the dropdown from escaping the frame.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Fix is scoped to the shifts tab only to avoid side effects on the on-call and my-info month selectors.
+
 ## 2026-06-29 — Image quality tuning + shifts selector UI + faster header image paint
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
