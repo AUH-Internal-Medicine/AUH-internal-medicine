@@ -47,6 +47,22 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-30 — Polish banner framing and pending badge color
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Smoothed the header background image framing on mobile, increased dark-mode image visibility, and changed the normal pending badge from yellow to red so not-joined states read more clearly.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Visual-only refinement; no data contract or behavior changes.
+
+## 2026-06-30 — Fix mobile banner crop and pending status color
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Improved the header background image framing on mobile and increased dark-mode visibility so the banner is less washed out. Changed the pending status badge from yellow to red so "not joined" states are clearer and match the requested emphasis.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Visual-only CSS update; no data contract or behavior changes.
+
 ## 2026-06-30 — Treat copied future-month shifts as not-ready
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
