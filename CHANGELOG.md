@@ -47,6 +47,22 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-30 — Fix header image as a fixed decorative banner
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** both
+- **What:** Disabled touch/mouse dragging on the header image so it stays fixed, and adjusted its sizing, position, opacity, and contrast to read more clearly across light and dark mode.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** no
+- **Notes / follow-ups:** Visual-only change; no data contract or app flow changes.
+
+## 2026-06-30 — Split not-joined status colors by phrase
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** both
+- **What:** Split the resident status badge styling so the exact phrase "لم ينضم للغروب" renders red while "لم يلتحق بعد" renders yellow. Updated the roster table/cards and My Info to use the new status-to-class helper.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** no
+- **Notes / follow-ups:** This is a presentation-only change; the sheet contract and data parsing stayed the same.
+
 ## 2026-06-30 — Polish banner framing and pending badge color
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
