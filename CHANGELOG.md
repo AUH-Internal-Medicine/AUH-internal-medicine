@@ -47,6 +47,22 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-30 — Icon consistency polish (chevrons + spacing)
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added a second-pass icon polish to normalize icon spacing/sizing in nav and labels, and fixed toggle behavior so only chevron indicators rotate in collapsible and Q&A category headers (not all icons in the row).
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Visual-only CSS refinement; no behavior/data contract changes.
+
+## 2026-06-30 — Replace emoji-heavy UI labels with icons
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Replaced emoji-based UI markers across navigation, section labels, status badges, tooltips, and dynamic cards with consistent Font Awesome icons already loaded in the project. This keeps the same behavior while improving visual consistency across devices and fonts.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** No data model, cache key, or sheet-column contract changes.
+
 ## 2026-06-29 — Hotfix loader stuck at 0% after footer text change
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
