@@ -28,7 +28,7 @@ starting map; the current app code now lives in separate files.
 |---|---|
 | `helpers.js` top section | `toggleDarkMode()` + dark-mode restore from `localStorage`, tooltip handlers, copy helpers, collapsible/Q&A toggles, dropdown handling, `showToast`, download-progress overlay control, and the pure helper functions. |
 | `helpers.js` config section | Google Sheet id, tab GIDs, Arabic month/day names, cache key + TTL, tab list. |
-| `helpers.js` builder section | `buildNav()` and `buildMainContent()` — return HTML strings for the nav buttons and all 7 tab sections. |
+| `helpers.js` builder section | `buildNav()` and `buildMainContent()` — return HTML strings for the nav buttons and all tab sections, including the support/complaints section opened from the floating shortcut. |
 | `app.js` class section | `class HospitalApp` — the whole application. |
 | `app.js` bootstrap | On `DOMContentLoaded`, `app = new HospitalApp(); window.app = app`. |
 
@@ -58,12 +58,14 @@ constructor, lines 349–357):
 ### Lifecycle
 
 1. **`constructor` → `init()`** (358–371): injects nav + main HTML, sets header
-   date/year, wires up tabs/searches/back-to-top, starts the draggable header,
-   then calls `loadData()` and schedules `loadData()` every 120 s.
+   date/year, wires up tabs/searches/back-to-top and the floating support shortcut,
+  starts the draggable header, then calls `loadData()` and schedules `loadData()` every 120 s.
+  Tab switches restore the chosen section and scroll the viewport back to the top.
 2. **`loadData()`** (372–377): if cache exists, renders it immediately
-  (`loadFromCache` → `applyCachedData`), hides the loading screen, and triggers
-  `loadFresh()` in the background. If there is no valid cache, it waits for a
-  foreground fetch before hiding the loading screen.
+  (`loadFromCache` → `applyCachedData`), waits until the header image is ready,
+  hides the loading screen, and triggers `loadFresh()` in the background.
+  If there is no valid cache, it waits for a foreground fetch and the same
+  header-image readiness before hiding the loading screen.
 3. **`loadFresh(silent)`** (412–426): fetches all five sheet tabs in parallel
    via `Promise.all`, parses, renders, and writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).

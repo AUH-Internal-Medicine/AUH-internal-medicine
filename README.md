@@ -20,7 +20,7 @@ Pages, Netlify, Cloudflare Pages, a plain file server, etc.).
 
 ## What it does
 
-The app presents resident data across **7 tabs** (Arabic label → meaning):
+The app presents resident data across **7 primary tabs** (Arabic label → meaning):
 
 | Tab id | Arabic label | Purpose |
 |---|---|---|
@@ -31,6 +31,9 @@ The app presents resident data across **7 tabs** (Arabic label → meaning):
 | `links` | روابط هامة | Important links / channels (e.g. group chats, resources). |
 | `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see a personal summary: cumulative on-calls, evaluation, shift, and a list of every on-call you appear in with your colleagues. Exportable as an image. |
 | `qa` | Q&A (الأسئلة والأجوبة) | Categorized, collapsible frequently-asked questions. |
+
+A separate floating **الشكاوي** support shortcut (outside the primary tab row)
+opens the technical-contact view when needed.
 
 ### Notable features
 - **Live Google Sheets data** via the gviz endpoint (CSV + JSON), refreshed every 2 minutes.

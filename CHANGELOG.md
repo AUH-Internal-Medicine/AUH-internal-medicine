@@ -47,6 +47,38 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-01 — Shrink support shortcut to icon and fix thanks wording
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** code
+- **What:** Converted the floating support shortcut into a smaller icon-only button and switched the icon to a clearer support/IT symbol. Updated the complaints message ending from "وشطرا" to "وشكرا".
+- **Files:** index.html, styles.css, helpers.js, CHANGELOG.md
+- **Docs synced:** no
+- **Notes / follow-ups:** Visual/UI copy update only; no data flow or contract changes.
+
+## 2026-07-01 — Move complaints outside primary nav and speed first header paint
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Removed الشكاوي from the primary top tab row and added it as a separate floating shortcut button on the side/bottom area. Also improved first-open visual loading by preloading both header image formats and waiting for header-image readiness before dismissing the loading screen.
+- **Files:** index.html, styles.css, helpers.js, app.js, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** Data contract and cache key are unchanged.
+
+## 2026-07-01 — Add complaints tab with technical support contact
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added a new top navigation tab (الشكاوي) and a dedicated page section that shows technical support contact details (name, WhatsApp number, and Telegram handle) when opened.
+- **Files:** helpers.js, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** The complaints tab is static UI content and does not use Google Sheet data.
+
+## 2026-07-01 — Unpin top nav and reset scroll on tab switch
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Made the top navigation non-sticky so it scrolls away with the page, and changed tab switching to scroll back to the top for a cleaner section transition.
+- **Files:** styles.css, app.js, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** This is a UI behavior change only; data loading, sheet contract, and cache key are unchanged.
+
 ## 2026-07-01 — Use WebP full-bleed header image
 - **Who:** GPT-5.4 mini (GitHub Copilot)
 - **Type:** code

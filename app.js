@@ -16,7 +16,7 @@ document.getElementById('currentDateHeader').textContent=new Date().toLocaleDate
 document.getElementById('oncallDatePicker').value=this.today;
 document.getElementById('monthSelector').value=this.m;
 document.getElementById('oncallMonthTitle').textContent=this.m+1;
-this.setupTabs();this.setupSearches();this.setupBackToTop();
+this.setupTabs();this.setupSearches();this.setupBackToTop();this.setupSupportShortcut();
 this.showLoading(false);
 this.loadData();
 setInterval(()=>{if(!document.hidden)this.loadData()},120000);
@@ -25,13 +25,13 @@ async loadData(){
 const cached=this.loadFromCache();
 if(cached){
 this.applyCachedData(cached);
-if(!this._dataReady){this._dataReady=true;this.showLoading(true)}
+if(!this._dataReady){await this.waitForHeaderImage();this._dataReady=true;this.showLoading(true)}
 this.loadFresh(true);
 return;
 }
 this.updateProgress(15,'جاري جلب البيانات...');
 await this.loadFresh(false);
-if(!this._dataReady){this._dataReady=true;this.showLoading(true)}
+if(!this._dataReady){await this.waitForHeaderImage();this._dataReady=true;this.showLoading(true)}
 }
 applyCachedData(c){
 if(c.residents){this.renderRes(c.residents);this.buildFilters();this.renderShiftsFromResidents()}
@@ -42,21 +42,27 @@ if(c.qa)this.qaData=c.qa;
 this.updateTime();
 }
 setupBackToTop(){const b=document.getElementById('backToTop');window.addEventListener('scroll',()=>{if(window.scrollY>300)b.classList.add('show');else b.classList.remove('show')},{passive:true})}
+setupSupportShortcut(){const b=document.getElementById('supportShortcut');if(!b)return;b.addEventListener('click',e=>{e.preventDefault();this.openComplaintsTab()})}
+openComplaintsTab(doScroll=true){if(typeof this.activateTab==='function')this.activateTab('complaints',doScroll)}
+waitForHeaderImage(timeoutMs=2200){const img=document.querySelector('.header-bg-photo');if(!img)return Promise.resolve();if(img.complete&&img.naturalWidth>0)return Promise.resolve();return new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);img.removeEventListener('load',finish);img.removeEventListener('error',finish);resolve()};const timer=setTimeout(finish,timeoutMs);img.addEventListener('load',finish,{once:true});img.addEventListener('error',finish,{once:true})})}
 showLoading(s){const ls=document.getElementById('loadingScreen');if(s){ls.classList.add('hidden');setTimeout(()=>ls.style.display='none',400)}else{ls.style.display='flex';ls.classList.remove('hidden')}}
-updateProgress(p,txt){document.getElementById('progressBar').style.width=p+'%';document.getElementById('loaderPercentage').textContent=p+'%';if(txt)document.getElementById('loaderSubtitle').textContent=txt;if(p>=100)setTimeout(()=>this.showLoading(true),150)}
+updateProgress(p,txt){document.getElementById('progressBar').style.width=p+'%';document.getElementById('loaderPercentage').textContent=p+'%';if(txt)document.getElementById('loaderSubtitle').textContent=txt}
 setupTabs(){
-document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{
+const activateTab=(tabId,doScroll)=>{
 document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
 document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
-b.classList.add('active');
-const tid=b.dataset.tab+'-tab';const el=document.getElementById(tid);if(el)el.classList.add('active');
-localStorage.setItem('activeTab',b.dataset.tab);
-if(b.dataset.tab==='evaluation')this.renderEval();
-if(b.dataset.tab==='links')this.renderLinks();
-if(b.dataset.tab==='qa')this.renderQA();
-if(b.dataset.tab==='shifts')this.renderShiftsFromResidents();
-}));
-const st=localStorage.getItem('activeTab');if(st){const btn=document.querySelector(`[data-tab="${st}"]`);if(btn)btn.click()}
+const btn=document.querySelector(`.nav-btn[data-tab="${tabId}"]`);if(btn)btn.classList.add('active');
+const tid=tabId+'-tab';const el=document.getElementById(tid);if(el)el.classList.add('active');
+localStorage.setItem('activeTab',tabId);
+if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
+if(tabId==='evaluation')this.renderEval();
+if(tabId==='links')this.renderLinks();
+if(tabId==='qa')this.renderQA();
+if(tabId==='shifts')this.renderShiftsFromResidents();
+};
+this.activateTab=activateTab;
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.tab,true)));
+const st=localStorage.getItem('activeTab');if(st)activateTab(st,false)
 }
 setupSearches(){
 document.getElementById('residentSearch').addEventListener('input',debounce(e=>{this._lrs=e.target.value;this.displayResidents();this.updateResCount();this.refreshSelectionUI()},120));
