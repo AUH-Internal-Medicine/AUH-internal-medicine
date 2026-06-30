@@ -47,6 +47,54 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-01 — Add normal/HQ on-call export actions
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added two explicit on-call image download actions: normal and high quality. Wired HQ mode to stronger capture scaling and a higher export cap so users can get sharper PNG output on demand while keeping normal export lighter.
+- **Files:** index.html, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** My Info export path is unchanged; this is specific to on-call image downloads.
+
+## 2026-07-01 — Raise on-call export sharpness
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Increased on-call image export clarity by raising capture scale and final max-side cap while preserving the compact table-style layout. This improves text/edge sharpness in downloaded PNGs without changing data behavior.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Layout and column contracts are unchanged; this is a quality-tuning pass.
+
+## 2026-07-01 — Compact table-style on-call export layout
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Adjusted on-call image export to be more compact and table-like by enforcing a 3-column category grid in capture mode and 2-column name cells inside each category. Reduced on-call export capture width/scale/max-side to keep high clarity while avoiding oversized output images.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** This specifically targets exported on-call card structure and size; runtime data behavior is unchanged.
+
+## 2026-07-01 — On-call layout cleanup + compact high-res image export
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Reworked the per-day on-call card into a cleaner structured layout with summary pills and a responsive category grid for easier reading. Updated image export to capture from an off-screen compact clone at high resolution with stricter max dimensions, producing sharper PNGs that are less oversized when shared.
+- **Files:** index.html, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** No Google Sheet column contract or cache-key changes.
+
+## 2026-07-01 — Second art-direction pass (clinical modern)
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added a second visual pass with a more intentional clinical-modern look: display typography for headings/navigation, cleaner top-nav treatment, richer section framing, and gentle staged panel reveal animations. Preserved all app behavior and data parsing while keeping prior performance optimizations.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** No Google Sheet contract, cache key, or functional workflow changes.
+
+## 2026-06-30 — Visual refresh with smoother runtime performance
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Refreshed the visual direction to a cooler blue/teal/amber palette, added a decorative textured hero overlay, and improved motion/accessibility with reduced-motion handling. Added runtime optimizations including CDN preconnect hints, debounced search inputs, hidden-tab refresh skipping, mobile animation load reduction, and asynchronous hero image decoding for faster perceived startup.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Behavior and sheet-column contracts were not changed; update is visual/performance-focused.
+
 ## 2026-06-30 — Fix header image as a fixed decorative banner
 - **Who:** GPT-5.4 mini (GitHub Copilot)
 - **Type:** both

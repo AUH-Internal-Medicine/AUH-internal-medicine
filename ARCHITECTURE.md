@@ -134,9 +134,12 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
   residents and triggers a `contacts.vcf` download (Blob + temporary `<a>`).
 - **`_captureImage`** (505) + `downloadOncallImage` / `downloadMyInfoImage`:
   use `html2canvas` to rasterize a DOM card to PNG, add padding, and download it.
-  Uses DPR-aware scaling and a maximum side cap before export to avoid oversized
-  images that messaging apps aggressively recompress on mobile share; mobile
-  scaling is biased higher to preserve detail before app-side recompression.
+  Uses DPR-aware scaling, an off-screen capture clone, and per-view width caps
+  before export to keep output crisp while reducing oversized image dimensions.
+  On-call export uses a compact capture mode that hides the download button and
+  reflows category blocks for cleaner sharing-ready cards. The on-call card now
+  exposes normal vs high-quality download actions that route to different export
+  scaling/cap settings.
 
 - **Header background strategy**: the header now uses an eager-loaded `<img>`
   layer inside `.header-bg-image` (instead of relying only on CSS background)
