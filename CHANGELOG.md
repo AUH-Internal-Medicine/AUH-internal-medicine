@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-01 — Restore the framed header image
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** code
+- **What:** Reverted the header photo from full-bleed back to the framed hero style with inset margins, rounded corners, and a soft shadow, matching the look before the last change.
+- **Files:** styles.css, CHANGELOG.md
+- **Docs synced:** no
+- **Notes / follow-ups:** This is a visual rollback only; no app logic or data contract changed.
+
 ## 2026-07-01 — Make the header image full-bleed
 - **Who:** GPT-5.4 mini (GitHub Copilot)
 - **Type:** code
