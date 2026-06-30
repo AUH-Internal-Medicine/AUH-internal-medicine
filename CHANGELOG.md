@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-01 — Use WebP full-bleed header image
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** code
+- **What:** Switched the header hero to use `bg.webp` as the primary asset and restored the image to a true edge-to-edge full-bleed layout so the top section loads faster and fills the full header area.
+- **Files:** index.html, styles.css, CHANGELOG.md
+- **Docs synced:** no
+- **Notes / follow-ups:** No data flow, tab behavior, or cache contract changed.
+
 ## 2026-07-01 — Restore the framed header image
 - **Who:** GPT-5.4 mini (GitHub Copilot)
 - **Type:** code
