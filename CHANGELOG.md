@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-06-30 — Treat copied future-month shifts as not-ready
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Fixed shifts/month display logic so a future month (e.g., month 7) that is an exact auto-copy of the previous month is treated as not populated yet. In this case, the app now shows "no data" in the shifts tab and in My Info for that month until real changes are entered.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Detection is strict (exact copy across joined residents), designed to prevent showing duplicated placeholder future-month data.
+
 ## 2026-06-30 — Icon consistency polish (chevrons + spacing)
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

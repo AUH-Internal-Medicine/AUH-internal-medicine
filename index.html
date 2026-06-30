@@ -460,7 +460,8 @@ parseCSVLine(line){const fields=[];let c='',iq=false;for(let i=0;i<line.length;i
 getShiftColIndex(headers,month){const cm=month!==undefined?month:this.m+1;for(let i=12;i<headers.length;i++){const h=(headers[i]||'').trim();const m=h.match(/فرز\s+شهر\s+(\d+)/i);if(m&&parseInt(m[1])===cm)return i}return -1}
 getShiftFromRow(r,month){const h=this._resHeaders||[];const idx=this.getShiftColIndex(h,month);if(idx<0)return'';return(r[idx]||'').trim()}
 getAllShiftMonths(){const h=this._resHeaders||[];const months=[];for(let i=12;i<h.length;i++){const ht=(h[i]||'').trim();const m=ht.match(/فرز\s+شهر\s+(\d+)/i);if(m)months.push({month:parseInt(m[1]),col:i,label:ht})}return months.sort((a,b)=>a.month-b.month)}
-hasShiftDataForMonth(month){const h=this._resHeaders||[];const idx=this.getShiftColIndex(h,month);if(idx<0||!this._resRaw||this._resRaw.length<2)return false;for(let i=1;i<this._resRaw.length;i++){const r=this._resRaw[i];if(!r)continue;const v=(r[idx]||'').trim();if(v&&v!=='غير محدد')return true}return false}
+isFutureShiftMonthAutoCopy(month){const current=this.m+1;if(month<=current)return false;const h=this._resHeaders||[];const idx=this.getShiftColIndex(h,month);const prev=month===1?12:month-1;const pidx=this.getShiftColIndex(h,prev);if(idx<0||pidx<0||!this._resRaw||this._resRaw.length<2)return false;let compared=0,same=0,hasMeaningful=false;for(let i=1;i<this._resRaw.length;i++){const r=this._resRaw[i];if(!r||!r[1]||!r[1].trim())continue;const status=(r[11]||'').trim();if(!isJoined(status))continue;const cur=(r[idx]||'').trim();const prv=(r[pidx]||'').trim();if(!cur&&!prv)continue;if(cur&&cur!=='غير محدد')hasMeaningful=true;compared++;if(cur===prv)same++}return hasMeaningful&&compared>=10&&same===compared}
+hasShiftDataForMonth(month){const h=this._resHeaders||[];const idx=this.getShiftColIndex(h,month);if(idx<0||!this._resRaw||this._resRaw.length<2)return false;if(this.isFutureShiftMonthAutoCopy(month))return false;for(let i=1;i<this._resRaw.length;i++){const r=this._resRaw[i];if(!r)continue;const v=(r[idx]||'').trim();if(v&&v!=='غير محدد')return true}return false}
 getPreferredShiftMonth(){const allMonths=this.getAllShiftMonths();if(!allMonths.length)return this.m+1;const current=this.m+1;const next=current===12?1:current+1;if(this.hasShiftDataForMonth(next))return next;if(this.hasShiftDataForMonth(current))return current;const withData=allMonths.filter(m=>this.hasShiftDataForMonth(m.month));if(withData.length)return withData[withData.length-1].month;return allMonths[allMonths.length-1].month}
 renderShiftsFromResidents(){
 const allMonths=this.getAllShiftMonths();
@@ -474,7 +475,7 @@ dispShiftsByMonth(month){
 const h=this._resHeaders||[];const idx=this.getShiftColIndex(h,month);
 const g=document.getElementById('shiftsGrid');if(!g)return;g.innerHTML='';
 document.getElementById('shiftMonthName').textContent=AM[month-1];
-if(idx<0||!this._resRaw||this._resRaw.length<2){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات فروز لهذا الشهر</p>';return}
+if(idx<0||!this._resRaw||this._resRaw.length<2||this.isFutureShiftMonthAutoCopy(month)){g.innerHTML='<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات فروز لهذا الشهر</p>';return}
 const groups={};
 for(let i=1;i<this._resRaw.length;i++){const r=this._resRaw[i];if(!r||!r[1]||!r[1].trim())continue;const status=(r[11]||'').trim();if(!isJoined(status))continue;const sVal=(r[idx]||'').trim();if(!sVal||sVal==='غير محدد')continue;const abbr=(r[2]||'').trim();const name=(r[1]||'').trim();const phone=(r[4]||'').trim();if(!groups[sVal])groups[sVal]=[];groups[sVal].push({name,abbr,phone})}
 const sGroups=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length);
@@ -553,7 +554,7 @@ h+=`<div class="collapsible-section"><button class="collapsible-btn open" onclic
 h+=`<button class="download-btn" onclick="app.downloadMyInfoImage()"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل معلوماتي كصورة</button></div>`;rd.innerHTML=h;rd.classList.add('show');document.getElementById('searchResultsList').innerHTML='';
 setTimeout(()=>this.updateMyInfoShift(r.name,r.abbr),100)}
 updateMyInfoShift(name,abbr){const cont=document.getElementById('myInfoShiftContent');if(!cont)return;const sel=document.getElementById('myInfoShiftMonth');if(!sel)return;const month=parseInt(sel.value);const h=this._resHeaders||[];const idx=this.getShiftColIndex(h,month);
-if(idx<0||!this._resRaw||this._resRaw.length<2){cont.innerHTML='<p style="color:#888;">لا توجد بيانات لهذا الشهر.</p>';return}
+if(idx<0||!this._resRaw||this._resRaw.length<2||this.isFutureShiftMonthAutoCopy(month)){cont.innerHTML='<p style="color:#888;">لا توجد بيانات لهذا الشهر.</p>';return}
 const shiftVal=(this._resRaw.find(r=>r&&(r[1]||'').trim()===name)||[])[idx]||'';const shiftName=shiftVal.trim();
 const members=[];for(let i=1;i<this._resRaw.length;i++){const r=this._resRaw[i];if(!r||!r[1])continue;const status=(r[11]||'').trim();if(!isJoined(status))continue;const sv=(r[idx]||'').trim();if(sv===shiftName&&sv&&sv!=='غير محدد'){const mname=(r[1]||'').trim();const mabbr=(r[2]||'').trim();const mphone=(r[4]||'').trim();if(!exactNameMatch(mabbr,abbr)&&!exactNameMatch(mname,name))members.push({name:mname,abbr:mabbr,phone:mphone})}}
 let ht='';if(shiftName&&shiftName!=='غير محدد'){ht+=`<div class="shift-card-full" style="margin-bottom:10px;"><h3>${shiftName}</h3></div>`}else{ht+='<p style="color:#888;margin-bottom:10px;">لا يوجد فرز للشهر المحدد.</p>'}
