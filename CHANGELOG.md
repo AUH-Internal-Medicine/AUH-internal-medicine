@@ -47,6 +47,22 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-01 — Make the header image full-bleed
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** code
+- **What:** Removed the inset frame around the header photo so it now fills the entire hero area edge-to-edge without showing uncovered background around it.
+- **Files:** styles.css, CHANGELOG.md
+- **Docs synced:** no
+- **Notes / follow-ups:** This is a visual-only change; app behavior and data flow are unchanged.
+
+## 2026-07-01 — Frame the header image instead of full-bleed
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** code
+- **What:** Changed the header photo from a flat full-bleed rectangle to a framed hero with inset edges, rounded corners, and a soft shadow so the image reads more intentionally.
+- **Files:** styles.css, CHANGELOG.md
+- **Docs synced:** no
+- **Notes / follow-ups:** This is purely visual; no data flow, tab behavior, or cache contract changed.
+
 ## 2026-07-01 — Split the JavaScript into helpers and app class files
 - **Who:** GPT-5.4 mini (GitHub Copilot)
 - **Type:** both
