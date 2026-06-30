@@ -47,6 +47,38 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-01 — Split the JavaScript into helpers and app class files
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** both
+- **What:** Moved the shared globals, helper functions, and tab builders into `helpers.js`, leaving `app.js` as the `HospitalApp` class and bootstrap. `index.html` now loads `helpers.js` before `app.js` so the runtime order stays correct.
+- **Files:** index.html, helpers.js, app.js, README.md, ARCHITECTURE.md, AGENTS.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, AGENTS.md, CHANGELOG.md
+- **Notes / follow-ups:** Behavior is unchanged; this is a structural refactor to make future edits easier and safer.
+
+## 2026-07-01 — Split the app into external CSS and JS files
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** both
+- **What:** Moved the inline stylesheet and script out of `index.html` into `styles.css` and `app.js`, keeping `index.html` as a thin bootstrap shell. This makes future edits easier without changing the app's runtime behavior.
+- **Files:** index.html, styles.css, app.js, README.md, ARCHITECTURE.md, AGENTS.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, AGENTS.md, CHANGELOG.md
+- **Notes / follow-ups:** Validated in browser after the split; the page loaded, the nav rendered, and the loader cleared normally.
+
+## 2026-07-01 — Add safe fallback for header background image
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Kept the header pointed at `bg.png` but added an `onerror` fallback to `bg.webp` so the site still renders a background if the preferred local file is missing or renamed.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** This is a runtime safety improvement only; app behavior and data loading are unchanged.
+
+## 2026-07-01 — Switch header to the new hospital background image
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Switched the header hero image source from `bg.webp` to the new `bg.png` hospital image and retuned header crop, opacity, and brightness so the building reads clearly in both light and dark mode.
+- **Files:** index.html, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Visual-only change; no app behavior, data contract, or cache changes.
+
 ## 2026-07-01 — Add normal/HQ on-call export actions
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

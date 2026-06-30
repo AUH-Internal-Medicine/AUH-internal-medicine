@@ -26,8 +26,9 @@ future models (of any vendor) stay oriented across sessions. See
 
 ## TL;DR for a model with zero context
 
-- This repo is **one HTML file** (`index.html`) plus two background images. No
-  framework, no build, no package manager, no tests, no backend.
+- This repo is a thin HTML shell (`index.html`) plus `styles.css`,
+  `helpers.js`, `app.js`, and two background images. No framework, no build,
+  no package manager, no tests, no backend.
 - It renders an **Arabic, right-to-left** dashboard of internal-medicine
   residents at Aleppo University Hospital.
 - All data is read **live, client-side, from a public Google Sheet** via the
@@ -117,7 +118,7 @@ the identifier names, which are stable.)
 
 ## What NOT to do
 
-- ❌ Don't add a build system, bundler, or framework. The single-file, no-build
+- ❌ Don't add a build system, bundler, or framework. The static, no-build
   nature is a deliberate constraint (easy hosting, easy hand-editing).
 - ❌ Don't move data into the repo or hardcode resident data — it belongs in the
   Google Sheet so non-developers can maintain it.

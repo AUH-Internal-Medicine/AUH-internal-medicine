@@ -1,8 +1,9 @@
 # AUH Internal Medicine — Residents Dashboard
 
-A single-page web app (one `index.html` file) that displays information about
-**first-year Internal Medicine residents at Aleppo University Hospital**
-(مشفى حلب الجامعي / قسم الداخلية - السنة الأولى).
+A single-page web app with a thin `index.html` shell plus separate `styles.css`,
+`helpers.js`, and `app.js` files. It displays information about **first-year
+Internal Medicine residents at Aleppo University Hospital** (مشفى حلب الجامعي /
+قسم الداخلية - السنة الأولى).
 
 The UI is **Arabic and right-to-left (RTL)**. All data is read **live from a
 public Google Sheet** — there is no backend server and no database. The page is
@@ -48,7 +49,8 @@ The app presents resident data across **7 tabs** (Arabic label → meaning):
 
 ## Quick start
 
-There is **no build step and no dependencies to install.** Everything is in one file.
+There is **no build step and no dependencies to install.** The app still runs
+as plain static files.
 
 ```bash
 # Just open it, or serve it statically:
@@ -65,7 +67,10 @@ itself comes from Google Sheets.
 ### Files in the repo
 | File | Role |
 |---|---|
-| `index.html` | The entire application (HTML + CSS + JS, minified inline). |
+| `index.html` | Thin HTML shell that loads the app assets and bootstraps the page. |
+| `styles.css` | All app styling, extracted from the old inline `<style>` block. |
+| `helpers.js` | Shared globals, helper functions, constants, and tab HTML builders. |
+| `app.js` | The `HospitalApp` class and bootstrap, extracted from the old inline `<script>` block. |
 | `bg.webp` / `bg.png` | Header background image (the `.webp` is used; `.png` is a fallback/source). |
 | `README.md`, `ARCHITECTURE.md`, `DATA-MODEL.md`, `AGENTS.md` | Documentation (this set). |
 

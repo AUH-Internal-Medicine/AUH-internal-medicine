@@ -1,40 +1,36 @@
 # Architecture & Code Guide
 
-This document explains how `index.html` is organized internally so any developer
-or AI model can navigate and modify it confidently. The entire app lives in one
-file; the CSS and JavaScript are minified onto long lines, so this is your map.
+This document explains how the app is organized internally so any developer or
+AI model can navigate and modify it confidently. The runtime is still a static
+single-page app, but the code is now split across a thin HTML shell plus
+separate CSS and JavaScript files.
 
 > Read [DATA-MODEL.md](DATA-MODEL.md) alongside this — much of the JS only makes
 > sense once you know the Google Sheet column layout it reads.
 
 ---
 
-## File layout of `index.html`
+## File layout
 
-Approximate line ranges (the file is ~533 physical lines because CSS/JS are
-condensed):
+Approximate line ranges in `index.html` before the split were used as the
+starting map; the current app code now lives in separate files.
 
-| Lines | Section |
+| File / section | Notes |
 |---|---|
-| 1 | `<head>`: meta, title (Arabic, `dir="rtl"`), favicon (inline SVG 🏥), CDN links (Font Awesome, Tajawal font, `html2canvas`), `bg.webp` preload. |
-| 2–292 | `<style>`: all CSS. CSS custom properties (`:root`), dark-mode overrides (`body.dark-mode`), component styles, and responsive `@media` blocks at the end. |
-| 293–302 | `<body>` static markup: animated background, loading screen, download-progress overlay, header, empty `<nav>` and `<main>` containers (filled by JS), footer, and the shared name tooltip. |
-| 303–531 | `<script>`: all JavaScript. |
-| 532–533 | Close tags. |
+| `index.html` | `<head>` meta, title (Arabic, `dir="rtl"`), favicon (inline SVG 🏥), CDN links, `bg.png` preload, and external includes for `styles.css`, `helpers.js`, and `app.js`. |
+| `styles.css` | All CSS. CSS custom properties (`:root`), dark-mode overrides (`body.dark-mode`), component styles, and responsive `@media` blocks at the end. |
+| `helpers.js` | Shared globals and non-class logic: helper functions, configuration constants, and `buildNav()` / `buildMainContent()`. |
+| `app.js` | The `HospitalApp` class and `DOMContentLoaded` bootstrap. |
 
 ### Inside the `<script>` (lines 303–531)
 
 | Lines | What |
 |---|---|
-| 304–305 | `toggleDarkMode()` + dark-mode restore from `localStorage`. |
-| 306 | `initDraggableBg()` — lets the user drag the header background image (mouse + touch). |
-| 307–311 | Name tooltip: `showTooltip`, `hideTooltip`, `copyTooltipPhone`, outside-click dismissal. |
-| 312–320 | UI helpers: `copyPhone`, collapsible/Q&A toggles, dropdown handling, `showToast`, download-progress overlay control. |
-| 321–331 | **Pure helper functions** (see below): Arabic normalization, name splitting/matching, date extraction, day/weekend helpers, `isJoined`, and `mcn` (clickable-name HTML builder). |
-| 332–337 | **Configuration constants**: Google Sheet id, tab GIDs, Arabic month/day names, cache key + TTL, tab list. |
-| 338–347 | `buildNav()` and `buildMainContent()` — return HTML strings for the nav buttons and all 7 tab sections. |
-| 348–530 | `class HospitalApp` — the whole application. |
-| 531 | Bootstrap: on `DOMContentLoaded`, `app = new HospitalApp(); window.app = app`. |
+| `helpers.js` top section | `toggleDarkMode()` + dark-mode restore from `localStorage`, tooltip handlers, copy helpers, collapsible/Q&A toggles, dropdown handling, `showToast`, download-progress overlay control, and the pure helper functions. |
+| `helpers.js` config section | Google Sheet id, tab GIDs, Arabic month/day names, cache key + TTL, tab list. |
+| `helpers.js` builder section | `buildNav()` and `buildMainContent()` — return HTML strings for the nav buttons and all 7 tab sections. |
+| `app.js` class section | `class HospitalApp` — the whole application. |
+| `app.js` bootstrap | On `DOMContentLoaded`, `app = new HospitalApp(); window.app = app`. |
 
 `window.app` is global on purpose: inline `onclick="app.method(...)"` handlers
 throughout the rendered HTML call back into the instance.
