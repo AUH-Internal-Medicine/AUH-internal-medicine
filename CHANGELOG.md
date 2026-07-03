@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-03 — Header-based residents mapping + detached filter
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Switched residents parsing from fixed column indices to header-name mapping for core fields (`الاسم الثلاثي`, `الاختصار`, `الاختصاص`, `رقم الهاتف`, `الحالة`, `تاريخ الالتحاق`, `المناوبات+`) while keeping fallback compatibility. Added explicit detached-status handling: `تم الانفكاك` is hidden from the roster by default, excluded from contacts export, color-coded black, and viewable only through a small dedicated filter button.
+- **Files:** app.js, helpers.js, styles.css, README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Notes / follow-ups:** Shift month discovery still uses `فرز شهر <number>` by header pattern; no cache key bump was required.
+
 ## 2026-07-01 — Shrink support shortcut to icon and fix thanks wording
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** code

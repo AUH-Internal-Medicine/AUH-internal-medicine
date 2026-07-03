@@ -50,7 +50,9 @@ constructor, lines 349–357):
 | `this.oncRows`, `this.oncHeaders` | Parsed on-call rows and their category headers. |
 | `this.evalData`, `this.linksData`, `this.qaData` | Raw row arrays for those tabs. |
 | `this._resHeaders`, `this._resRaw` | Raw header row and raw resident rows (kept because shift columns are read by header-name later). |
+| `this._resCols` | Resolved residents-column map (field name -> column index) built from the header row. |
 | `this.filterJoined/Specialty/Shift`, `this._lrs` | Active filters and last resident-search term. |
+| `this.filterDetached` | Controls whether `تم الانفكاك` residents are shown (default hidden). |
 | `this.selectedResidents` | `Set` of selected resident names (for contact export). |
 | `this.currentDisplayMonth`, `this.currentShiftsMonth` | Which month the on-call and shifts tabs are showing. |
 | `this._id`, `this._dataReady` | Guards: image-download in progress, first data load complete. |
@@ -118,9 +120,12 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
 - **`getEvalForResident`** (512): looks up a resident's evaluation row by fuzzy
   name/abbr match and returns a structured object with 8 labeled skills + totals.
 - **Shift columns are dynamic**: `getShiftColIndex` / `getAllShiftMonths`
-  (431–433) scan header cells from column 12 onward for the pattern
+  (431–433) scan header cells for the pattern
   `فرز شهر <number>` to discover per-month shift columns, so new months can be
   added to the sheet without code changes.
+- **Core residents fields are header-driven**: `buildResidentColumnMap` resolves
+  fields by Arabic header names (name, abbreviation, specialty, phone, status,
+  join date, cumulative on-calls) with legacy index fallback only as safety.
 - **Month defaulting is data-aware**: `getPreferredShiftMonth` +
   `hasShiftDataForMonth` prefer `فرز شهر <next month>` if it already contains
   real values (not empty / not `غير محدد`), otherwise fall back to current month
@@ -164,9 +169,9 @@ These near the top of the script are the safest things to read first:
 
 ## Conventions & quirks
 
-- **Index-based column access.** Renderers read raw rows like `r[1]`, `r[4]`,
-  `r[11]`. These indices are a hard contract with the sheet layout
-  ([DATA-MODEL.md](DATA-MODEL.md)). Changing the sheet's column order breaks the app.
+- **Header-name access for residents data.** Core resident fields are resolved
+  from the header row by name via `buildResidentColumnMap`/`getResidentCell`.
+  Monthly shifts remain header-pattern based (`فرز شهر <number>`).
 - **Two render targets per list.** Tables (`.desktop-table`) and cards
   (`.mobile-cards`) are both built; CSS shows one based on viewport width.
 - **Arabic month/day arrays.** `AM` (months, Levantine names like كانون الثاني)

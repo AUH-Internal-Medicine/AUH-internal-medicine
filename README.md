@@ -41,6 +41,7 @@ opens the technical-contact view when needed.
 - **Dark mode** toggle (persisted in `localStorage`).
 - **Arabic-aware search** with normalization (handles أ/إ/آ/ا, ة/ه, ى/ي, the "ال" prefix, diacritics, etc.).
 - **Export to contacts**: select residents → download a `.vcf` (vCard) file.
+- **Detached-status handling**: residents with status `تم الانفكاك` are hidden from the roster by default, excluded from contact export, and can be shown using a small side filter button.
 - **Export to image**: render the on-call card or "my info" card to a PNG using `html2canvas`; on-call export now uses a cleaner compact capture layout with two download options (normal and high quality) so users can choose sharper output when needed.
 - **Shift month auto-preference**: if next month's shift column already has real values, the shifts views default to it immediately (instead of waiting for calendar month rollover).
 - **Shift month control polish**: month selector in the shifts tab now has clearer modern styling and better spacing.
@@ -110,10 +111,11 @@ relevant tab. A `setInterval` re-fetches every 120 seconds. See
 - The Google Sheet **must be publicly readable** ("anyone with the link can
   view") for the gviz endpoints to work from the browser. If data stops
   loading, sharing permissions are the first thing to check.
-- Column **positions matter**. The code reads many fields by fixed index
-  (e.g. resident name is column index 1, phone is 4, status is 11). Inserting
-  or reordering columns in the sheet will silently break rendering. See
-  [DATA-MODEL.md](DATA-MODEL.md).
+- For the residents sheet, core fields are now matched by **header name** (e.g.
+  `الاسم الثلاثي`, `الاختصار`, `الاختصاص`, `رقم الهاتف`, `الحالة`,
+  `تاريخ الالتحاق`, `المناوبات+`) instead of hard-coded column positions.
+  Monthly shift columns are discovered by headers matching `فرز شهر <number>`.
+  See [DATA-MODEL.md](DATA-MODEL.md).
 - The cache key is **versioned** (`hc_v62`). Bumping it (e.g. `hc_v63`)
   invalidates everyone's cached data — useful after a breaking data change.
 - All user-facing strings are Arabic. Keep RTL and Arabic copy consistent when

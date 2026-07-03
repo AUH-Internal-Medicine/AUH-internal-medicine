@@ -28,9 +28,9 @@ Both are normalized in code to the same in-memory shape:
 **`[ headerRow, ...dataRows ]`**, where every row is an **array of strings**.
 Indexing below is **0-based** and refers to that array.
 
-> ⚠️ **The column positions are a hard contract.** The code reads fixed indices.
-> Do **not** insert, delete, or reorder columns in the sheet without updating
-> `index.html` to match. Adding columns at the far right is usually safe.
+> ⚠️ For the **residents** sheet, core fields are read by **header name** first,
+> with legacy index fallback for compatibility. Shift columns are discovered by
+> header pattern. Renaming required headers will affect parsing.
 
 ---
 
@@ -39,22 +39,25 @@ Indexing below is **0-based** and refers to that array.
 Row 0 is the header. Each subsequent row is one resident. Rows whose name cell is
 empty, or contains the literal "الاسم" (header echo), are skipped.
 
-| Index | Field (code name) | Arabic meaning |
+| Header name (preferred) | Field (code name) | Arabic meaning |
 |---|---|---|
-| 0 | (sequence, recomputed in code as `seq = i+1`) | الترتيب |
-| 1 | `name` | الاسم الثلاثي (full name) |
-| 2 | `abbr` | الاختصار (abbreviation / short code) |
-| 3 | `spec` | الاختصاص (specialty) |
-| 4 | `phone` | الهاتف |
-| 9 | `join` | تاريخ/حالة الالتحاق |
-| 10 | `onc` / `cumulativeOnc` | المناوبات التراكمية (cumulative on-calls) |
-| 11 | `st` | الحالة (status — drives `isJoined()`) |
-| 12+ | monthly shift columns | الفرز الشهري |
+| `الاسم الثلاثي` (fallback: `الاسم`) | `name` | الاسم الثلاثي (full name) |
+| `الاختصار` | `abbr` | الاختصار (abbreviation / short code) |
+| `الاختصاص` | `spec` | الاختصاص (specialty) |
+| `رقم الهاتف` (fallback: `الهاتف`) | `phone` | الهاتف |
+| `تاريخ الالتحاق` (fallback: `الالتحاق`) | `join` | تاريخ الالتحاق |
+| `المناوبات+` (fallback: `المناوبات التراكمية`/`المناوبات`) | `onc` / `cumulativeOnc` | المناوبات التراكمية |
+| `الحالة` | `st` | الحالة (status — drives `isJoined()`) |
+| `فرز شهر <رقم>` | monthly shift columns | الفرز الشهري |
 
-**Status (`st`, index 11):** a resident is considered "joined" if the status text
+**Status (`st`):** a resident is considered "joined" if the status text
 contains التحق, ملتحق, or التحاق (`isJoined()`).
 
-**Monthly shift columns (index ≥ 12):** discovered dynamically by scanning the
+Residents with status containing `تم الانفكاك` are hidden from the roster by
+default, excluded from contact export, and can be shown via the dedicated
+detached filter button.
+
+**Monthly shift columns:** discovered dynamically by scanning the
 header row for cells matching the regex `فرز شهر (\d+)` (e.g. "فرز شهر 6" = shift
 for month 6). This lets you add a new month by adding a new column with that
 header; no code change needed. Cells equal to "غير محدد" (unspecified) are
