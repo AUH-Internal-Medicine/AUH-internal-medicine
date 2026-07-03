@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-03 — Detached count moved into button text + normal row styling
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Updated the detached filter button label to include the detached count directly in the button text (`المنفكين N`). Kept click behavior as a standard filter toggle that shows only `تم الانفكاك` rows. Removed detached-specific black row/card styling so list rows render with normal theme styling.
+- **Files:** helpers.js, app.js, styles.css, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Detached status badge color remains unchanged; only row/card forced black styling was removed.
+
 ## 2026-07-03 — Detached button now filters detached-only rows
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
