@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-03 — Add lectures and medical activities calendar tab
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added a new tab powered by Google Sheet `gid=393274093` for lectures/medical activities with header-name based parsing (`التاريخ`, `التصنيف`, `العنوان`, `المحتويات`, `المحاضر`, `المكان`, `التوقيت`, `المدة`, `القسم`, `السنة`). Implemented smart search (title/content/speaker), department/year filters, large today highlight cards (excluding ended sessions), upcoming sessions view, and a toggle to reveal old sessions.
+- **Files:** helpers.js, app.js, styles.css, README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Notes / follow-ups:** Lectures are fetched as CSV and cached with the same cache key payload; no cache key bump was required.
+
 ## 2026-07-03 — Detached count moved into button text + normal row styling
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

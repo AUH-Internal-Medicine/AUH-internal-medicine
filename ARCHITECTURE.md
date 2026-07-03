@@ -68,7 +68,7 @@ constructor, lines 349–357):
   hides the loading screen, and triggers `loadFresh()` in the background.
   If there is no valid cache, it waits for a foreground fetch and the same
   header-image readiness before hiding the loading screen.
-3. **`loadFresh(silent)`** (412–426): fetches all five sheet tabs in parallel
+3. **`loadFresh(silent)`** (412–426): fetches all six sheet tabs in parallel
    via `Promise.all`, parses, renders, and writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).
 
@@ -90,7 +90,7 @@ constructor, lines 349–357):
 - **`loadFromCache`** (410) / **`saveToCache`** (411): JSON blob in
   `localStorage` under `CK` (`hc_v62`) with a `timestamp`; entries older than
   `CD` (10 minutes) are treated as stale. Cache stores the **raw** resident/oncall
-  data plus the eval/links/qa arrays.
+  data plus the eval/links/qa/lectures arrays.
 
 ### Rendering (one method per tab area)
 
@@ -99,6 +99,7 @@ constructor, lines 349–357):
 | `renderRes` / `displayResidents` | Roster table + mobile cards; `displayResidents` re-applies filters/search on every change. |
 | `buildFilters` | Populates specialty + shift `<select>` dropdowns from the data. |
 | `renderShiftsFromResidents` / `dispShiftsByMonth` | The "shifts" (فروز) tab — groups joined residents by their shift value for a chosen month (auto-prefers next month when data is already present); month chooser is rendered with dedicated wrapper styling in the tab header. |
+| `parseLecturesData` / `renderLectures` | The lectures/activities calendar tab — parses header-driven lecture fields, builds today/upcoming/past groups, and applies search + department/year filters. |
 | `renderEval` | Evaluation table + cards (columns 13/14 are praise/penalty badges). |
 | `renderLinks` | Links table + cards; `formatLink` turns `http…` values into buttons. |
 | `renderQA` | Groups Q&A by category into collapsible sections. |

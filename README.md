@@ -20,12 +20,13 @@ Pages, Netlify, Cloudflare Pages, a plain file server, etc.).
 
 ## What it does
 
-The app presents resident data across **7 primary tabs** (Arabic label → meaning):
+The app presents resident data across **8 primary tabs** (Arabic label → meaning):
 
 | Tab id | Arabic label | Purpose |
 |---|---|---|
 | `residents` | لائحة المقيمين | Full roster: name, specialty, phone, status, shift. Search, filter, multi-select, export to phone contacts (vCard). |
 | `shifts` | الفروز | Monthly "shift assignment" (فرز) groups — which residents are assigned where, per month. |
+| `lectures` | رزنامة المحاضرات | Medical lectures/activities calendar with smart search, department/year filters, today highlights, upcoming list, and optional old-events view. |
 | `oncall` | المناوبات | On-call schedule. Monthly calendar + per-day breakdown by category. Exportable as an image. |
 | `evaluation` | التقييم السنوي | Annual evaluation scores per resident across 8 skill areas, plus praises (ثناءات) and penalties (عقوبات). |
 | `links` | روابط هامة | Important links / channels (e.g. group chats, resources). |
@@ -48,6 +49,7 @@ opens the technical-contact view when needed.
 - **Faster first header paint**: header background image is now eagerly loaded to reduce partial/flicker appearance on mobile.
 - **Click-to-copy phone numbers** via tooltips.
 - **Responsive**: desktop tables collapse into mobile cards under 768px.
+- **Lectures calendar UX**: large "today" highlight cards for sessions not yet finished, separate upcoming sessions list, and a toggle to reveal past sessions.
 
 ---
 
@@ -84,8 +86,9 @@ itself comes from Google Sheets.
 
 On load, `HospitalApp` reads any cached snapshot from `localStorage` (key
 `hc_v62`) and renders it immediately, then fetches fresh data from the Google
-Sheet in the background. Five sheet tabs are fetched in parallel by their
-**GID** (numeric tab id): residents, on-call, evaluation, links, and Q&A. CSV
+Sheet in the background. Six sheet tabs are fetched in parallel by their
+**GID** (numeric tab id): residents, on-call, evaluation, links, Q&A, and
+lectures calendar. CSV
 tabs are parsed by a hand-written CSV parser; JSON tabs use the gviz JSON
 response. The parsed rows are stored on the app instance and rendered into the
 relevant tab. A `setInterval` re-fetches every 120 seconds. See
@@ -96,7 +99,7 @@ relevant tab. A `setInterval` re-fetches every 120 seconds. See
 
 ## Editing the content vs. editing the code
 
-- **To change displayed data** (residents, schedules, evaluations, links, Q&A):
+- **To change displayed data** (residents, schedules, lectures, evaluations, links, Q&A):
   edit the **Google Sheet** — not this repo. The sheet id and tab GIDs are in
   [DATA-MODEL.md](DATA-MODEL.md). The site picks up changes within ~2 minutes
   (or immediately on a hard refresh that bypasses cache).

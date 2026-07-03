@@ -10,7 +10,7 @@ There is no server and no write path — the app is read-only against the sheet.
 - The sheet must be shared as **"Anyone with the link can view"**, or the
   browser fetch fails and the page shows cached/empty data.
 
-Each tab (worksheet) is addressed by its numeric **GID**. The app fetches five tabs:
+Each tab (worksheet) is addressed by its numeric **GID**. The app fetches six tabs:
 
 | Constant | GID | Tab content | Fetched as |
 |---|---|---|---|
@@ -19,6 +19,7 @@ Each tab (worksheet) is addressed by its numeric **GID**. The app fetches five t
 | `GID_E` | `253629565` | Annual evaluation (التقييم السنوي) | CSV |
 | `GID_L` | `1649404909` | Links / channels (روابط) | CSV |
 | `GID_Q` | `680270268` | Q&A (الأسئلة والأجوبة) | JSON |
+| `GID_LEC` | `393274093` | Lectures & medical activities calendar (رزنامة المحاضرات والانشطة الطبية) | CSV |
 
 ### Endpoint shapes
 - CSV: `https://docs.google.com/spreadsheets/d/{SID}/gviz/tq?tqx=out:csv&gid={GID}`
@@ -142,6 +143,31 @@ Entries are grouped by category into collapsible sections, sorted alphabetically
 
 ---
 
+## 6. Lectures Calendar (`GID_LEC = 393274093`, CSV)
+
+Row 0 is the header and is matched by header names (trimmed/normalized).
+
+| Header name | Meaning |
+|---|---|
+| `التاريخ` | Lecture/activity date. Parsed from day/month/year style values (e.g. `يوم / شهر / سنة`). |
+| `التصنيف` | Category / type. |
+| `العنوان` | Lecture title. |
+| `المحتويات` | Lecture content/summary. |
+| `المحاضر` | Speaker. |
+| `المكان` | Place/location. |
+| `التوقيت` | Start time. |
+| `المدة` | Duration. |
+| `القسم` | Department. |
+| `السنة` | Year/level. |
+
+Rendering behavior:
+- Smart search covers title + content + speaker.
+- Department/year filters are generated dynamically from available rows.
+- "Today" hero shows sessions whose end time has not passed yet.
+- Past sessions are hidden by default and can be shown with the dedicated toggle.
+
+---
+
 ## Caching & refresh
 
 - The full fetched dataset is cached in `localStorage` under key **`hc_v62`**
@@ -154,6 +180,6 @@ Entries are grouped by category into collapsible sections, sorted alphabetically
 
 ## Changing the data source
 
-If you point the app at a different spreadsheet, update `SID` and the five `GID_*`
+If you point the app at a different spreadsheet, update `SID` and the six `GID_*`
 constants near line 332 of `index.html`, and make sure the new tabs match the
 column contracts above (or update the renderers accordingly).

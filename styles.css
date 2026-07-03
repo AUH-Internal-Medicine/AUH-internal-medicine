@@ -141,6 +141,22 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 .card-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}
 .card-label{color:var(--text-secondary)}.card-value{font-weight:600;text-align:left;color:var(--text)}
 .shifts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.today-lectures-hero{margin-bottom:14px}
+.lectures-section-head{display:flex;align-items:center;gap:8px;margin:8px 0 10px}
+.lectures-section-head h3{font-family:var(--display-font);font-size:1.05em;color:#667eea;display:flex;align-items:center;gap:8px}
+.lectures-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.lecture-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:16px;border:1px solid var(--glass-border);box-shadow:var(--shadow);background:var(--glass-bg);transition:var(--transition);position:relative;overflow:hidden}
+.lecture-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#0f6ecf,#0ea5a4,#10b981)}
+.lecture-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.lecture-card.hero{padding:22px;border-right:5px solid #0f6ecf;box-shadow:var(--shadow-lg)}
+.lecture-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.lecture-head h4{font-size:1.08em;color:var(--text);line-height:1.5}
+.lecture-tag{padding:5px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;background:rgba(15,110,207,0.12);color:#0f6ecf;border:1px solid rgba(15,110,207,0.22);white-space:nowrap}
+.lecture-date{font-size:12px;font-weight:700;color:#0f766e;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.lecture-content{font-size:12px;color:var(--text-secondary);line-height:1.8;margin-bottom:10px;white-space:pre-wrap}
+.lecture-meta{display:flex;flex-wrap:wrap;gap:6px}
+.lecture-meta-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;background:var(--gray-100);color:var(--text);border:1px solid var(--border)}
+.lecture-empty{text-align:center;padding:20px;border-radius:var(--radius);background:var(--gray-100);color:var(--text-secondary);font-size:13px;font-weight:600}
 .shift-card-full{background:var(--card-bg);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow);border-top:5px solid #0ea5a4;background:var(--glass-bg);border:1px solid rgba(14,165,164,0.2);position:relative;transition:var(--transition)}
 .shift-card-full:hover{transform:translateY(-4px);box-shadow:var(--shadow-xl)}
 .shift-card-full h3{color:#667eea;font-size:1.1em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
