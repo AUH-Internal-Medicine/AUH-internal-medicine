@@ -47,6 +47,30 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-03 — Detached button now filters detached-only rows
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Changed detached button click behavior to toggle filtering the residents roster by status `تم الانفكاك` only. When disabled, detached rows remain hidden by default; when enabled, only detached rows are shown.
+- **Files:** app.js, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** If joined-only filter is active, enabling detached-only now automatically turns joined-only off to avoid contradictory filters.
+
+## 2026-07-03 — Detached count badge polish beside button
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Updated the detached button UI so the number appears in a separate compact badge beside the button (instead of inside button text). Added a subtle bounce animation when the count updates, while keeping click behavior as count-only toast with no names/details shown.
+- **Files:** helpers.js, app.js, styles.css, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Behavior is unchanged functionally; this is a presentation polish for the detached count indicator.
+
+## 2026-07-03 — Detached button switched to count-only action
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Changed the detached residents button behavior from filter-toggle to count-only. The button label now shows `عدد المنفكين: X`, and clicking it only shows a toast with the count without displaying names or any detached details.
+- **Files:** app.js, CHANGELOG.md
+- **Docs synced:** yes — CHANGELOG.md
+- **Notes / follow-ups:** Detached residents remain hidden from roster details and excluded from contacts export.
+
 ## 2026-07-03 — Header-based residents mapping + detached filter
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

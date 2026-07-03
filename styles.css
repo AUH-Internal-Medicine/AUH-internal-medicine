@@ -102,6 +102,10 @@ body.dark-mode .header-bg-photo{opacity:0.78;filter:saturate(1.02) contrast(1.06
 .filter-btn:hover{border-color:#667eea;color:#667eea}
 .filter-btn.active-filter{background:#667eea;color:white;border-color:#667eea}
 .detached-filter-btn{padding:7px 12px;font-size:11px;opacity:.9}
+.detached-filter-wrap{display:inline-flex;align-items:center;gap:7px}
+.detached-count-pill{min-width:32px;height:26px;padding:0 10px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a,#1f2937);color:#fff;font-size:12px;font-weight:800;box-shadow:0 6px 14px rgba(15,23,42,0.25);border:1px solid rgba(255,255,255,0.2)}
+.detached-count-pill.count-bounce{animation:countBounce .45s ease}
+@keyframes countBounce{0%{transform:translateY(0) scale(1)}40%{transform:translateY(-2px) scale(1.08)}100%{transform:translateY(0) scale(1)}}
 .specialty-filter,.shift-filter{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:600;color:var(--text);min-width:160px;transition:var(--transition)}
 .specialty-filter:hover,.shift-filter:hover{border-color:#667eea}
 .contacts-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 0}
