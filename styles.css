@@ -144,6 +144,8 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 .today-lectures-hero{margin-bottom:14px}
 .lectures-section-head{display:flex;align-items:center;gap:8px;margin:8px 0 10px}
 .lectures-section-head h3{font-family:var(--display-font);font-size:1.05em;color:#667eea;display:flex;align-items:center;gap:8px}
+.lectures-today-head{padding:8px 12px;border-radius:var(--radius);background:linear-gradient(135deg,rgba(15,110,207,0.08),rgba(16,185,129,0.1));border:1px solid rgba(15,110,207,0.2)}
+.lectures-today-head h3{font-size:1.2em;color:#0f6ecf}
 .lectures-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .lecture-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:16px;border:1px solid var(--glass-border);box-shadow:var(--shadow);background:var(--glass-bg);transition:var(--transition);position:relative;overflow:hidden}
 .lecture-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#0f6ecf,#0ea5a4,#10b981)}

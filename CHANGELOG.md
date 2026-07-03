@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-03 — Reorder tabs and adjust old lectures ordering
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Reordered top navigation and section flow so the first four tabs are: residents, shifts, on-call, then lectures calendar. Improved today-lectures header emphasis and changed old lectures list order to chronological ascending (oldest to newest) when the old-lectures toggle is enabled.
+- **Files:** helpers.js, app.js, styles.css, README.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, CHANGELOG.md
+- **Notes / follow-ups:** Today area remains filtered to sessions that have not ended yet.
+
 ## 2026-07-03 — Add lectures and medical activities calendar tab
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

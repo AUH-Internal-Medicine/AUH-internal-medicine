@@ -26,8 +26,8 @@ The app presents resident data across **8 primary tabs** (Arabic label → meani
 |---|---|---|
 | `residents` | لائحة المقيمين | Full roster: name, specialty, phone, status, shift. Search, filter, multi-select, export to phone contacts (vCard). |
 | `shifts` | الفروز | Monthly "shift assignment" (فرز) groups — which residents are assigned where, per month. |
-| `lectures` | رزنامة المحاضرات | Medical lectures/activities calendar with smart search, department/year filters, today highlights, upcoming list, and optional old-events view. |
 | `oncall` | المناوبات | On-call schedule. Monthly calendar + per-day breakdown by category. Exportable as an image. |
+| `lectures` | رزنامة المحاضرات | Medical lectures/activities calendar with smart search, department/year filters, today highlights, upcoming list, and optional old-events view. |
 | `evaluation` | التقييم السنوي | Annual evaluation scores per resident across 8 skill areas, plus praises (ثناءات) and penalties (عقوبات). |
 | `links` | روابط هامة | Important links / channels (e.g. group chats, resources). |
 | `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see a personal summary: cumulative on-calls, evaluation, shift, and a list of every on-call you appear in with your colleagues. Exportable as an image. |
