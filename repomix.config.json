@@ -1,0 +1,24 @@
+{
+  "output": {
+    "filePath": "project.txt",
+    "style": "plain",
+    "removeComments": false,
+    "removeEmptyLines": true,
+    "showLineNumbers": false
+  },
+  "ignore": {
+    "useGitignore": true,
+    "customPatterns": [
+      "node_modules",
+      ".git",
+      "*.jpg",
+      "*.png",
+      "*.svg",
+      "*.ico",
+      "project.txt",
+      "CHANGELOG.md",
+      "ARCHITECTURE.md",
+      "repomix-output.xml"
+    ]
+  }
+}
