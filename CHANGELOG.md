@@ -47,6 +47,30 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-04 — Improve on-call raw table name readability
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Updated the `عرض كجدول` rendering in the on-call tab so multiple abbreviations in a single cell are displayed with separators (`، `) instead of crowded merged text.
+- **Files:** app.js, CHANGELOG.md
+- **Docs synced:** no — behavior-only display polish with no data-contract change.
+- **Notes / follow-ups:** Date formatting and trailing empty-column fixes from the previous entry remain unchanged.
+
+## 2026-07-04 — Fix stats sorting UX, on-call raw table date display, and My Info labels
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Updated Doctor Statistics sorting buttons to a three-state cycle (تصاعدي → تنازلي → إلغاء), added clearer state labels on the buttons, and normalized number display to hide trailing `.0`. Added vertical column separators in the Doctor Statistics desktop table and hardened subgroup extraction so subtype counts are displayed more reliably. Fixed On-call raw table date rendering to show `YYYY/MM/DD` instead of `Date(...)`, and removed trailing empty columns. Updated My Info wording from `إجمالي المناوبات الظاهرة` to `المناوبات المتبقية` and applied cleaned cumulative number display.
+- **Files:** app.js, styles.css, CHANGELOG.md
+- **Docs synced:** no — no data contract or architecture change.
+- **Notes / follow-ups:** Sorting now uses click-cycling states; if explicit dropdown menus are preferred later, this can be switched without changing data logic.
+
+## 2026-07-04 — Add doctor statistics tab, on-call rule engine, and major UX updates
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Implemented requested UI reorder and added a new `احصائيات الأطباء` tab driven by `gid=811980834` with smart search, grouped totals/details, and sorting by hours/shifts. Added on-call rules integration from `gid=1364488029` to show duty time/duration and holiday-aware highlights, prevented background refresh from forcing the selected on-call day back to today, and added a raw on-call table view. Expanded lectures with category filter and optional registration/announcement links, updated complaints content, and enriched `معلوماتي` with clearer guidance, counters, statistics section, and upcoming-vs-all on-call toggle.
+- **Files:** helpers.js, app.js, styles.css, README.md, DATA-MODEL.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, DATA-MODEL.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** Cache key bumped from `hc_v62` to `hc_v63` because cache payload and rendered contracts changed.
+
 ## 2026-07-03 — Reorder tabs and adjust old lectures ordering
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

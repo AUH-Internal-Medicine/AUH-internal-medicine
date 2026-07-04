@@ -68,7 +68,7 @@ constructor, lines 349–357):
   hides the loading screen, and triggers `loadFresh()` in the background.
   If there is no valid cache, it waits for a foreground fetch and the same
   header-image readiness before hiding the loading screen.
-3. **`loadFresh(silent)`** (412–426): fetches all six sheet tabs in parallel
+3. **`loadFresh(silent)`**: fetches all eight sheet tabs in parallel
    via `Promise.all`, parses, renders, and writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).
 
@@ -87,10 +87,10 @@ constructor, lines 349–357):
 
 ### Caching
 
-- **`loadFromCache`** (410) / **`saveToCache`** (411): JSON blob in
-  `localStorage` under `CK` (`hc_v62`) with a `timestamp`; entries older than
+- **`loadFromCache`** / **`saveToCache`**: JSON blob in
+  `localStorage` under `CK` (`hc_v63`) with a `timestamp`; entries older than
   `CD` (10 minutes) are treated as stale. Cache stores the **raw** resident/oncall
-  data plus the eval/links/qa/lectures arrays.
+  data plus evaluation, links, Q&A, lectures, doctor statistics, and on-call rules.
 
 ### Rendering (one method per tab area)
 

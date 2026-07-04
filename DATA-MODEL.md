@@ -10,7 +10,7 @@ There is no server and no write path — the app is read-only against the sheet.
 - The sheet must be shared as **"Anyone with the link can view"**, or the
   browser fetch fails and the page shows cached/empty data.
 
-Each tab (worksheet) is addressed by its numeric **GID**. The app fetches six tabs:
+Each tab (worksheet) is addressed by its numeric **GID**. The app fetches eight tabs:
 
 | Constant | GID | Tab content | Fetched as |
 |---|---|---|---|
@@ -20,6 +20,8 @@ Each tab (worksheet) is addressed by its numeric **GID**. The app fetches six ta
 | `GID_L` | `1649404909` | Links / channels (روابط) | CSV |
 | `GID_Q` | `680270268` | Q&A (الأسئلة والأجوبة) | JSON |
 | `GID_LEC` | `393274093` | Lectures & medical activities calendar (رزنامة المحاضرات والانشطة الطبية) | CSV |
+| `GID_DS` | `811980834` | Doctor statistics (احصائيات الأطباء) | CSV |
+| `GID_OR` | `1364488029` | On-call rules (modes/times/holiday dates) | CSV |
 
 ### Endpoint shapes
 - CSV: `https://docs.google.com/spreadsheets/d/{SID}/gviz/tq?tqx=out:csv&gid={GID}`
@@ -159,27 +161,71 @@ Row 0 is the header and is matched by header names (trimmed/normalized).
 | `المدة` | Duration. |
 | `القسم` | Department. |
 | `السنة` | Year/level. |
+| `رابط التسجيل` | Optional registration URL (shown only when present). |
+| `رابط الاعلان` / `رابط الإعلان` | Optional announcement URL (shown only when present). |
 
 Rendering behavior:
 - Smart search covers title + content + speaker.
-- Department/year filters are generated dynamically from available rows.
+- Category, department, and year filters are generated dynamically from available rows.
 - "Today" hero shows sessions whose end time has not passed yet.
 - Past sessions are hidden by default and can be shown with the dedicated toggle.
 
 ---
 
+## 7. Doctor Statistics (`GID_DS = 811980834`, CSV)
+
+Row 0 is the header and is parsed by header names. Core columns include:
+
+- `الاسم الكامل`, `الاختصار الرسمي`, `الاختصاص`, `الحالة`, `فرز شهر <x>`
+- `عدد_المناوبات`, `مجموع_الساعات`, `متوسط ساعات/مناوبة`
+- Group totals: `العنايات`, `الأجنحة`, `الإسعاف`, `المنوعات`
+- Detail columns used to build grouped views:
+  - ICU: `عناية قلبية`, `عناية مركز`, `عناية داخلية`
+  - Wards: `سابع`, `رابع`, `تالت`, `تاني`, `خارجيات`
+  - Emergency: all columns whose names start with `إسعاف`/`اسعاف`
+  - Misc: `ديال`, `أورام`
+- Additional analytics: `مناوبات أيام الدوام`, `العطل`, `المناوبات الليلية`,
+  `فرق الساعات عن متوسط الملتحقين`, `فرق المناوبات عن متوسط الملتحقين`,
+  `ترتيب الساعات`, `ترتيب عدد المناوبات`, `أول مناوبة`, `آخر مناوبة`, `تاريخ الالتحاق`.
+
+The UI also computes **days since join** from `تاريخ الالتحاق`.
+
+---
+
+## 8. On-call Rules (`GID_OR = 1364488029`, CSV)
+
+This tab defines duty time/duration metadata for each on-call type.
+
+- Row 1 contains on-call type names (`B1...`) that map to on-call category headers.
+- Rows 2–5 are the old schedule block:
+  - row 2: workday time
+  - row 3: workday duration
+  - row 4: holiday time
+  - row 5: holiday duration
+- `B6` (`تاريخ بدء حساب المواعيد الجديد`) acts as the switch date.
+  - if today is before it, use rows 2–5
+  - if today is on/after it, use rows 7–10
+- Annual holiday dates are read from the section under `العطل السنوية`
+  (`B14`, `B15`, ... when present).
+
+Holiday definition used by the app:
+- Fridays + Saturdays
+- annual holidays from the rules sheet
+
+---
+
 ## Caching & refresh
 
-- The full fetched dataset is cached in `localStorage` under key **`hc_v62`**
+- The full fetched dataset is cached in `localStorage` under key **`hc_v63`**
   with a timestamp.
 - Cache **TTL is 10 minutes** (`CD = 10 * 60 * 1000`). Within the TTL the page
   renders instantly from cache and still refreshes in the background.
 - The app re-fetches every **120 seconds** while open.
 - To force-invalidate every visitor's cache after a breaking change, bump the
-  cache key version in `index.html` (e.g. `hc_v62` → `hc_v63`).
+  cache key version in `helpers.js` (e.g. `hc_v63` → `hc_v64`).
 
 ## Changing the data source
 
-If you point the app at a different spreadsheet, update `SID` and the six `GID_*`
+If you point the app at a different spreadsheet, update `SID` and the eight `GID_*`
 constants near line 332 of `index.html`, and make sure the new tabs match the
 column contracts above (or update the renderers accordingly).

@@ -20,17 +20,18 @@ Pages, Netlify, Cloudflare Pages, a plain file server, etc.).
 
 ## What it does
 
-The app presents resident data across **8 primary tabs** (Arabic label → meaning):
+The app presents resident data across **9 primary tabs** (Arabic label → meaning):
 
 | Tab id | Arabic label | Purpose |
 |---|---|---|
 | `residents` | لائحة المقيمين | Full roster: name, specialty, phone, status, shift. Search, filter, multi-select, export to phone contacts (vCard). |
+| `lectures` | رزنامة المحاضرات | Medical lectures/activities calendar with smart search, category/department/year filters, today highlights, upcoming list, optional old-events view, and optional registration/announcement links. |
 | `shifts` | الفروز | Monthly "shift assignment" (فرز) groups — which residents are assigned where, per month. |
 | `oncall` | المناوبات | On-call schedule. Monthly calendar + per-day breakdown by category. Exportable as an image. |
-| `lectures` | رزنامة المحاضرات | Medical lectures/activities calendar with smart search, department/year filters, today highlights, upcoming list, and optional old-events view. |
+| `doctorstats` | احصائيات الأطباء | Monthly doctor analytics (hours, shifts, totals + detailed category breakdowns, rankings, first/last shift, and days since join) with smart search and sorting by hours/shifts. |
 | `evaluation` | التقييم السنوي | Annual evaluation scores per resident across 8 skill areas, plus praises (ثناءات) and penalties (عقوبات). |
 | `links` | روابط هامة | Important links / channels (e.g. group chats, resources). |
-| `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see a personal summary: cumulative on-calls, evaluation, shift, and a list of every on-call you appear in with your colleagues. Exportable as an image. |
+| `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see personal summary cards (counters, shift, evaluation, statistics, and on-calls with schedule metadata). By default it shows upcoming on-calls and can toggle old on-calls. Exportable as an image. |
 | `qa` | Q&A (الأسئلة والأجوبة) | Categorized, collapsible frequently-asked questions. |
 
 A separate floating **الشكاوي** support shortcut (outside the primary tab row)
@@ -39,6 +40,8 @@ opens the technical-contact view when needed.
 ### Notable features
 - **Live Google Sheets data** via the gviz endpoint (CSV + JSON), refreshed every 2 minutes.
 - **Offline-ish caching** in `localStorage` (10-minute TTL) so the page renders instantly from cache, then refreshes in the background.
+- **Doctor statistics tab** sourced from a dedicated sheet tab with grouped totals and detailed per-category counts.
+- **On-call timing rules** sourced from a dedicated sheet tab to show duty times/durations and holiday-aware highlights (Fri/Sat + annual holidays from sheet).
 - **Dark mode** toggle (persisted in `localStorage`).
 - **Arabic-aware search** with normalization (handles أ/إ/آ/ا, ة/ه, ى/ي, the "ال" prefix, diacritics, etc.).
 - **Export to contacts**: select residents → download a `.vcf` (vCard) file.
@@ -85,10 +88,10 @@ itself comes from Google Sheets.
 ## How the data flows (one paragraph)
 
 On load, `HospitalApp` reads any cached snapshot from `localStorage` (key
-`hc_v62`) and renders it immediately, then fetches fresh data from the Google
-Sheet in the background. Six sheet tabs are fetched in parallel by their
-**GID** (numeric tab id): residents, on-call, evaluation, links, Q&A, and
-lectures calendar. CSV
+`hc_v63`) and renders it immediately, then fetches fresh data from the Google
+Sheet in the background. Eight sheet tabs are fetched in parallel by their
+**GID** (numeric tab id): residents, on-call, evaluation, links, Q&A,
+lectures calendar, doctor statistics, and on-call rules. CSV
 tabs are parsed by a hand-written CSV parser; JSON tabs use the gviz JSON
 response. The parsed rows are stored on the app instance and rendered into the
 relevant tab. A `setInterval` re-fetches every 120 seconds. See
@@ -119,7 +122,7 @@ relevant tab. A `setInterval` re-fetches every 120 seconds. See
   `تاريخ الالتحاق`, `المناوبات+`) instead of hard-coded column positions.
   Monthly shift columns are discovered by headers matching `فرز شهر <number>`.
   See [DATA-MODEL.md](DATA-MODEL.md).
-- The cache key is **versioned** (`hc_v62`). Bumping it (e.g. `hc_v63`)
+- The cache key is **versioned** (`hc_v63`). Bumping it (e.g. `hc_v64`)
   invalidates everyone's cached data — useful after a breaking data change.
 - All user-facing strings are Arabic. Keep RTL and Arabic copy consistent when
   editing.
