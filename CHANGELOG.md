@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-04 — Harden Pages artifact packaging for deploy stability
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Updated Pages workflow to prepare and upload a dedicated `_site` directory (runtime files only) plus `.nojekyll`, instead of uploading the full repository root. This reduces deployment backend failures that surface as generic `Deployment failed, try again later` during `actions/deploy-pages`.
+- **Files:** .github/workflows/pages.yml, README.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, CHANGELOG.md
+- **Notes / follow-ups:** Node deprecation/punycode lines in the runner logs are warnings and were not the failure cause in this run.
+
 ## 2026-07-04 — Add GitHub Pages Actions deploy workflow
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

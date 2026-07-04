@@ -90,6 +90,7 @@ itself comes from Google Sheets.
 - This repo uses **GitHub Actions** deployment for Pages via [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 - In repository settings, set **Pages > Source** to **GitHub Actions**.
 - If source is set to branch mode while relying on Actions checks, deployment checks can fail quickly.
+- The workflow publishes a clean `_site` artifact (not the whole repo root), containing only runtime site files.
 
 ---
 
