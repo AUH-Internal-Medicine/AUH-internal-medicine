@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-04 — Add retry logic for transient Pages deploy backend failures
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Hardened GitHub Pages deployment by adding up to 3 deploy attempts in the `deploy` job and failing only if all attempts fail. This specifically targets intermittent `Deployment failed, try again later` errors after artifact upload succeeds.
+- **Files:** .github/workflows/pages.yml, README.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, CHANGELOG.md
+- **Notes / follow-ups:** Node 20 deprecation and `punycode` messages in the shown logs are warnings, not the direct failure.
+
 ## 2026-07-04 — Keep strong 2-minute refresh without disrupting on-call reading
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

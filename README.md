@@ -91,6 +91,7 @@ itself comes from Google Sheets.
 - In repository settings, set **Pages > Source** to **GitHub Actions**.
 - If source is set to branch mode while relying on Actions checks, deployment checks can fail quickly.
 - The workflow publishes a clean `_site` artifact (not the whole repo root), containing only runtime site files.
+- The deploy job retries up to 3 times to handle transient Pages backend errors like `Deployment failed, try again later`.
 
 ---
 
