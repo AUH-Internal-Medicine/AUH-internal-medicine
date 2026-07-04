@@ -81,8 +81,15 @@ itself comes from Google Sheets.
 | `styles.css` | All app styling, extracted from the old inline `<style>` block. |
 | `helpers.js` | Shared globals, helper functions, constants, and tab HTML builders. |
 | `app.js` | The `HospitalApp` class and bootstrap, extracted from the old inline `<script>` block. |
+| `.github/workflows/pages.yml` | GitHub Pages deployment workflow (build + deploy jobs) for the `pages build and deployment` checks. |
 | `bg.webp` / `bg.png` | Header background image (the `.webp` is used; `.png` is a fallback/source). |
 | `README.md`, `ARCHITECTURE.md`, `DATA-MODEL.md`, `AGENTS.md` | Documentation (this set). |
+
+### GitHub Pages deployment mode
+
+- This repo uses **GitHub Actions** deployment for Pages via [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
+- In repository settings, set **Pages > Source** to **GitHub Actions**.
+- If source is set to branch mode while relying on Actions checks, deployment checks can fail quickly.
 
 ---
 

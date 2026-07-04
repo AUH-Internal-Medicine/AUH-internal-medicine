@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-04 — Add GitHub Pages Actions deploy workflow
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added a dedicated GitHub Actions workflow for Pages deployment (`pages build and deployment`) with build and deploy jobs using official `configure-pages`, `upload-pages-artifact`, and `deploy-pages` actions. This addresses fast-failing dynamic deploy checks when Pages is expected to deploy through Actions.
+- **Files:** .github/workflows/pages.yml, README.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, CHANGELOG.md
+- **Notes / follow-ups:** In GitHub repository settings, Pages source should be set to `GitHub Actions` for this workflow to be used.
+
 ## 2026-07-04 — Add automatic stale-cache recovery and periodic hard reload
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both
