@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-04 — Keep strong 2-minute refresh without disrupting on-call reading
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Switched auto-refresh behavior to a non-disruptive network-first path every 120 seconds (and on tab resume) without forced page reloads. Fixed on-call refresh flow to always update data while preserving the currently selected on-call date and syncing the date picker, preventing unexpected jumps back to today's date during reading.
+- **Files:** app.js, helpers.js, README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Notes / follow-ups:** Existing `no-store` + request cache-busting remains in place for strong refresh behavior.
+
 ## 2026-07-04 — Harden Pages artifact packaging for deploy stability
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

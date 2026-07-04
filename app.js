@@ -56,8 +56,6 @@ class HospitalApp {
   }
 
   init() {
-    if (this.maybeAutoHardReload('startup')) return;
-
     document.getElementById('navContainer').innerHTML = buildNav();
     document.getElementById('mainContent').innerHTML = buildMainContent();
 
@@ -84,36 +82,14 @@ class HospitalApp {
     this.loadData();
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) this.maybeAutoHardReload('resume');
+      if (!document.hidden) this.loadFresh(true);
     });
 
     setInterval(() => {
       if (!document.hidden) {
-        if (this.maybeAutoHardReload('interval')) return;
-        this.loadData();
+        this.loadFresh(true);
       }
     }, 120000);
-  }
-
-  maybeAutoHardReload(reason) {
-    try {
-      const now = Date.now();
-      const raw = localStorage.getItem(HARD_RELOAD_KEY);
-      const parsed = raw ? JSON.parse(raw) : null;
-      const lastAt = parsed && Number.isFinite(parsed.lastAt) ? parsed.lastAt : 0;
-
-      if (now - lastAt < HARD_RELOAD_INTERVAL) return false;
-
-      localStorage.removeItem(CK);
-      localStorage.setItem(HARD_RELOAD_KEY, JSON.stringify({ lastAt: now, reason }));
-
-      const u = new URL(window.location.href);
-      u.searchParams.set('hr', String(now));
-      window.location.replace(u.toString());
-      return true;
-    } catch (e) {
-      return false;
-    }
   }
 
   async loadData() {
@@ -367,13 +343,11 @@ class HospitalApp {
       }
 
       if (od) {
-        const shouldRefreshOncall = !silent || !this.oncRows.length;
-        if (shouldRefreshOncall) {
-          this.parseOncallData(od);
-          this.renderMonthlyCalendar();
-          this.showOncallDate(this.selectedOncallDate);
-          this.renderOncallRawTable();
-        }
+        const keepDate = this.selectedOncallDate || this.today;
+        this.parseOncallData(od);
+        this.renderMonthlyCalendar();
+        this.showOncallDate(keepDate);
+        this.renderOncallRawTable();
       }
 
       if (ord) {
@@ -1953,6 +1927,8 @@ class HospitalApp {
     if (!dstr || !dp || !this.oncRows.length) return;
 
     this.selectedOncallDate = dstr;
+    const picker = document.getElementById('oncallDatePicker');
+    if (picker && picker.value !== dstr) picker.value = dstr;
 
     const oncRow = this.getOncRow(dstr);
     if (!oncRow) {

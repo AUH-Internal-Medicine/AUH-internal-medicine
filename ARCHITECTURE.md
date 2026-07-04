@@ -61,9 +61,11 @@ constructor, lines 349–357):
 
 1. **`constructor` → `init()`** (358–371): injects nav + main HTML, sets header
    date/year, wires up tabs/searches/back-to-top and the floating support shortcut,
-  starts the draggable header, then calls `loadData()` and schedules `loadData()` every 120 s.
-  Before normal rendering, `maybeAutoHardReload()` may trigger a periodic hard reload
-  (every ~6 hours) to prevent stale assets/cache accumulation.
+  starts the draggable header, then calls `loadData()` and schedules background
+  `loadFresh(true)` refresh every 120 s.
+  Auto refresh is network-first and non-disruptive: while the page is visible,
+  it refreshes in the background every 120 s and also refreshes on tab resume,
+  without forcing a full page reload.
   Tab switches restore the chosen section and scroll the viewport back to the top.
 2. **`loadData()`** (372–377): if cache exists, renders it immediately
   (`loadFromCache` → `applyCachedData`), waits until the header image is ready,
@@ -95,9 +97,8 @@ constructor, lines 349–357):
   `localStorage` under `CK` (`hc_v63`) with a `timestamp`; entries older than
   `CD` (10 minutes) are treated as stale. Cache stores the **raw** resident/oncall
   data plus evaluation, links, Q&A, lectures, doctor statistics, and on-call rules.
-- **`maybeAutoHardReload`**: stores last hard-reload time in `localStorage`
-  (`HARD_RELOAD_KEY`) and, if overdue (`HARD_RELOAD_INTERVAL`), clears `CK`
-  and reloads the page with a cache-busting `hr` URL parameter.
+- On-call background refresh now preserves user reading context by re-rendering
+  with the currently selected date instead of forcing a fallback to today's date.
 
 ### Rendering (one method per tab area)
 
