@@ -232,6 +232,8 @@ const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربع�
 
 const CK='hc_v63';
 const CD=10*60*1000;
+const HARD_RELOAD_INTERVAL=6*60*60*1000;
+const HARD_RELOAD_KEY='hc_hard_reload_v1';
 
 const TABS=[
   {id:'residents',icon:'<i class="fas fa-user-doctor"></i>',label:'لائحة المقيمين'},

@@ -62,6 +62,8 @@ constructor, lines 349–357):
 1. **`constructor` → `init()`** (358–371): injects nav + main HTML, sets header
    date/year, wires up tabs/searches/back-to-top and the floating support shortcut,
   starts the draggable header, then calls `loadData()` and schedules `loadData()` every 120 s.
+  Before normal rendering, `maybeAutoHardReload()` may trigger a periodic hard reload
+  (every ~6 hours) to prevent stale assets/cache accumulation.
   Tab switches restore the chosen section and scroll the viewport back to the top.
 2. **`loadData()`** (372–377): if cache exists, renders it immediately
   (`loadFromCache` → `applyCachedData`), waits until the header image is ready,
@@ -76,9 +78,11 @@ constructor, lines 349–357):
 
 - **`fetchCSV(gid)`** (427): hits
   `https://docs.google.com/spreadsheets/d/{SID}/gviz/tq?tqx=out:csv&gid={gid}`,
+  adds a cache-busting query parameter and requests with `fetch(..., { cache: 'no-store' })`,
   decodes UTF-8, rejects HTML error pages, parses with `parseCSV`.
 - **`fetchJSON(gid)`** (428): hits the same endpoint with `out:json`, strips the
-  gviz JS wrapper (`{...}` substring), and flattens `table.cols`/`table.rows`
+  gviz JS wrapper (`{...}` substring), also uses `no-store` + cache-busting,
+  and flattens `table.cols`/`table.rows`
   into a `[headers, ...rows]` array of string arrays — the **same shape** CSV
   produces, so downstream renderers don't care which transport was used.
 - **`parseCSV` / `parseCSVLine`** (429–430): a hand-written quote-aware CSV
@@ -91,6 +95,9 @@ constructor, lines 349–357):
   `localStorage` under `CK` (`hc_v63`) with a `timestamp`; entries older than
   `CD` (10 minutes) are treated as stale. Cache stores the **raw** resident/oncall
   data plus evaluation, links, Q&A, lectures, doctor statistics, and on-call rules.
+- **`maybeAutoHardReload`**: stores last hard-reload time in `localStorage`
+  (`HARD_RELOAD_KEY`) and, if overdue (`HARD_RELOAD_INTERVAL`), clears `CK`
+  and reloads the page with a cache-busting `hr` URL parameter.
 
 ### Rendering (one method per tab area)
 

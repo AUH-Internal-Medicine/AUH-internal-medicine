@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-04 — Add automatic stale-cache recovery and periodic hard reload
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Added an automatic hard-reload policy to reduce cases where users stay on stale site versions: at startup/resume/interval checks, the app now reloads itself when the configured interval is exceeded. Also hardened Google Sheets fetches with `cache: 'no-store'` plus cache-busting query params to reduce stale network responses.
+- **Files:** app.js, helpers.js, README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Notes / follow-ups:** Cache key `CK` stayed `hc_v63` because payload format is unchanged; only refresh policy changed.
+
 ## 2026-07-04 — Improve on-call raw table name readability
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

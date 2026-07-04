@@ -221,6 +221,11 @@ Holiday definition used by the app:
 - Cache **TTL is 10 minutes** (`CD = 10 * 60 * 1000`). Within the TTL the page
   renders instantly from cache and still refreshes in the background.
 - The app re-fetches every **120 seconds** while open.
+- Sheet fetches use `fetch(..., { cache: 'no-store' })` plus a cache-busting
+  query parameter on each request to reduce stale CDN/browser responses.
+- The app performs an automatic hard reload roughly every **6 hours**
+  (`HARD_RELOAD_INTERVAL`) by clearing the local snapshot cache and reloading
+  with a cache-busting `hr` URL parameter.
 - To force-invalidate every visitor's cache after a breaking change, bump the
   cache key version in `helpers.js` (e.g. `hc_v63` → `hc_v64`).
 

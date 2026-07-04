@@ -56,6 +56,8 @@ class HospitalApp {
   }
 
   init() {
+    if (this.maybeAutoHardReload('startup')) return;
+
     document.getElementById('navContainer').innerHTML = buildNav();
     document.getElementById('mainContent').innerHTML = buildMainContent();
 
@@ -81,9 +83,37 @@ class HospitalApp {
     this.showLoading(false);
     this.loadData();
 
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.maybeAutoHardReload('resume');
+    });
+
     setInterval(() => {
-      if (!document.hidden) this.loadData();
+      if (!document.hidden) {
+        if (this.maybeAutoHardReload('interval')) return;
+        this.loadData();
+      }
     }, 120000);
+  }
+
+  maybeAutoHardReload(reason) {
+    try {
+      const now = Date.now();
+      const raw = localStorage.getItem(HARD_RELOAD_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      const lastAt = parsed && Number.isFinite(parsed.lastAt) ? parsed.lastAt : 0;
+
+      if (now - lastAt < HARD_RELOAD_INTERVAL) return false;
+
+      localStorage.removeItem(CK);
+      localStorage.setItem(HARD_RELOAD_KEY, JSON.stringify({ lastAt: now, reason }));
+
+      const u = new URL(window.location.href);
+      u.searchParams.set('hr', String(now));
+      window.location.replace(u.toString());
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   async loadData() {
@@ -377,9 +407,9 @@ class HospitalApp {
   }
 
   async fetchCSV(gid) {
-    const url = `https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:csv&gid=${gid}`;
+    const url = `https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:csv&gid=${gid}&_=${Date.now()}`;
     try {
-      const r = await fetch(url);
+      const r = await fetch(url, { cache: 'no-store' });
       if (!r.ok) return null;
       const b = await r.arrayBuffer();
       const t = new TextDecoder('utf-8').decode(b);
@@ -391,9 +421,9 @@ class HospitalApp {
   }
 
   async fetchJSON(gid) {
-    const url = `https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&gid=${gid}`;
+    const url = `https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&gid=${gid}&_=${Date.now()}`;
     try {
-      const r = await fetch(url);
+      const r = await fetch(url, { cache: 'no-store' });
       if (!r.ok) return null;
       const raw = await r.text();
       const s = raw.indexOf('{');

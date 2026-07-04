@@ -40,6 +40,7 @@ opens the technical-contact view when needed.
 ### Notable features
 - **Live Google Sheets data** via the gviz endpoint (CSV + JSON), refreshed every 2 minutes.
 - **Offline-ish caching** in `localStorage` (10-minute TTL) so the page renders instantly from cache, then refreshes in the background.
+- **Stale-version protection**: data fetches use `no-store` + cache-busting query params, and the app triggers an automatic hard reload about every 6 hours (also on tab resume if overdue).
 - **Doctor statistics tab** sourced from a dedicated sheet tab with grouped totals and detailed per-category counts.
 - **On-call timing rules** sourced from a dedicated sheet tab to show duty times/durations and holiday-aware highlights (Fri/Sat + annual holidays from sheet).
 - **Dark mode** toggle (persisted in `localStorage`).
@@ -94,7 +95,9 @@ Sheet in the background. Eight sheet tabs are fetched in parallel by their
 lectures calendar, doctor statistics, and on-call rules. CSV
 tabs are parsed by a hand-written CSV parser; JSON tabs use the gviz JSON
 response. The parsed rows are stored on the app instance and rendered into the
-relevant tab. A `setInterval` re-fetches every 120 seconds. See
+relevant tab. A `setInterval` re-fetches every 120 seconds, and a periodic
+auto hard reload policy (6-hour interval) clears stale local cache and reloads
+the page with a cache-busting URL parameter. See
 [DATA-MODEL.md](DATA-MODEL.md) for the exact sheet/column layout and
 [ARCHITECTURE.md](ARCHITECTURE.md) for the code structure.
 
