@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-05 — Fix lectures date parsing and add interactive lectures month calendar
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Fixed lectures date parsing so the app accepts multiple date formats (including `YYYY-MM-DD`, `DD/MM/YYYY`, `MM/DD/YYYY`, Arabic/English month names, and gviz `Date(y,m,d)` values). Added an interactive month calendar to the lectures tab that highlights lecture days in green and shows that day’s lectures when clicked.
+- **Files:** app.js, helpers.js, styles.css, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** No Google Sheet column contract changes were made.
+
 ## 2026-07-04 — Add retry logic for transient Pages deploy backend failures
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

@@ -107,7 +107,7 @@ constructor, lines 349–357):
 | `renderRes` / `displayResidents` | Roster table + mobile cards; `displayResidents` re-applies filters/search on every change. |
 | `buildFilters` | Populates specialty + shift `<select>` dropdowns from the data. |
 | `renderShiftsFromResidents` / `dispShiftsByMonth` | The "shifts" (فروز) tab — groups joined residents by their shift value for a chosen month (auto-prefers next month when data is already present); month chooser is rendered with dedicated wrapper styling in the tab header. |
-| `parseLecturesData` / `renderLectures` | The lectures/activities calendar tab — parses header-driven lecture fields, builds today/upcoming/past groups, and applies search + department/year filters. |
+| `parseLecturesData` / `renderLectures` | The lectures/activities calendar tab — parses header-driven lecture fields with flexible date parsing, builds today/upcoming/past groups, renders an interactive monthly calendar (lecture days highlighted), and applies search + department/year filters. |
 | `renderEval` | Evaluation table + cards (columns 13/14 are praise/penalty badges). |
 | `renderLinks` | Links table + cards; `formatLink` turns `http…` values into buttons. |
 | `renderQA` | Groups Q&A by category into collapsible sections. |

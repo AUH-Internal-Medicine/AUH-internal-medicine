@@ -39,6 +39,9 @@ class HospitalApp {
     this.lecturesDeptFilter = '';
     this.lecturesYearFilter = '';
     this.showPastLectures = false;
+    this.lecturesSelectedDate = '';
+    this.lecturesCalendarMonth = this.m;
+    this.lecturesCalendarYear = n.getFullYear();
 
     this.selectedResidents = new Set();
     this.currentDisplayMonth = this.m;
@@ -1170,17 +1173,152 @@ class HospitalApp {
   }
 
   parseLectureDate(v) {
-    const s = this.toAsciiDigits(v).replace(/\./g, '/');
-    const nums = s.match(/\d+/g);
+    const src = this.toAsciiDigits(v || '').trim();
+    if (!src) return '';
+
+    const buildIso = (y, m, d) => {
+      const yy = parseInt(y, 10);
+      const mm = parseInt(m, 10);
+      const dd = parseInt(d, 10);
+      if (!yy || !mm || !dd) return '';
+      const dt = new Date(yy, mm - 1, dd);
+      if (dt.getFullYear() !== yy || dt.getMonth() !== mm - 1 || dt.getDate() !== dd) return '';
+      return `${yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+    };
+
+    const gviz = src.match(/Date\((\d+),\s*(\d+),\s*(\d+)\)/i);
+    if (gviz) {
+      return buildIso(gviz[1], parseInt(gviz[2], 10) + 1, gviz[3]);
+    }
+
+    const ymd = src.match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+    if (ymd) {
+      const iso = buildIso(ymd[1], ymd[2], ymd[3]);
+      if (iso) return iso;
+    }
+
+    const ext = extractDate(src);
+    if (ext) return ext;
+
+    const clean = src
+      .replace(/[,،]/g, ' ')
+      .replace(/السبت|الأحد|الاحد|الاثنين|الثلاثاء|الأربعاء|الاربعاء|الخميس|الجمعة|Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const monthMap = {
+      'كانون الثاني': 1,
+      'يناير': 1,
+      january: 1,
+      jan: 1,
+      شباط: 2,
+      فبراير: 2,
+      february: 2,
+      feb: 2,
+      اذار: 3,
+      آذار: 3,
+      مارس: 3,
+      march: 3,
+      mar: 3,
+      نيسان: 4,
+      ابريل: 4,
+      أبريل: 4,
+      april: 4,
+      apr: 4,
+      ايار: 5,
+      أيار: 5,
+      مايو: 5,
+      may: 5,
+      حزيران: 6,
+      يونيو: 6,
+      june: 6,
+      jun: 6,
+      تموز: 7,
+      يوليو: 7,
+      july: 7,
+      jul: 7,
+      اب: 8,
+      آب: 8,
+      اغسطس: 8,
+      أغسطس: 8,
+      august: 8,
+      aug: 8,
+      ايلول: 9,
+      أيلول: 9,
+      سبتمبر: 9,
+      september: 9,
+      sep: 9,
+      sept: 9,
+      تشرين: 10,
+      'تشرين الاول': 10,
+      'تشرين الأول': 10,
+      اكتوبر: 10,
+      أكتوبر: 10,
+      october: 10,
+      oct: 10,
+      'تشرين الثاني': 11,
+      نوفمبر: 11,
+      november: 11,
+      nov: 11,
+      'كانون الاول': 12,
+      'كانون الأول': 12,
+      ديسمبر: 12,
+      december: 12,
+      dec: 12
+    };
+
+    const normMonthText = normAr(clean).toLowerCase();
+    let matchedMonth = 0;
+    for (const [k, m] of Object.entries(monthMap)) {
+      if (normMonthText.includes(normAr(k).toLowerCase())) {
+        matchedMonth = m;
+        break;
+      }
+    }
+    if (matchedMonth) {
+      const nums = clean.match(/\d+/g) || [];
+      const yRaw = nums.find(n => n.length === 4) || nums.find(n => parseInt(n, 10) > 31);
+      let year = yRaw ? parseInt(yRaw, 10) : NaN;
+      if (!Number.isFinite(year)) {
+        const ys = nums.find(n => n.length <= 2);
+        if (ys) year = parseInt(ys, 10) + 2000;
+      }
+
+      const dayCand = nums
+        .map(n => parseInt(n, 10))
+        .filter(n => n >= 1 && n <= 31)
+        .find(n => n !== year && n !== year - 2000);
+
+      if (Number.isFinite(year) && dayCand) {
+        const iso = buildIso(year, matchedMonth, dayCand);
+        if (iso) return iso;
+      }
+    }
+
+    const nums = clean.match(/\d+/g);
     if (!nums || nums.length < 3) return '';
-    let d = parseInt(nums[0], 10);
-    let m = parseInt(nums[1], 10);
-    let y = parseInt(nums[2], 10);
-    if (y < 100) y += 2000;
-    if (!d || !m || !y) return '';
-    const dt = new Date(y, m - 1, d);
-    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return '';
-    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+    let a = parseInt(nums[0], 10);
+    let b = parseInt(nums[1], 10);
+    let c = parseInt(nums[2], 10);
+    if (!a || !b || !c) return '';
+
+    if (a > 999) {
+      const iso = buildIso(a, b, c);
+      if (iso) return iso;
+    }
+
+    let year = c;
+    if (year < 100) year += year < 50 ? 2000 : 1900;
+
+    let day = a;
+    let month = b;
+    if (a <= 12 && b > 12) {
+      month = a;
+      day = b;
+    }
+
+    return buildIso(year, month, day);
   }
 
   parseTimeMinutes(v) {
@@ -1344,6 +1482,99 @@ class HospitalApp {
     this.renderLectures();
   }
 
+  changeLecturesCalendarMonth(step) {
+    const cur = new Date(this.lecturesCalendarYear, this.lecturesCalendarMonth, 1);
+    cur.setMonth(cur.getMonth() + (step || 0));
+    this.lecturesCalendarYear = cur.getFullYear();
+    this.lecturesCalendarMonth = cur.getMonth();
+    this.renderLectures();
+  }
+
+  clickLectureCalendarDay(ds) {
+    this.lecturesSelectedDate = ds;
+    const parts = (ds || '').split('-');
+    if (parts.length === 3) {
+      this.lecturesCalendarYear = parseInt(parts[0], 10);
+      this.lecturesCalendarMonth = parseInt(parts[1], 10) - 1;
+    }
+    this.renderLectures();
+
+    setTimeout(() => {
+      const el = document.getElementById('lecturesSelectedDayBox');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  }
+
+  renderLecturesMonthlyCalendar(list) {
+    const titleEl = document.getElementById('lecturesCalendarTitle');
+    const container = document.getElementById('lecturesMonthlyCalendar');
+    if (!titleEl || !container) return;
+
+    const yr = this.lecturesCalendarYear;
+    const mo = this.lecturesCalendarMonth;
+    titleEl.textContent = `${AM[mo]} ${yr}`;
+
+    const dim = new Date(yr, mo + 1, 0).getDate();
+    const fd = new Date(yr, mo, 1).getDay();
+    const afd = fd === 0 ? 6 : fd - 1;
+    const dns = ['اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
+
+    const now = new Date();
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const dayCount = {};
+    for (const l of list) {
+      if (!l.dateISO) continue;
+      dayCount[l.dateISO] = (dayCount[l.dateISO] || 0) + 1;
+    }
+
+    let h = '<div class="monthly-calendar"><div class="calendar-grid">';
+    dns.forEach((d, i) => {
+      h += `<div class="calendar-day-header${i === 4 || i === 5 ? ' weekend' : ''}">${d}</div>`;
+    });
+
+    for (let i = 0; i < afd; i++) h += '<div class="calendar-day empty"></div>';
+
+    for (let day = 1; day <= dim; day++) {
+      const ds = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const di = new Date(yr, mo, day).getDay();
+      const hasLecture = !!dayCount[ds];
+
+      let cls = 'calendar-day';
+      if (ds === todayIso) cls += ' today';
+      if (ds === this.lecturesSelectedDate) cls += ' selected-day';
+      if (di === 5 || di === 6) cls += ' weekend';
+      if (hasLecture) cls += ' has-lecture';
+
+      const dot = hasLecture ? `<span class="lecture-day-count">${dayCount[ds]}</span>` : '';
+      h += `<div class="${cls}" onclick="app.clickLectureCalendarDay('${ds}')"><span>${day}</span>${dot}</div>`;
+    }
+
+    h += '</div></div>';
+    container.innerHTML = h;
+  }
+
+  renderLecturesSelectedDay(list) {
+    const box = document.getElementById('lecturesSelectedDayBox');
+    if (!box) return;
+
+    if (!this.lecturesSelectedDate) {
+      box.innerHTML = '<div class="lecture-empty">اختر يوماً من الرزنامة لعرض المحاضرات.</div>';
+      return;
+    }
+
+    const dayList = list.filter(l => l.dateISO === this.lecturesSelectedDate).sort((a, b) => a.startAt - b.startAt);
+    const dn = getDayName(this.lecturesSelectedDate);
+    const title = `<div class="lectures-section-head"><h3><i class="fas fa-calendar-day"></i> محاضرات يوم ${this.escapeHtml(this.lecturesSelectedDate)} ${dn ? '- ' + this.escapeHtml(dn) : ''}</h3></div>`;
+
+    if (!dayList.length) {
+      box.innerHTML = `${title}<div class="lecture-empty">لا توجد محاضرات في هذا اليوم حسب الفلاتر الحالية.</div>`;
+      return;
+    }
+
+    box.innerHTML = `${title}<div class="lectures-grid">${dayList.map(l => this.lectureCard(l, true)).join('')}</div>`;
+  }
+
   lectureCard(l, hero = false) {
     const cat = l.category ? `<span class="lecture-tag">${this.escapeHtml(l.category)}</span>` : '';
     const dep = l.dept ? `<span class="lecture-meta-chip"><i class="fas fa-building"></i> ${this.escapeHtml(l.dept)}</span>` : '';
@@ -1380,6 +1611,26 @@ class HospitalApp {
       const t = this.lecturesSearchTerm;
       list = list.filter(l => smartSearch(`${l.title} ${l.content} ${l.speaker}`, t));
     }
+
+    list.sort((a, b) => a.startAt - b.startAt);
+
+    const dateSet = new Set(list.map(l => l.dateISO));
+    if (!this.lecturesSelectedDate || !dateSet.has(this.lecturesSelectedDate)) {
+      if (dateSet.has(todayIso)) {
+        this.lecturesSelectedDate = todayIso;
+      } else {
+        const firstUpcoming = list.find(l => l.endAt >= now);
+        this.lecturesSelectedDate = firstUpcoming ? firstUpcoming.dateISO : list[0] ? list[0].dateISO : '';
+      }
+      const parts = (this.lecturesSelectedDate || '').split('-');
+      if (parts.length === 3) {
+        this.lecturesCalendarYear = parseInt(parts[0], 10);
+        this.lecturesCalendarMonth = parseInt(parts[1], 10) - 1;
+      }
+    }
+
+    this.renderLecturesMonthlyCalendar(list);
+    this.renderLecturesSelectedDay(list);
 
     const past = list.filter(l => l.endAt < now).sort((a, b) => a.startAt - b.startAt);
     const active = list.filter(l => l.endAt >= now).sort((a, b) => a.startAt - b.startAt);

@@ -54,6 +54,8 @@ opens the technical-contact view when needed.
 - **Click-to-copy phone numbers** via tooltips.
 - **Responsive**: desktop tables collapse into mobile cards under 768px.
 - **Lectures calendar UX**: large "today" highlight cards for sessions not yet finished, separate upcoming sessions list, and a toggle to reveal past sessions.
+- **Interactive lectures month calendar**: month grid now highlights days with lectures in green (with counts) and shows that day's lectures when clicked.
+- **Flexible lectures date parsing**: lecture dates now accept multiple input styles (including `YYYY-MM-DD`, `DD/MM/YYYY`, `MM/DD/YYYY`, Arabic/English month names, and `Date(y,m,d)` gviz-style values).
 
 ---
 
