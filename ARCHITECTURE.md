@@ -65,7 +65,10 @@ constructor, lines 349–357):
   `loadFresh(true)` refresh every 120 s.
   Auto refresh is network-first and non-disruptive: while the page is visible,
   it refreshes in the background every 120 s and also refreshes on tab resume,
-  without forcing a full page reload.
+    without forcing a full page reload. A separate lightweight update check polls
+    `index.html` (`no-store`) for the deployed `app-build` id; when a newer build
+    is detected, old `hc_v*` local caches are cleared and the page is reloaded to
+    the latest bundle.
   Tab switches restore the chosen section and scroll the viewport back to the top.
 2. **`loadData()`** (372–377): if cache exists, renders it immediately
   (`loadFromCache` → `applyCachedData`), waits until the header image is ready,
@@ -94,7 +97,7 @@ constructor, lines 349–357):
 ### Caching
 
 - **`loadFromCache`** / **`saveToCache`**: JSON blob in
-  `localStorage` under `CK` (`hc_v63`) with a `timestamp`; entries older than
+  `localStorage` under `CK` (`hc_v63_<buildId>`) with a `timestamp`; entries older than
   `CD` (10 minutes) are treated as stale. Cache stores the **raw** resident/oncall
   data plus evaluation, links, Q&A, lectures, doctor statistics, and on-call rules.
 - On-call background refresh now preserves user reading context by re-rendering

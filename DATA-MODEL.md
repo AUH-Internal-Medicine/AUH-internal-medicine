@@ -216,8 +216,8 @@ Holiday definition used by the app:
 
 ## Caching & refresh
 
-- The full fetched dataset is cached in `localStorage` under key **`hc_v63`**
-  with a timestamp.
+- The full fetched dataset is cached in `localStorage` under key pattern
+  **`hc_v63_<buildId>`** with a timestamp (`buildId` is injected at deploy time).
 - Cache **TTL is 10 minutes** (`CD = 10 * 60 * 1000`). Within the TTL the page
   renders instantly from cache and still refreshes in the background.
 - The app re-fetches every **120 seconds** while open.
@@ -226,8 +226,10 @@ Holiday definition used by the app:
 - Refresh on tab resume follows the same non-disruptive network-first path,
   and on-call rendering keeps the currently selected date to avoid unexpected
   jumps back to today's date while reading.
-- To force-invalidate every visitor's cache after a breaking change, bump the
-  cache key version in `helpers.js` (e.g. `hc_v63` → `hc_v64`).
+- To force-invalidate every visitor's cache after a breaking data change, bump
+  the cache key base version in `helpers.js` (e.g. `hc_v63` → `hc_v64`).
+  Note that each deploy already gets a unique `buildId`, so stale payload reuse
+  across deployments is avoided by default.
 
 ## Changing the data source
 

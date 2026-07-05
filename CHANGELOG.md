@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-05 — Fix stale-site caching with deploy build-id and auto-update check
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Implemented a durable anti-stale-cache strategy for GitHub Pages deployments. The build pipeline now injects a unique build id into `index.html` and appends it to local asset URLs, local data cache keys are now build-scoped (`hc_v63_<buildId>`), and clients periodically check remote `index.html` to detect newer builds and auto-reload after clearing old app caches.
+- **Files:** index.html, app.js, helpers.js, .github/workflows/pages.yml, README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, DATA-MODEL.md, CHANGELOG.md
+- **Notes / follow-ups:** This avoids requiring hard refresh in normal update flows and reduces long-lived stale sessions.
+
 ## 2026-07-05 — Fix lectures date parsing and add interactive lectures month calendar
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

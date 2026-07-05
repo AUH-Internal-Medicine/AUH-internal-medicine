@@ -54,6 +54,8 @@ class HospitalApp {
     this._id = false;
     this._lrs = '';
     this._dataReady = false;
+    this._buildId = (window.__APP_BUILD_ID__ || 'dev').trim();
+    this._updateCheckRunning = false;
 
     this.init();
   }
@@ -85,7 +87,10 @@ class HospitalApp {
     this.loadData();
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) this.loadFresh(true);
+      if (!document.hidden) {
+        this.loadFresh(true);
+        this.checkForAppUpdate();
+      }
     });
 
     setInterval(() => {
@@ -93,6 +98,57 @@ class HospitalApp {
         this.loadFresh(true);
       }
     }, 120000);
+
+    setInterval(() => {
+      if (!document.hidden) {
+        this.checkForAppUpdate();
+      }
+    }, 90000);
+
+    this.checkForAppUpdate();
+  }
+
+  clearOldAppCaches() {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k) keys.push(k);
+      }
+      keys.forEach(k => {
+        if (k.startsWith('hc_v')) localStorage.removeItem(k);
+      });
+    } catch (e) {}
+  }
+
+  extractBuildIdFromHtml(html) {
+    const m = String(html || '').match(/<meta\s+name=["']app-build["']\s+content=["']([^"']+)["']/i);
+    return m ? (m[1] || '').trim() : '';
+  }
+
+  async checkForAppUpdate() {
+    if (this._updateCheckRunning) return;
+    this._updateCheckRunning = true;
+
+    try {
+      const r = await fetch(`index.html?__check=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) return;
+
+      const html = await r.text();
+      const remoteBuild = this.extractBuildIdFromHtml(html);
+      if (!remoteBuild || remoteBuild === this._buildId) return;
+
+      const guardKey = 'app_last_reloaded_build';
+      const lastReloaded = sessionStorage.getItem(guardKey) || '';
+      if (lastReloaded === remoteBuild) return;
+
+      sessionStorage.setItem(guardKey, remoteBuild);
+      this.clearOldAppCaches();
+      location.replace(`./?v=${encodeURIComponent(remoteBuild)}`);
+    } catch (e) {
+    } finally {
+      this._updateCheckRunning = false;
+    }
   }
 
   async loadData() {

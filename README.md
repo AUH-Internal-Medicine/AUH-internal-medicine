@@ -41,6 +41,8 @@ opens the technical-contact view when needed.
 - **Live Google Sheets data** via the gviz endpoint (CSV + JSON), refreshed every 2 minutes.
 - **Offline-ish caching** in `localStorage` (10-minute TTL) so the page renders instantly from cache, then refreshes in the background.
 - **Strong non-disruptive refresh**: background updates fetch from network with `no-store` + cache-busting, while preserving user context (especially selected on-call date) to avoid jumping to today.
+- **Deployment cache busting**: each GitHub Pages deploy now injects a unique build id into `index.html`, appends it to local asset URLs (`styles.css`, `helpers.js`, `app.js`, images), and exposes it via `<meta name="app-build">`.
+- **Automatic client update**: running clients periodically fetch the latest `index.html` with `no-store`; when a newer build id is detected, stale local app caches are cleared and the page reloads to the latest version.
 - **Doctor statistics tab** sourced from a dedicated sheet tab with grouped totals and detailed per-category counts.
 - **On-call timing rules** sourced from a dedicated sheet tab to show duty times/durations and holiday-aware highlights (Fri/Sat + annual holidays from sheet).
 - **Dark mode** toggle (persisted in `localStorage`).
@@ -92,7 +94,7 @@ itself comes from Google Sheets.
 - This repo uses **GitHub Actions** deployment for Pages via [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 - In repository settings, set **Pages > Source** to **GitHub Actions**.
 - If source is set to branch mode while relying on Actions checks, deployment checks can fail quickly.
-- The workflow publishes a clean `_site` artifact (not the whole repo root), containing only runtime site files.
+- The workflow publishes a clean `_site` artifact (not the whole repo root), containing only runtime site files, and injects a per-deploy build id into `index.html` for cache-safe asset URLs.
 - The deploy job retries up to 3 times to handle transient Pages backend errors like `Deployment failed, try again later`.
 
 ---

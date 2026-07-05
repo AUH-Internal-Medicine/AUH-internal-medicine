@@ -28,7 +28,9 @@ jobs:
       - name: Prepare static site
         run: |
           mkdir -p _site
-          cp index.html styles.css helpers.js app.js bg.png bg.webp bg.webp.png _site/
+          BUILD_ID="${GITHUB_SHA::12}"
+          sed "s/__BUILD_ID__/${BUILD_ID}/g" index.html > _site/index.html
+          cp styles.css helpers.js app.js bg.png bg.webp bg.webp.png _site/
           touch _site/.nojekyll
 
       - name: Upload artifact
