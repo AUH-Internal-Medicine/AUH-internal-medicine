@@ -20,7 +20,7 @@ Pages, Netlify, Cloudflare Pages, a plain file server, etc.).
 
 ## What it does
 
-The app presents resident data across **9 primary tabs** (Arabic label → meaning):
+The app presents resident data across **11 primary tabs** (Arabic label → meaning):
 
 | Tab id | Arabic label | Purpose |
 |---|---|---|
@@ -28,10 +28,12 @@ The app presents resident data across **9 primary tabs** (Arabic label → meani
 | `lectures` | رزنامة المحاضرات | Medical lectures/activities calendar with smart search, category/department/year filters, today highlights, upcoming list, optional old-events view, and optional registration/announcement links. |
 | `shifts` | الفروز | Monthly "shift assignment" (فرز) groups — which residents are assigned where, per month. |
 | `oncall` | المناوبات | On-call schedule. Monthly calendar + per-day breakdown by category. Exportable as an image. |
+| `exams` | الامتحانات والاختبارات | Placeholder page for upcoming exams/tests features (work in progress). |
+| `clinicalcases` | مشروع الحالات السريرية | Placeholder page for clinical-cases project features (work in progress). |
 | `doctorstats` | احصائيات الأطباء | Monthly doctor analytics (hours, shifts, totals + detailed category breakdowns, rankings, first/last shift, and days since join) with smart search and sorting by hours/shifts. |
 | `evaluation` | التقييم السنوي | Annual evaluation scores per resident across 8 skill areas, plus praises (ثناءات) and penalties (عقوبات). |
 | `links` | روابط هامة | Important links / channels (e.g. group chats, resources). |
-| `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see personal summary cards (counters, shift, evaluation, statistics, and on-calls with schedule metadata). By default it shows upcoming on-calls and can toggle old on-calls. Exportable as an image. |
+| `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see a personal summary card with an identity header (name, abbreviation, sequence number), static cumulative/join-day counters, cumulative on-call distribution, extra resident info, evaluation, shift data, and a month-selectable on-call calendar. On-call days jump to their cards, past days/cards are visually marked as completed, and holiday shifts are distinguished without recoloring the whole card. Exportable as an image. |
 | `qa` | Q&A (الأسئلة والأجوبة) | Categorized, collapsible frequently-asked questions. |
 
 A separate floating **الشكاوي** support shortcut (outside the primary tab row)
@@ -45,6 +47,10 @@ opens the technical-contact view when needed.
 - **Automatic client update**: running clients periodically fetch the latest `index.html` with `no-store`; when a newer build id is detected, stale local app caches are cleared and the page reloads to the latest version.
 - **Doctor statistics tab** sourced from a dedicated sheet tab with grouped totals and detailed per-category counts.
 - **On-call timing rules** sourced from a dedicated sheet tab to show duty times/durations and holiday-aware highlights (Fri/Sat + annual holidays from sheet).
+- **My Info on-call UX upgrade**: the personal card now uses a cleaner identity header, static cumulative/join-day cards, an always-visible cumulative distribution panel, a month dropdown for on-calls, cleaner month statistics, and a denser month calendar with on-call labels inside each active day.
+- **My Info completed/holiday styling**: finished on-calls are highlighted in green with a clear `تم` badge, while holiday on-calls keep the normal card color and only use a red dot / `عطلة` badge.
+- **On-call raw table freeze polish**: sticky header row and first two sticky columns were refined to avoid spacing artifacts while scrolling.
+- **Lectures calendar polish**: month navigation now uses dedicated arrow buttons, the month title is shown as `الشهر X`, only the currently selected day is filled, and clicking an empty day keeps that day selected while showing `لا يوجد.` under the correct day/date heading.
 - **Dark mode** toggle (persisted in `localStorage`).
 - **Arabic-aware search** with normalization (handles أ/إ/آ/ا, ة/ه, ى/ي, the "ال" prefix, diacritics, etc.).
 - **Export to contacts**: select residents → download a `.vcf` (vCard) file.

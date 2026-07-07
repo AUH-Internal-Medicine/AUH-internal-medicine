@@ -28,7 +28,7 @@ starting map; the current app code now lives in separate files.
 |---|---|
 | `helpers.js` top section | `toggleDarkMode()` + dark-mode restore from `localStorage`, tooltip handlers, copy helpers, collapsible/Q&A toggles, dropdown handling, `showToast`, download-progress overlay control, and the pure helper functions. |
 | `helpers.js` config section | Google Sheet id, tab GIDs, Arabic month/day names, cache key + TTL, tab list. |
-| `helpers.js` builder section | `buildNav()` and `buildMainContent()` — return HTML strings for the nav buttons and all tab sections, including the support/complaints section opened from the floating shortcut. |
+| `helpers.js` builder section | `buildNav()` and `buildMainContent()` — return HTML strings for the nav buttons and core tab sections, including the support/complaints section opened from the floating shortcut. Additional static WIP tabs (`exams`, `clinicalcases`) are appended at runtime by `HospitalApp.ensureAdditionalStaticTabs()`. |
 | `app.js` class section | `class HospitalApp` — the whole application. |
 | `app.js` bootstrap | On `DOMContentLoaded`, `app = new HospitalApp(); window.app = app`. |
 
@@ -55,6 +55,7 @@ constructor, lines 349–357):
 | `this.filterDetached` | Controls whether `تم الانفكاك` residents are shown (default hidden). |
 | `this.selectedResidents` | `Set` of selected resident names (for contact export). |
 | `this.currentDisplayMonth`, `this.currentShiftsMonth` | Which month the on-call and shifts tabs are showing. |
+| `this.myInfoOncallBreakdown`, `this.currentMyInfoOncallStats` | "My Info" monthly on-call counters state (total / done / remaining with type breakdown). |
 | `this._id`, `this._dataReady` | Guards: image-download in progress, first data load complete. |
 
 ### Lifecycle
@@ -117,6 +118,8 @@ constructor, lines 349–357):
 | `renderMonthlyCalendar` | The on-call month calendar grid (week starts Monday; Fri/Sat marked as weekend). |
 | `showOncallDate` | The per-day on-call breakdown card for a selected date. |
 | `searchMe` → `showMe` | The "my info" personal summary (the most complex renderer). |
+| `renderMyInfoMonthCalendar` / `focusMyInfoOncallDate` / `toggleMyInfoMonthBreakdown` | "My Info" on-call UX: month calendar with inline on-call labels, click-to-scroll + highlight for matching cards, and a fixed monthly breakdown panel. |
+| `toggleMyInfoDetail` / `getResidentShiftDaysDistribution` / `changeMyInfoMonth` | Legacy helper paths from the earlier interactive-counter layout; current "My Info" uses static top counters and a dropdown-based month switch for on-calls. |
 | `updateMyInfoShift` | The shift sub-section inside "my info", switchable by month. |
 
 ### Cross-referencing logic (the interesting part)
@@ -159,6 +162,15 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
 - **Header background strategy**: the header now uses an eager-loaded `<img>`
   layer inside `.header-bg-image` (instead of relying only on CSS background)
   so users see the hero image faster on first paint, especially on mobile.
+- **On-call raw table usability**: raw-table mode now freezes the header row and
+  first two columns to keep date/category context visible while scrolling.
+- **Lectures calendar behavior**: until users click a different day, the selected
+  date defaults to today's date when the current month is shown; changing the
+  lectures month now moves selection into that month instead of snapping back to
+  today's month. Only the selected day is filled, empty selected days still show
+  the correct day/date heading with `لا يوجد.`, the standalone "today lectures"
+  hero block is hidden, and the old lectures/workshops toggle remains at the end
+  of the section.
 
 ---
 

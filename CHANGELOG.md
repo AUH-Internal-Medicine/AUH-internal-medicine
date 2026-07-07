@@ -47,6 +47,54 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-07 — Reshape My Info and fix lectures month selection UX
+- **Who:** GPT-5.4 (GitHub Copilot)
+- **Type:** both
+- **What:** Rebuilt the `معلوماتي` card header and counters to match the requested static layout, replaced the old clickable counter/details flow with always-visible cumulative distribution and a month-dropdown on-call summary, and cleaned up on-call card/calendar styling for completed vs holiday shifts. Fixed the lectures month calendar so arrow navigation keeps the selected month, shows the title as `الشهر X`, and preserves user-selected empty days with a correct `لا يوجد.` state.
+- **Files:** app.js, helpers.js, styles.css, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** Validated syntax with workspace diagnostics and checked the updated UI locally in the browser; browser validation still showed the existing preload warnings for background images only.
+
+## 2026-07-07 — Fix app startup parse corruption
+- **Who:** GPT-5.4 mini (GitHub Copilot)
+- **Type:** code
+- **What:** Removed stray corrupted fragments that had been inserted into `app.js` and restored the constructor/method boundaries in `HospitalApp`, which was preventing the script from parsing and leaving the page stuck on the loading overlay.
+- **Files:** app.js, CHANGELOG.md
+- **Docs synced:** no — runtime boot fix only, no data contract or documented feature change.
+- **Notes / follow-ups:** Verified in the browser that `window.app` initializes, the nav renders, and the loading screen hides.
+
+## 2026-07-07 — Remove residual My Info on-call fields
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** code
+- **What:** Removed the remaining first/last on-call and days-since-join fields from the `معلوماتي` extra-info grid so the simplified layout only shows the resident identity, contact, join date, status, and the interactive counters. This keeps the on-call area focused on the new month selector, breakdown counters, and calendar/row navigation.
+- **Files:** app.js, CHANGELOG.md
+- **Docs synced:** no — layout cleanup only, no new data contract.
+- **Notes / follow-ups:** No sheet or cache changes.
+
+## 2026-07-07 — Simplify My Info counters and hide lectures today block
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Removed the name sequence number from `معلوماتي`, replaced the erroneous days-since-join counter with a shift-history counter based on the resident's `فرز شهر` columns, and kept the monthly on-call breakdown open by default. Added compact hover popups with a details button on on-call calendar days, and marked completed on-call cards with a clearer done badge and softer completed styling. Hidden the standalone lectures-today hero block, kept upcoming lectures unchanged, and moved the old lectures/workshops toggle to the end of the lectures section.
+- **Files:** app.js, styles.css, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** No sheet contract or cache-key changes.
+
+## 2026-07-07 — Refine table freeze, My Info structure, and lectures calendar UX
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Fixed on-call raw table freeze quality by refining sticky behavior/offsets for the header row and first two columns. Reworked `معلوماتي` layout so the identity row sits under the name, top counters are interactive (cumulative on-calls and days-since-join with shift-based details), removed the old-oncalls toggle from the on-call section, added month navigation for on-calls, and kept month cards in chronological order with past-day/card greying and click-to-focus from the calendar. Polished lectures calendar visuals and selection behavior: today uses border highlight, selected day uses fill, lecture count badge is clearly separated, and an inline button near upcoming lectures toggles old lectures/workshops.
+- **Files:** app.js, styles.css, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** No data-contract changes were made.
+
+## 2026-07-07 — My Info on-call calendar UX, raw-table freeze, and two new tabs
+- **Who:** GPT-5.3-Codex (GitHub Copilot)
+- **Type:** both
+- **What:** Upgraded the `معلوماتي` on-call experience with an interactive current-month calendar (on-call days in green with on-call-type labels), past-day greying, click-to-scroll + highlight to matching on-call cards, and monthly counters (total/done/remaining) with clickable category distributions. Added sticky behavior in on-call raw table mode to freeze the header row and first two columns while scrolling. Added two new navigation tabs (`الامتحانات والاختبارات`, `مشروع الحالات السريرية`) as styled work-in-progress sections.
+- **Files:** app.js, helpers.js, styles.css, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Notes / follow-ups:** No Google Sheet contract change and no cache-key bump were required.
+
 ## 2026-07-05 — Fix stale-site caching with deploy build-id and auto-update check
 - **Who:** GPT-5.3-Codex (GitHub Copilot)
 - **Type:** both

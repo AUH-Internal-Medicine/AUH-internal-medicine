@@ -5,7 +5,6 @@ class HospitalApp {
 
     const n = new Date();
     this.today = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-
     this.res = [];
     this.oncRows = [];
     this.oncHeaders = [];
@@ -50,6 +49,11 @@ class HospitalApp {
     this.selectedOncallDate = this.today;
 
     this.showMyInfoPast = false;
+    this.myInfoOncallBreakdown = 'monthTotal';
+    this.currentMyInfoOncallStats = null;
+    this.myInfoDetailPanel = 'cum';
+    this.myInfoMonthKey = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+    this.lecturesUserSelectedDate = false;
 
     this._id = false;
     this._lrs = '';
@@ -63,6 +67,7 @@ class HospitalApp {
   init() {
     document.getElementById('navContainer').innerHTML = buildNav();
     document.getElementById('mainContent').innerHTML = buildMainContent();
+    this.ensureAdditionalStaticTabs();
 
     const yel = document.getElementById('currentYear');
     if (yel) yel.textContent = new Date().getFullYear();
@@ -105,20 +110,7 @@ class HospitalApp {
       }
     }, 90000);
 
-    this.checkForAppUpdate();
-  }
-
-  clearOldAppCaches() {
-    try {
-      const keys = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k) keys.push(k);
-      }
-      keys.forEach(k => {
-        if (k.startsWith('hc_v')) localStorage.removeItem(k);
-      });
-    } catch (e) {}
+      this.checkForAppUpdate();
   }
 
   extractBuildIdFromHtml(html) {
@@ -134,15 +126,6 @@ class HospitalApp {
       const r = await fetch(`index.html?__check=${Date.now()}`, { cache: 'no-store' });
       if (!r.ok) return;
 
-      const html = await r.text();
-      const remoteBuild = this.extractBuildIdFromHtml(html);
-      if (!remoteBuild || remoteBuild === this._buildId) return;
-
-      const guardKey = 'app_last_reloaded_build';
-      const lastReloaded = sessionStorage.getItem(guardKey) || '';
-      if (lastReloaded === remoteBuild) return;
-
-      sessionStorage.setItem(guardKey, remoteBuild);
       this.clearOldAppCaches();
       location.replace(`./?v=${encodeURIComponent(remoteBuild)}`);
     } catch (e) {
@@ -232,6 +215,31 @@ class HospitalApp {
       e.preventDefault();
       this.openComplaintsTab();
     });
+  }
+
+  ensureAdditionalStaticTabs() {
+    const root = document.getElementById('mainContent');
+    if (!root) return;
+
+    if (!document.getElementById('exams-tab')) {
+      const sec = document.createElement('section');
+      sec.className = 'tab-content';
+      sec.id = 'exams-tab';
+      sec.innerHTML =
+        '<div class="section-header"><h2><i class="fas fa-file-pen"></i> الامتحانات والاختبارات</h2></div>' +
+        '<div class="work-in-progress-panel"><i class="fas fa-screwdriver-wrench"></i><h3>هذا القسم قيد العمل والتطوير</h3><p>سيتم تحديثه في المستقبل</p></div>';
+      root.appendChild(sec);
+    }
+
+    if (!document.getElementById('clinicalcases-tab')) {
+      const sec = document.createElement('section');
+      sec.className = 'tab-content';
+      sec.id = 'clinicalcases-tab';
+      sec.innerHTML =
+        '<div class="section-header"><h2><i class="fas fa-stethoscope"></i> مشروع الحالات السريرية</h2></div>' +
+        '<div class="work-in-progress-panel"><i class="fas fa-screwdriver-wrench"></i><h3>هذا القسم قيد العمل والتطوير</h3><p>سيتم تحديثه في المستقبل</p></div>';
+      root.appendChild(sec);
+    }
   }
 
   openComplaintsTab(doScroll = true) {
@@ -566,6 +574,19 @@ class HospitalApp {
     }
     fields.push(c);
     return fields;
+  }
+
+  clearOldAppCaches() {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k) keys.push(k);
+      }
+      keys.forEach(k => {
+        if (k.startsWith('hc_v')) localStorage.removeItem(k);
+      });
+    } catch (e) {}
   }
 
   getHeaderIndex(headers, candidates) {
@@ -1543,10 +1564,13 @@ class HospitalApp {
     cur.setMonth(cur.getMonth() + (step || 0));
     this.lecturesCalendarYear = cur.getFullYear();
     this.lecturesCalendarMonth = cur.getMonth();
+    this.lecturesSelectedDate = `${this.lecturesCalendarYear}-${String(this.lecturesCalendarMonth + 1).padStart(2, '0')}-01`;
+    this.lecturesUserSelectedDate = true;
     this.renderLectures();
   }
 
   clickLectureCalendarDay(ds) {
+    this.lecturesUserSelectedDate = true;
     this.lecturesSelectedDate = ds;
     const parts = (ds || '').split('-');
     if (parts.length === 3) {
@@ -1568,7 +1592,7 @@ class HospitalApp {
 
     const yr = this.lecturesCalendarYear;
     const mo = this.lecturesCalendarMonth;
-    titleEl.textContent = `${AM[mo]} ${yr}`;
+    titleEl.textContent = `الشهر ${mo + 1}`;
 
     const dim = new Date(yr, mo + 1, 0).getDate();
     const fd = new Date(yr, mo, 1).getDay();
@@ -1597,13 +1621,13 @@ class HospitalApp {
       const hasLecture = !!dayCount[ds];
 
       let cls = 'calendar-day';
-      if (ds === todayIso) cls += ' today';
+      if (ds === todayIso) cls += ' lecture-today';
       if (ds === this.lecturesSelectedDate) cls += ' selected-day';
       if (di === 5 || di === 6) cls += ' weekend';
       if (hasLecture) cls += ' has-lecture';
 
-      const dot = hasLecture ? `<span class="lecture-day-count">${dayCount[ds]}</span>` : '';
-      h += `<div class="${cls}" onclick="app.clickLectureCalendarDay('${ds}')"><span>${day}</span>${dot}</div>`;
+      const dot = hasLecture ? `<span class="lecture-day-count">x${dayCount[ds]}</span>` : '';
+      h += `<div class="${cls}" onclick="app.clickLectureCalendarDay('${ds}')"><span class="lecture-day-number">${day}</span>${dot}</div>`;
     }
 
     h += '</div></div>';
@@ -1621,10 +1645,10 @@ class HospitalApp {
 
     const dayList = list.filter(l => l.dateISO === this.lecturesSelectedDate).sort((a, b) => a.startAt - b.startAt);
     const dn = getDayName(this.lecturesSelectedDate);
-    const title = `<div class="lectures-section-head"><h3><i class="fas fa-calendar-day"></i> محاضرات يوم ${this.escapeHtml(this.lecturesSelectedDate)} ${dn ? '- ' + this.escapeHtml(dn) : ''}</h3></div>`;
+    const title = `<div class="lectures-section-head"><h3><i class="fas fa-calendar-day"></i> محاضرات يوم ${dn ? this.escapeHtml(dn) + ' ' : ''}${this.escapeHtml(this.lecturesSelectedDate)}</h3></div>`;
 
     if (!dayList.length) {
-      box.innerHTML = `${title}<div class="lecture-empty">لا توجد محاضرات في هذا اليوم حسب الفلاتر الحالية.</div>`;
+      box.innerHTML = `${title}<div class="lecture-empty">لا يوجد.</div>`;
       return;
     }
 
@@ -1670,19 +1694,13 @@ class HospitalApp {
 
     list.sort((a, b) => a.startAt - b.startAt);
 
-    const dateSet = new Set(list.map(l => l.dateISO));
-    if (!this.lecturesSelectedDate || !dateSet.has(this.lecturesSelectedDate)) {
-      if (dateSet.has(todayIso)) {
-        this.lecturesSelectedDate = todayIso;
-      } else {
-        const firstUpcoming = list.find(l => l.endAt >= now);
-        this.lecturesSelectedDate = firstUpcoming ? firstUpcoming.dateISO : list[0] ? list[0].dateISO : '';
-      }
-      const parts = (this.lecturesSelectedDate || '').split('-');
-      if (parts.length === 3) {
-        this.lecturesCalendarYear = parseInt(parts[0], 10);
-        this.lecturesCalendarMonth = parseInt(parts[1], 10) - 1;
-      }
+    const calendarMonthKey = `${this.lecturesCalendarYear}-${String(this.lecturesCalendarMonth + 1).padStart(2, '0')}`;
+    if (!this.lecturesSelectedDate) {
+      this.lecturesSelectedDate = calendarMonthKey === todayIso.slice(0, 7) ? todayIso : `${calendarMonthKey}-01`;
+    }
+
+    if ((this.lecturesSelectedDate || '').slice(0, 7) !== calendarMonthKey) {
+      this.lecturesSelectedDate = calendarMonthKey === todayIso.slice(0, 7) && !this.lecturesUserSelectedDate ? todayIso : `${calendarMonthKey}-01`;
     }
 
     this.renderLecturesMonthlyCalendar(list);
@@ -1693,8 +1711,26 @@ class HospitalApp {
     const today = active.filter(l => l.dateISO === todayIso);
     const upcoming = active.filter(l => l.dateISO !== todayIso);
 
-    todayEl.innerHTML = today.length ? today.map(l => this.lectureCard(l, true)).join('') : '<div class="lecture-empty">لا توجد محاضرات متبقية اليوم.</div>';
+    const todayHead = todayEl.previousElementSibling;
+    if (todayHead) todayHead.style.display = 'none';
+    todayEl.style.display = 'none';
+    todayEl.innerHTML = '';
     nextEl.innerHTML = upcoming.length ? upcoming.map(l => this.lectureCard(l, false)).join('') : '<div class="lecture-empty">لا توجد محاضرات قادمة حسب الفلاتر الحالية.</div>';
+
+    let oldBtn = document.getElementById('lecturesOldToggleInlineBtn');
+    if (!oldBtn) {
+      const wrap = document.createElement('div');
+      wrap.className = 'controls-row lectures-old-toggle-wrap';
+      wrap.style.marginTop = '12px';
+      wrap.innerHTML = '<button class="filter-btn" id="lecturesOldToggleInlineBtn" onclick="app.togglePastLectures()"></button>';
+      pastWrap.parentElement.appendChild(wrap);
+      oldBtn = document.getElementById('lecturesOldToggleInlineBtn');
+    }
+
+    if (oldBtn) {
+      oldBtn.innerHTML = this.showPastLectures ? '<i class="fas fa-eye-slash"></i> إخفاء المحاضرات والورشات القديمة' : '<i class="fas fa-clock-rotate-left"></i> عرض المحاضرات والورشات القديمة';
+      oldBtn.classList.toggle('active-filter', this.showPastLectures);
+    }
 
     if (this.showPastLectures) {
       pastWrap.style.display = 'block';
@@ -2194,7 +2230,9 @@ class HospitalApp {
     let html = '<div class="table-wrapper oncall-raw-table-wrap"><table class="oncall-raw-table"><thead><tr>';
     for (let j = 0; j <= lastUsedCol; j++) {
       const h = headers[j] || '';
-      html += `<th>${this.escapeHtml(h || '-')}</th>`;
+      const cls = j === 0 ? 'oncall-raw-sticky-col-1' : j === 1 ? 'oncall-raw-sticky-col-2' : '';
+      const st = j === 0 ? 'style="min-width:110px;width:110px;"' : j === 1 ? 'style="min-width:140px;width:140px;"' : '';
+      html += `<th class="${cls}" ${st}>${this.escapeHtml(h || '-')}</th>`;
     }
     html += '</tr></thead><tbody>';
 
@@ -2207,7 +2245,9 @@ class HospitalApp {
         let val = raw;
         if (j === 1) val = this.formatOncallRawDateCell(raw);
         else if (j >= 2) val = this.formatOncallRawNamesCell(raw);
-        html += `<td>${this.escapeHtml(val)}</td>`;
+        const cls = j === 0 ? 'oncall-raw-sticky-col-1' : j === 1 ? 'oncall-raw-sticky-col-2' : '';
+        const st = j === 0 ? 'style="min-width:110px;width:110px;"' : j === 1 ? 'style="min-width:140px;width:140px;"' : '';
+        html += `<td class="${cls}" ${st}>${this.escapeHtml(val)}</td>`;
       }
       html += '</tr>';
     }
@@ -2492,8 +2532,145 @@ class HospitalApp {
 
   toggleMyInfoPastOncalls() {
     if (!this.currentMyInfo) return;
-    this.showMyInfoPast = !this.showMyInfoPast;
     this.showMe(this.currentMyInfo);
+  }
+
+  getResidentShiftDaysDistribution(r) {
+    const allMonths = this.getAllShiftMonths();
+    const row =
+      (this._resRaw || []).find(x => x && (exactNameMatch(this.getResidentCell(x, 'name'), r.name) || exactNameMatch(this.getResidentCell(x, 'abbr'), r.abbr))) || null;
+    if (!row) return [];
+
+    const year = new Date().getFullYear();
+    const out = {};
+
+    allMonths.forEach(mo => {
+      const shift = (row[mo.col] || '').trim();
+      if (!shift || shift === 'غير محدد') return;
+      const days = new Date(year, mo.month, 0).getDate();
+      out[shift] = (out[shift] || 0) + days;
+    });
+
+    return Object.entries(out).sort((a, b) => b[1] - a[1]);
+  }
+
+  buildOncallCategoryBreakdown(list) {
+    const counts = {};
+    (list || []).forEach(o => {
+      counts[o.cat] = (counts[o.cat] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }
+
+  renderMyInfoMonthBreakdown() {
+    if (!this.currentMyInfoOncallStats) return '';
+
+    const target = this.currentMyInfoOncallStats.monthTotal || [];
+    const title = 'توزيع مناوبات هذا الشهر';
+    if (!target.length) {
+      return `<div class="myinfo-breakdown-box"><h4><i class="fas fa-chart-pie"></i> ${title}</h4><p>لا توجد بيانات لعرض التوزيع.</p></div>`;
+    }
+
+    return `<div class="myinfo-breakdown-box"><h4><i class="fas fa-chart-pie"></i> ${title}</h4><div class="myinfo-breakdown-grid">${target
+      .map(([type, count]) => `<div class="myinfo-breakdown-item"><span>${type}</span><strong>${count}</strong></div>`)
+      .join('')}</div></div>`;
+  }
+
+  toggleMyInfoMonthBreakdown(kind) {
+    if (!this.currentMyInfo) return;
+    this.myInfoOncallBreakdown = this.myInfoOncallBreakdown === kind ? '' : kind;
+    this.showMe(this.currentMyInfo);
+  }
+
+  toggleMyInfoDetail(kind) {
+    if (!this.currentMyInfo) return;
+    this.myInfoDetailPanel = this.myInfoDetailPanel === kind ? '' : kind;
+    this.showMe(this.currentMyInfo);
+  }
+
+  changeMyInfoMonth(delta) {
+    if (!this.currentMyInfo) return;
+    const d = new Date(`${this.myInfoMonthKey || this.today.slice(0, 7)}-01T00:00:00`);
+    d.setMonth(d.getMonth() + delta);
+    this.myInfoMonthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    this.showMe(this.currentMyInfo);
+  }
+
+  setMyInfoMonth(key) {
+    if (!this.currentMyInfo || !key) return;
+    this.myInfoMonthKey = key;
+    this.showMe(this.currentMyInfo);
+  }
+
+  renderMyInfoMonthCalendar(monthOncalls, monthKey) {
+    const parts = String(monthKey || this.today.slice(0, 7)).split('-');
+    const yr = parseInt(parts[0], 10);
+    const mo = parseInt(parts[1], 10) - 1;
+    const dim = new Date(yr, mo + 1, 0).getDate();
+    const fd = new Date(yr, mo, 1).getDay();
+    const afd = fd === 0 ? 6 : fd - 1;
+    const dns = ['اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
+    const todayDay = parseInt(this.today.split('-')[2], 10);
+
+    const byDate = {};
+    (monthOncalls || []).forEach(o => {
+      if (!byDate[o.date]) byDate[o.date] = [];
+      if (!byDate[o.date].includes(o.cat)) byDate[o.date].push(o.cat);
+    });
+
+    let h = `<div class="myinfo-month-calendar"><div class="calendar-header"><h3><i class="fas fa-calendar-days"></i> رزنامة مناوبات ${AM[mo]}</h3></div><div class="calendar-grid">`;
+    dns.forEach((d, i) => {
+      h += `<div class="calendar-day-header${i === 4 || i === 5 ? ' weekend' : ''}">${d}</div>`;
+    });
+
+    for (let i = 0; i < afd; i++) h += '<div class="calendar-day empty"></div>';
+
+    for (let day = 1; day <= dim; day++) {
+      const ds = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(yr, mo, day);
+      const di = d.getDay();
+      const isToday = day === todayDay;
+      const isPast = ds < this.today;
+      const cats = byDate[ds] || [];
+      const hasOncall = cats.length > 0;
+      const shortCats = cats.slice(0, 2);
+      const extraCount = Math.max(0, cats.length - shortCats.length);
+
+      let cls = 'calendar-day myinfo-day';
+      if (isToday) cls += ' today';
+      if (isPast && !isToday) cls += ' past-day myinfo-past-day';
+      if (di === 5 || di === 6) cls += ' weekend';
+      if (hasOncall) cls += ' has-oncall';
+      const click = hasOncall ? `onclick="app.focusMyInfoOncallDate('${ds}')" title="${cats.join('، ')}"` : '';
+      const labels = hasOncall
+        ? `<div class="myinfo-day-cats">${shortCats.map(cat => `<span>${this.escapeHtml(cat)}</span>`).join('')}${extraCount ? `<span>+${extraCount}</span>` : ''}</div>`
+        : '';
+      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click}><div class="myinfo-day-num">${day}</div>${labels}</div>`;
+    }
+
+    h += '</div></div>';
+    return h;
+  }
+
+  focusMyInfoOncallDate(dateIso) {
+    this.myInfoFocusedOncallDate = dateIso;
+    document.querySelectorAll('#myInfoContent .myinfo-day[data-date]').forEach(day => {
+      day.classList.toggle('selected-day', day.getAttribute('data-date') === dateIso);
+    });
+
+    const rows = Array.from(document.querySelectorAll('#myInfoOncallsList .oncall-info-row'));
+    if (!rows.length) return;
+
+    const matches = rows.filter(r => r.getAttribute('data-oncall-date') === dateIso);
+    if (!matches.length) {
+      showToast('لا توجد بطاقة مناوبة لهذا اليوم في القائمة الحالية.');
+      return;
+    }
+
+    rows.forEach(r => r.classList.remove('myinfo-row-focus'));
+    matches.forEach(r => r.classList.add('myinfo-row-focus'));
+    matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => matches.forEach(r => r.classList.remove('myinfo-row-focus')), 1900);
   }
 
   showMe(r) {
@@ -2541,24 +2718,41 @@ class HospitalApp {
     const firstOncallDate = allOncalls.length ? allOncalls[0].date : '-';
     const lastOncallDate = allOncalls.length ? allOncalls[allOncalls.length - 1].date : '-';
 
-    const visibleOncalls = this.showMyInfoPast ? allOncalls : allOncalls.filter(o => o.date >= this.today);
+    const oncallMonths = [...new Set(allOncalls.map(o => o.date.slice(0, 7)))].sort();
+    if (!oncallMonths.includes(this.myInfoMonthKey)) this.myInfoMonthKey = oncallMonths.includes(this.today.slice(0, 7)) ? this.today.slice(0, 7) : oncallMonths[0] || this.today.slice(0, 7);
+
+    const monthOncalls = allOncalls.filter(o => o.date.slice(0, 7) === this.myInfoMonthKey).sort((a, b) => a.date.localeCompare(b.date));
+    const monthDone = monthOncalls.filter(o => o.date < this.today);
+    const monthRemaining = monthOncalls.filter(o => o.date >= this.today);
     const visibleCounts = {};
-    visibleOncalls.forEach(o => {
+    monthOncalls.forEach(o => {
       visibleCounts[o.cat] = (visibleCounts[o.cat] || 0) + 1;
     });
+    const totVisible = monthOncalls.length;
 
-    const totVisible = visibleOncalls.length;
+    this.currentMyInfoOncallStats = {
+      monthTotal: this.buildOncallCategoryBreakdown(monthOncalls),
+      monthDone: this.buildOncallCategoryBreakdown(monthDone),
+      monthRemaining: this.buildOncallCategoryBreakdown(monthRemaining)
+    };
+    if (this.myInfoOncallBreakdown && !this.currentMyInfoOncallStats[this.myInfoOncallBreakdown]) this.myInfoOncallBreakdown = '';
 
     const now = new Date();
     const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
     const evalInfo = this.getEvalForResident(r.name, r.abbr);
     const doctorStats = this.getDoctorStatsForResident(r.name, r.abbr);
-    const daysSinceJoin = daysSinceDate(extractDate(r.join));
+    const cumDetails = this.buildOncallCategoryBreakdown(allOncalls);
+    const joinDateIso = extractDate(r.join) || extractDate(doctorStats?.joinDate) || doctorStats?.joinDate || '';
+    const joinDays = daysSinceDate(joinDateIso);
 
-    let h = `<div id="myInfoContent" style="padding:8px;"><h3 style="color:#667eea;text-align:center;font-size:1.4em;margin-bottom:14px;"><i class="fas fa-user"></i> ${r.name} (${r.abbr}) <span style="font-size:0.6em;color:var(--text-secondary);">#${r.seq}</span></h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px;"><div class="cumulative-box" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(r.cumulativeOnc || '0')}</div><div class="cum-lbl">إجمالي المناوبات التراكمية</div></div><div class="cumulative-box" style="margin:0;"><div class="cum-num">${totVisible}</div><div class="cum-lbl">المناوبات المتبقية</div></div><div class="cumulative-box" style="margin:0;"><div class="cum-num">${daysSinceJoin ?? '-'}</div><div class="cum-lbl">عدد أيام الدوام منذ الالتحاق</div></div></div>`;
+    if (!monthOncalls.find(o => o.date === this.myInfoFocusedOncallDate)) {
+      this.myInfoFocusedOncallDate = monthOncalls[0]?.date || '';
+    }
 
-    h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-circle-info"></i> معلومات إضافية</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid"><div class="info-item"><div class="info-label">الرقم التسلسلي</div><div class="info-value">${r.seq}</div></div><div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div><div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div><div class="info-item"><div class="info-label">الالتحاق</div><div class="info-value">${r.join || '-'}</div></div><div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok ? 'status-joined' : getStatusBadgeClass(r.st)}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${r.st || 'غير محدد'}</span></div></div><div class="info-item"><div class="info-label">مجال المناوبات في الجدول</div><div class="info-value">${firstOncallDate} ← ${lastOncallDate}</div></div><div class="info-item"><div class="info-label">عدد أيام الدوام منذ الالتحاق</div><div class="info-value">${daysSinceJoin ?? '-'}</div></div></div></div></div>`;
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(r.cumulativeOnc || '0')}</div><div class="cum-lbl">إجمالي المناوبات التراكمية</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v]) => `<div class="myinfo-breakdown-item"><span>${k}</span><strong>${v}</strong></div>`).join('')}</div>` : '<p>لا توجد بيانات لعرض التوزيع.</p>'}</div>`;
+
+    h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-circle-info"></i> معلومات إضافية</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid"><div class="info-item"><div class="info-label">الاسم</div><div class="info-value">${r.name}</div></div><div class="info-item"><div class="info-label">الاختصار</div><div class="info-value">${r.abbr || '-'}</div></div><div class="info-item"><div class="info-label">الرقم التسلسلي</div><div class="info-value">#${r.seq || '-'}</div></div><div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div><div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div><div class="info-item"><div class="info-label">تاريخ الالتحاق</div><div class="info-value">${r.join || '-'}</div></div><div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok ? 'status-joined' : getStatusBadgeClass(r.st)}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${r.st || 'غير محدد'}</span></div></div></div></div></div>`;
 
     if (evalInfo) {
       h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-chart-line"></i> التقييم السنوي</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid">`;
@@ -2586,18 +2780,34 @@ class HospitalApp {
     h += `<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span><i class="fas fa-calendar-days"></i> المناوبات (${totVisible})</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;
 
     if (allOncalls.length) {
-      h += `<div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div><div class="controls-row" style="margin-bottom:8px;"><button class="filter-btn ${this.showMyInfoPast ? 'active-filter' : ''}" onclick="app.toggleMyInfoPastOncalls()"><i class="fas fa-history"></i> ${this.showMyInfoPast ? 'إخفاء المناوبات القديمة' : 'إظهار المناوبات القديمة'}</button><span class="count-badge">أول مناوبة: ${firstOncallDate}</span><span class="count-badge">آخر مناوبة: ${lastOncallDate}</span></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:10px;"><div class="stat-card"><div class="stat-num">${totVisible}</div><div class="stat-lbl">المناوبات المتبقية</div></div>`;
-      for (const [type, count] of Object.entries(visibleCounts).sort((a, b) => b[1] - a[1])) h += `<div class="stat-card"><div class="stat-num">${count}</div><div class="stat-lbl">${type}</div></div>`;
-      h += '</div>';
+      h += `<div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div><div class="myinfo-calendar-controls"><label class="myinfo-month-label" for="myInfoMonthSelect">الشهر</label><select class="month-selector" id="myInfoMonthSelect" onchange="app.setMyInfoMonth(this.value)">${oncallMonths
+        .map(m => {
+          const p = m.split('-');
+          const y = p[0] || '';
+          const mi = Math.max(0, parseInt(p[1] || '1', 10) - 1);
+          const lbl = `${AM[mi] || m} ${y}`;
+          return `<option value="${m}"${m === this.myInfoMonthKey ? ' selected' : ''}>${lbl}</option>`;
+        })
+        .join('')}</select></div>`;
 
-      visibleOncalls.forEach(o => {
+      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div></div>`;
+
+      h += this.renderMyInfoMonthBreakdown();
+      h += this.renderMyInfoMonthCalendar(monthOncalls, this.myInfoMonthKey);
+
+      h += '<div id="myInfoOncallsList">';
+
+      monthOncalls.forEach((o, idx) => {
         const we = this.isHolidayDate(o.date);
         const sch = o.schedule;
-        h += `<div class="oncall-info-row${we ? ' holiday' : ''}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot weekend"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}</span><span class="oc-type">${o.cat}</span></div>`;
+        const isPast = o.date < this.today;
+        const rowId = `myInfoOncall-${o.date}-${idx}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+        h += `<div class="oncall-info-row${we ? ' holiday' : ''}${isPast ? ' past done' : ''}" id="${rowId}" data-oncall-date="${o.date}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot holiday"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}${we ? '<span class="oncall-holiday-badge">عطلة</span>' : ''}</span><span class="oc-type">${o.cat}${isPast ? ' <span class="oncall-done-badge"><i class="fas fa-check"></i> تم</span>' : ''}</span></div>`;
         if (sch && (sch.time || sch.duration)) h += `<div class="myinfo-oncall-meta${sch.isHoliday ? ' holiday' : ''}"><span><i class="fas fa-clock"></i> ${sch.time || '-'}</span><span><i class="fas fa-hourglass-half"></i> ${sch.duration || '-'}</span></div>`;
         if (o.colleagues.length) h += `<div class="colleague-row"><span class="cl-label"><i class="fas fa-users"></i> الزملاء:</span><span class="cl-names">${o.colleagues.map((c, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${mcn(c.name, c.phone, c.abbr)}`).join('')}</span></div>`;
         h += '</div>';
       });
+      h += '</div>';
     } else h += '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';
 
     h += '</div></div>';
