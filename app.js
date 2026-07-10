@@ -2633,19 +2633,31 @@ class HospitalApp {
       const isPast = ds < this.today;
       const cats = byDate[ds] || [];
       const hasOncall = cats.length > 0;
-      const shortCats = cats.slice(0, 2);
-      const extraCount = Math.max(0, cats.length - shortCats.length);
 
-      let cls = 'calendar-day myinfo-day';
+      let cls = 'calendar-day';
       if (isToday) cls += ' today';
-      if (isPast && !isToday) cls += ' past-day myinfo-past-day';
+      if (isPast && !isToday) cls += ' past-day';
       if (di === 5 || di === 6) cls += ' weekend';
       if (hasOncall) cls += ' has-oncall';
-      const click = hasOncall ? `onclick="app.focusMyInfoOncallDate('${ds}')" title="${cats.join('، ')}"` : '';
-      const labels = hasOncall
-        ? `<div class="myinfo-day-cats">${shortCats.map(cat => `<span>${this.escapeHtml(cat)}</span>`).join('')}${extraCount ? `<span>+${extraCount}</span>` : ''}</div>`
-        : '';
-      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click}><div class="myinfo-day-num">${day}</div>${labels}</div>`;
+
+      // Dot indicators instead of text labels
+      let dotsHtml = '';
+      if (hasOncall) {
+        const dotColors = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#0ea5a4'];
+        const maxDots = Math.min(cats.length, 4);
+        dotsHtml = '<div class="calendar-day-dots">';
+        for (let ci = 0; ci < maxDots; ci++) {
+          dotsHtml += `<span class="calendar-day-dot" style="background:${dotColors[ci % dotColors.length]}"></span>`;
+        }
+        if (cats.length > 4) {
+          dotsHtml += `<span class="calendar-day-dot-more">+${cats.length - 4}</span>`;
+        }
+        dotsHtml += '</div>';
+      }
+
+      const click = hasOncall ? `onclick="app.focusMyInfoOncallDate('${ds}')"` : '';
+      const datatipAttr = hasOncall ? `data-tip="${this.escapeHtml(cats.join('، '))}"` : '';
+      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click} ${datatipAttr}>${day}${dotsHtml}</div>`;
     }
 
     h += '</div></div>';
@@ -2654,7 +2666,7 @@ class HospitalApp {
 
   focusMyInfoOncallDate(dateIso) {
     this.myInfoFocusedOncallDate = dateIso;
-    document.querySelectorAll('#myInfoContent .myinfo-day[data-date]').forEach(day => {
+    document.querySelectorAll('#myInfoContent .calendar-day[data-date]').forEach(day => {
       day.classList.toggle('selected-day', day.getAttribute('data-date') === dateIso);
     });
 

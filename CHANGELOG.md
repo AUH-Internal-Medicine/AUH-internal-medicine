@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-10 — Make My Info calendar identical to main calendar + dots/tooltip
+- **Who:** Cline (Claude)
+- **Type:** code
+- **What:** Removed all `.myinfo-day`/`.myinfo-past-day` CSS classes. `renderMyInfoMonthCalendar()` now uses the exact same `.calendar-day` class as the main oncall calendar (`renderMonthlyCalendar()`), so both calendars are visually identical (same aspect-ratio, padding, hover effects, colors). My Info days with oncall data show colored dot indicators (up to 4, +N overflow) instead of text labels, plus a CSS tooltip on hover that lists the oncall categories. Past days with oncall keep grey background + green border. Full dark mode support.
+- **Files:** app.js, styles.css, CHANGELOG.md
+- **Docs synced:** no — UI enhancement only, no data contract or behavior change.
+- **Notes / follow-ups:** Dot colors rotate through green, indigo, amber, pink, teal. Tooltip appears above the day on hover. The `focusMyInfoOncallDate` selector was also updated from `.myinfo-day[data-date]` to `.calendar-day[data-date]`.
+
 ## 2026-07-10 — Change support shortcut button color to green
 - **Who:** Cline (Claude)
 - **Type:** code
