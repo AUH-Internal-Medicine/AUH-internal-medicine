@@ -301,8 +301,8 @@ tbody tr:nth-child(even){background:rgba(102,126,234,0.02)}
 .back-to-top{position:fixed;bottom:25px;right:25px;z-index:999;width:44px;height:44px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:50%;cursor:pointer;font-size:18px;box-shadow:0 5px 25px rgba(102,126,234,0.5);transition:var(--transition);display:none;align-items:center;justify-content:center}
 .back-to-top.show{display:flex}
 .back-to-top:hover{transform:translateY(-5px)}
-.support-shortcut{position:fixed;left:20px;bottom:25px;z-index:999;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;padding:0;border:none;border-radius:50%;cursor:pointer;font-size:17px;color:white;background:linear-gradient(135deg,#e67e22,#d35400);box-shadow:0 10px 24px rgba(211,84,0,0.35);transition:var(--transition-fast)}
-.support-shortcut:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(211,84,0,0.42)}
+.support-shortcut{position:fixed;left:20px;bottom:25px;z-index:999;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;padding:0;border:none;border-radius:50%;cursor:pointer;font-size:17px;color:white;background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 10px 24px rgba(5,150,105,0.35);transition:var(--transition-fast)}
+.support-shortcut:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(5,150,105,0.42)}
 .toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#333,#444);color:white;padding:12px 24px;border-radius:var(--radius-full);font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.4);animation:toastIn 0.3s ease,toastOut 0.3s ease 1.7s forwards}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-20px)}}

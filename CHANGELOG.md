@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-10 — Change support shortcut button color to green
+- **Who:** Cline (Claude)
+- **Type:** code
+- **What:** Changed the floating support shortcut button (شكاوي/دعم فني) background color from orange to green (`#10b981` to `#059669`) and updated matching box-shadow colors.
+- **Files:** styles.css, CHANGELOG.md
+- **Docs synced:** no — visual-only CSS change, no behavior or data contract change.
+- **Notes / follow-ups:** The button is the `support-shortcut` class in the bottom-left corner with the headset icon.
+
 ## 2026-07-07 — Reshape My Info and fix lectures month selection UX
 - **Who:** GPT-5.4 (GitHub Copilot)
 - **Type:** both
