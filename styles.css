@@ -202,6 +202,12 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .shift-month-wrap{display:inline-flex;align-items:center;gap:8px;background:rgba(27,58,92,0.1);border:1px solid rgba(27,58,92,0.2);padding:4px 8px;border-radius:var(--radius-full);margin-right:0;max-width:100%;flex:1 1 220px;min-width:0}
 .shift-month-label{font-size:0.75em;font-weight:800;color:var(--text-secondary);white-space:nowrap}
 #shiftsMonthSelector{min-width:0;width:clamp(120px,28vw,220px)}
+.oncall-year-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.oncall-year-btn{padding:9px 16px;border-radius:var(--radius-full);border:2px solid var(--border);background:var(--card-bg);color:var(--text-secondary);font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:var(--transition-fast)}
+.oncall-year-btn:hover{border-color:var(--primary);color:var(--primary)}
+.oncall-year-btn.active{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);border-color:transparent;color:#fff}
+.oncall-year-heading{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--primary);margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.oncall-year-section:first-of-type .oncall-year-heading{margin-top:0}
 .oncall-controls{background:var(--card-bg);padding:16px 20px;border-radius:var(--radius-lg);margin-bottom:14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--glass-bg);border:1px solid var(--glass-border)}
 .oncall-controls label{font-weight:700;font-size:14px;color:var(--text)}
 .oncall-controls label i{color:var(--primary);margin-left:6px}
@@ -274,6 +280,9 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .day-dot.weekend{background:var(--weekend-color)}
 .oc-type{color:var(--text-secondary);font-size:13px;font-weight:700;background:linear-gradient(135deg,rgba(27,58,92,0.15),rgba(47,125,92,0.15));padding:5px 14px;border-radius:var(--radius-full);border:1px solid rgba(27,58,92,0.2)}
 .colleague-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;font-size:12px}
+.colleague-row-y2{border-top:1px dashed var(--border);margin-top:2px;padding-top:8px}
+.colleague-row-y2 .cl-label{color:var(--secondary)}
+.colleague-row-y2 .cl-names{color:var(--text-secondary)}
 .cl-label{color:var(--text-secondary);font-size:11px;font-weight:600}
 .cl-names{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .cl-sep{color:var(--text-secondary);font-weight:700}

@@ -156,9 +156,9 @@ function extractDate(t){
   c=c.replace(/[٠-٩]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x0660+0x30));
   let m=c.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
   if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-  m=c.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  m=c.match(/(\d{1,2})[\/\-.\\](\d{1,2})[\/\-.\\](\d{4})/);
   if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-  m=c.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})/);
+  m=c.match(/(\d{1,2})[\/\-.\\](\d{1,2})[\/\-.\\](\d{2})/);
   if(m){
     const y=parseInt(m[3],10)<50?'20'+m[3]:'19'+m[3];
     return`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
@@ -234,6 +234,68 @@ const GID_Q='680270268';
 const GID_LEC='393274093';
 const GID_OR='1364488029';
 
+// Second-year residents on-call schedule — a different spreadsheet with a different
+// header structure (merged group + sub-role header rows instead of one header row).
+const SID2='1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8';
+const GID_O2='0';
+
+// Builds one clean category label per data column from the Year-2 sheet's two merged
+// header rows (row1 = group name e.g. "الاسعاف", row2 = sub-role e.g. "باب"/"بارد",
+// only present inside the "الاسعاف" group). Forward-fills blank (merged) cells from the
+// nearest earlier non-blank cell, so it adapts automatically to however many columns each
+// group/sub-role actually spans — no hardcoded column counts.
+function buildYear2CategoryLabels(row1, row2){
+  const labels=[];
+  let lastGroup='';
+  let lastShift='';
+  const maxLen=Math.max(row1.length,row2.length);
+  for(let col=1;col<maxLen;col++){
+    const g1=(row1[col]||'').trim();
+    const g2=(row2[col]||'').trim();
+    if(g1)lastGroup=g1;
+
+    let finalLabel;
+    if(normAr(lastGroup)===normAr('الاسعاف')){
+      if(g2){
+        if(g2.includes('نهاري')){lastShift='نهاري';finalLabel=g2;}
+        else if(g2.includes('ليلي')){lastShift='ليلي';finalLabel=g2;}
+        else if(g2==='باب'||g2==='بارد')finalLabel=`اسعاف ${g2} ${lastShift}`;
+        else finalLabel=lastGroup;
+      }else{
+        finalLabel=null;
+      }
+    }else{
+      finalLabel=lastGroup;
+    }
+    labels.push(finalLabel);
+  }
+  for(let i=0;i<labels.length;i++){
+    if(labels[i]===null)labels[i]=i>0?labels[i-1]:'';
+  }
+  return labels;
+}
+
+// Best-effort correspondence between Year-1 on-call category names and their closest
+// Year-2 equivalent(s), used only to suggest "زملاء السنة الثانية" in My Info. The two
+// sheets track duty differently (Year-2 splits emergency duty into hall/cold-room/door,
+// Year-1 doesn't), so this is an approximation — categories with no clear match are
+// simply omitted rather than guessed.
+const YEAR2_CATEGORY_MAP={
+  'سابع':['جناح السابع'],
+  'رابع':['جناح الرابع'],
+  'تالت':['ثالث خاص + خارجيات'],
+  'خارجيات':['ثالث خاص + خارجيات'],
+  'تاني':['ثاني رجال'],
+  'ديال':['ديال'],
+  'عناية قلبية':['عناية قلبية'],
+  'عناية مركز':['عناية المركز'],
+  'عناية داخلية':['عناية داخلية'],
+  'اسعاف مركز صباحي':['اسعاف مركز'],
+  'اسعاف مركز ليلي':['اسعاف مركز'],
+  'اسعاف بارد صباحي':['اسعاف بارد نهاري'],
+  'اسعاف بارد ليلي':['اسعاف بارد ليلي']
+};
+
 const AM=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 const DAY_NAMES=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
@@ -305,7 +367,7 @@ function buildMainContent(){
   return `<section class="tab-content active" id="residents-tab"><div class="section-header"><h2><i class="fas fa-users"></i> لائحة مقيمي السنة الأولى <span class="count-badge" id="residentCount">0</span><span class="percentage-badge" id="joinedPercentageBadge" style="display:none;"></span></h2></div><div class="controls-row" style="margin-bottom:12px"><div class="search-box"><input type="text" id="residentSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div></div><div class="controls-row" style="margin-bottom:12px"><select class="specialty-filter" id="specialtyFilter" onchange="app.filterBySpecialty()"><option value="">جميع الاختصاصات</option></select><select class="shift-filter" id="shiftFilter" onchange="app.filterByShift()"><option value="">جميع الفروز</option></select><button class="filter-btn" id="filterJoinedBtn" onclick="app.toggleFilter()"><i class="fas fa-filter"></i> الملتحقين فقط</button><button class="filter-btn detached-filter-btn" id="filterDetachedBtn" onclick="app.toggleDetachedFilter()"><i class="fas fa-user-slash"></i> المنفكين 0</button></div><div class="contacts-bar"><button class="select-all-btn" onclick="app.toggleSelectAll()"><i class="fas fa-check-square"></i> تحديد الكل</button><span class="selected-count" id="selectedCount">0 محدد</span><button class="contacts-btn" id="exportContactsBtn" onclick="app.exportToContacts()" disabled><i class="fas fa-address-book"></i> تحميل إلى جهات اتصالي</button></div><div class="table-wrapper desktop-table"><table><thead><tr><th style="width:35px">ت</th><th style="width:40px"><i class="fas fa-check"></i></th><th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th><th>الفرز</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th></tr></thead><tbody id="residentsBody"></tbody></table></div><div class="mobile-cards" id="residentsCards"></div></section>
 <section class="tab-content" id="lectures-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> رزنامة المحاضرات والانشطة الطبية</h2><div class="search-box"><input type="text" id="lecturesSearch" placeholder="ابحث بعنوان المحاضرة أو المحتويات أو المحاضر..."><i class="fas fa-search"></i></div></div><div class="controls-row" style="margin-bottom:12px"><select class="specialty-filter" id="lecturesCategoryFilter" onchange="app.filterLecturesByCategory()"><option value="">كل التصنيفات</option></select><select class="specialty-filter" id="lecturesDeptFilter" onchange="app.filterLecturesByDept()"><option value="">كل الأقسام</option></select><select class="shift-filter" id="lecturesYearFilter" onchange="app.filterLecturesByYear()"><option value="">كل السنوات</option></select><button class="filter-btn" id="lecturesPastBtn" onclick="app.togglePastLectures()"><i class="fas fa-clock-rotate-left"></i> رؤية المحاضرات القديمة</button></div><div class="lectures-calendar-shell"><div class="lectures-calendar-head"><button class="filter-btn lectures-cal-nav" aria-label="الشهر السابق" onclick="app.changeLecturesCalendarMonth(-1)"><i class="fas fa-chevron-right"></i></button><h3 id="lecturesCalendarTitle"></h3><button class="filter-btn lectures-cal-nav" aria-label="الشهر التالي" onclick="app.changeLecturesCalendarMonth(1)"><i class="fas fa-chevron-left"></i></button></div><div id="lecturesMonthlyCalendar" class="lectures-monthly-calendar"></div></div><div id="lecturesSelectedDayBox" class="lectures-selected-day"></div><div class="lectures-section-head lectures-today-head"><h3><i class="fas fa-star"></i> محاضرات اليوم</h3></div><div id="todayLecturesHero" class="today-lectures-hero"></div><div class="lectures-section-head"><h3><i class="fas fa-calendar-plus"></i> المحاضرات القادمة</h3></div><div id="upcomingLecturesList" class="lectures-grid"></div><div id="pastLecturesWrap" style="display:none;"><div class="lectures-section-head"><h3><i class="fas fa-calendar-minus"></i> المحاضرات القديمة</h3></div><div id="pastLecturesList" class="lectures-grid"></div></div></section>
 <section class="tab-content" id="shifts-tab"><div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span> <span class="shift-month-wrap"><span class="shift-month-label">الشهر</span><select class="month-selector" id="shiftsMonthSelector" onchange="app.changeShiftsMonth()"></select></span></h2><div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div><div class="shifts-grid" id="shiftsGrid"></div></section>
-<section class="tab-content" id="oncall-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> مناوبات شهر <span id="oncallMonthTitle"></span></h2></div><div class="oncall-controls"><label><i class="fas fa-calendar-day"></i> اختر تاريخ:</label><input type="date" id="oncallDatePicker" onchange="app.selectDayFromCalendar()"><select class="month-selector" id="monthSelector" onchange="app.changeMonth()">${AM.map((m,i)=>`<option value="${i}">${m}</option>`).join('')}</select><button class="filter-btn" onclick="app.toggleOncallRawTable()"><i class="fas fa-table"></i> عرض كجدول</button></div><div class="oncall-raw-backdrop" id="oncallRawBackdrop" onclick="app.toggleOncallRawTable()"></div><div id="oncallRawTableWrap" class="oncall-raw-wrap" style="display:none;"></div><div id="monthlyCalendar"></div><div id="oncallDayDisplay" style="margin-top:14px"></div></section>
+<section class="tab-content" id="oncall-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> مناوبات شهر <span id="oncallMonthTitle"></span></h2></div><div class="oncall-year-filter" id="oncallYearFilter"><button type="button" class="oncall-year-btn active" data-year="y1" onclick="app.changeOncallYearFilter('y1')">السنة الأولى</button><button type="button" class="oncall-year-btn" data-year="y2" onclick="app.changeOncallYearFilter('y2')">السنة الثانية</button><button type="button" class="oncall-year-btn" data-year="y1y2" onclick="app.changeOncallYearFilter('y1y2')">الأولى + الثانية</button></div><div class="oncall-controls"><label><i class="fas fa-calendar-day"></i> اختر تاريخ:</label><input type="date" id="oncallDatePicker" onchange="app.selectDayFromCalendar()"><select class="month-selector" id="monthSelector" onchange="app.changeMonth()">${AM.map((m,i)=>`<option value="${i}">${m}</option>`).join('')}</select><button class="filter-btn" onclick="app.toggleOncallRawTable()"><i class="fas fa-table"></i> عرض كجدول</button></div><div class="oncall-raw-backdrop" id="oncallRawBackdrop" onclick="app.toggleOncallRawTable()"></div><div id="oncallRawTableWrap" class="oncall-raw-wrap" style="display:none;"></div><div id="monthlyCalendar"></div><div id="oncallDayDisplay" style="margin-top:14px"></div></section>
 <section class="tab-content" id="doctorstats-tab"><div class="section-header"><h2><i class="fas fa-chart-column"></i> احصائيات الأطباء <span class="count-badge" id="doctorStatsCount">0</span></h2><div class="search-box"><input type="text" id="doctorStatsSearch" placeholder="ابحث باسم الطبيب أو اختصاره..."><i class="fas fa-search"></i></div></div><div class="controls-row" style="margin-bottom:12px"><button class="filter-btn" id="sortHoursBtn" onclick="app.toggleDoctorStatsSort('hours')"><i class="fas fa-arrow-down-wide-short"></i> ترتيب حسب عدد الساعات</button></div><div class="doctor-stats-grid" id="doctorStatsGrid"></div></section>
 <section class="tab-content" id="evaluation-tab"><div class="section-header"><h2><i class="fas fa-star"></i> التقييم السنوي للمقيمين</h2><div class="search-box"><input type="text" id="evalSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div></div><div class="table-wrapper desktop-table"><table><thead id="evalHead"></thead><tbody id="evalBody"></tbody></table></div><div class="mobile-cards" id="evalCards"></div></section>
 <section class="tab-content" id="links-tab"><div class="section-header"><h2><i class="fas fa-link"></i> الروابط والقنوات الهامة</h2></div><div id="linksGrid"></div></section>

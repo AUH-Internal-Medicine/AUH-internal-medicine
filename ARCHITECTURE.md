@@ -76,8 +76,9 @@ constructor, lines 349–357):
   hides the loading screen, and triggers `loadFresh()` in the background.
   If there is no valid cache, it waits for a foreground fetch and the same
   header-image readiness before hiding the loading screen.
-3. **`loadFresh(silent)`**: fetches all seven sheet tabs in parallel
-   via `Promise.all`, parses, renders, computes doctor statistics (see below),
+3. **`loadFresh(silent)`**: fetches all seven Year-1 sheet tabs, plus the Year-2
+   on-call tab from the second spreadsheet (`SID2`/`GID_O2`), in parallel via
+   `Promise.all`, parses, renders, computes doctor statistics (see below),
    and writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).
 
@@ -119,7 +120,7 @@ constructor, lines 349–357):
 | `renderLinks` | Links table + cards; `formatLink` turns `http…` values into buttons. |
 | `renderQA` | Groups Q&A by category into collapsible sections. |
 | `renderMonthlyCalendar` | The on-call month calendar grid (week starts Monday; Fri/Sat marked as weekend). |
-| `showOncallDate` | The per-day on-call breakdown card for a selected date. |
+| `showOncallDate` | The per-day on-call breakdown card for a selected date. Year-aware: reads `this.oncallYearFilter` (`y1`/`y2`/`y1y2`) and renders Year-1 categories, Year-2 categories, or both as separate labeled sections via `buildOncallCategoriesForDate()` / `oncallCategoriesSectionHtml()`. |
 | `searchMe` → `showMe` | The "my info" personal summary (the most complex renderer). |
 | `renderMyInfoMonthCalendar` / `focusMyInfoOncallDate` / `toggleMyInfoMonthBreakdown` | "My Info" on-call UX: month calendar with inline on-call labels, click-to-scroll + highlight for matching cards, and a fixed monthly breakdown panel. |
 | `toggleMyInfoDetail` / `getResidentShiftDaysDistribution` / `changeMyInfoMonth` | Legacy helper paths from the earlier interactive-counter layout; current "My Info" uses static top counters and a dropdown-based month switch for on-calls. |

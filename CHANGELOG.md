@@ -47,6 +47,18 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Add Year-2 on-call schedule (second spreadsheet, different structure) + year filter + cross-year colleagues
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** Added support for a second, structurally different on-call spreadsheet for second-year residents:
+  1. **Parsing**: the Year-2 sheet (`SID2 = '1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8'`, `GID_O2 = '0'`) uses two merged header rows (group name, then a sub-role row only inside "الاسعاف") instead of one plain header row, and dates use `\` as a separator instead of `/`/`-`/`.`. Added `buildYear2CategoryLabels(row1, row2)` in `helpers.js`, which forward-fills each merged header row (a blank cell inherits the nearest earlier non-blank cell) to derive one clean category label per column with no hardcoded column counts — verified against the sheet's real header text (45 data columns, 15 distinct category labels, including the disambiguated `اسعاف باب نهاري`/`بارد نهاري`/`باب ليلي`/`بارد ليلي`). Extended `extractDate()` to also accept `\` as a date separator. `parseOncallDataY2()` normalizes the parsed result into the same column-index shape as Year-1's on-call data (`oncRows2`/`oncHeaders2`) so existing rendering logic can treat both years uniformly.
+  2. **Year filter on the المناوبات tab**: three buttons — أولى فقط / ثانية فقط / أولى + ثانية (`#oncallYearFilter`, `changeOncallYearFilter()`). Refactored `showOncallDate()` into `buildOncallCategoriesForDate()` + `oncallCategoriesSectionHtml()` so it can render Year-1 categories, Year-2 categories, or both as separate clearly-headed sections. Similarly split `renderOncallRawTable()` into a reusable `oncallRawTableHtml(d, startIdx)` so the raw-table modal can show one or both years' full tables depending on the filter.
+  3. **My Info cross-year colleagues**: added `YEAR2_CATEGORY_MAP` (best-effort Year-1 → Year-2 category name correspondence) and `getYear2ColleaguesForDate()`. Every on-call entry in "معلوماتي" now shows Year-1 colleagues (as before) plus, where a mapped Year-2 category exists for that date, a second "السنة الثانية" line with those names (shown as plain text — Year-2 residents aren't in the residents roster, so no phone/tooltip is available for them).
+  4. `fetchCSV()` was generalized to accept an optional spreadsheet id (`fetchCSV(gid, sid = SID)`) instead of always using the primary sheet.
+- **Files:** helpers.js, app.js, styles.css, DATA-MODEL.md, README.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md (new "Second Source Spreadsheet" section documenting the Year-2 structure and parsing approach), README.md (المناوبات and معلوماتي tab descriptions), ARCHITECTURE.md (`loadFresh` tab count, `showOncallDate` description).
+- **Notes / follow-ups:** `YEAR2_CATEGORY_MAP` in `helpers.js` is a **best-effort name correspondence**, not a confirmed medical/administrative mapping — the resident asked to first get parsing correct and defer integration decisions, then requested the year filter + cross-year colleagues directly; this map was built from category-name similarity alone (e.g. "سابع" ↔ "جناح السابع") and should be reviewed by someone familiar with both rotations. Categories with no clear Year-2 equivalent (e.g. Year-1's "أورام") are simply omitted rather than guessed. No cache-key bump needed — `oncall2` is a new, additive cache key; old cached blobs without it just compute Year-2 as empty until the next fetch succeeds.
+
 ## 2026-07-30 — Doctor stats: split completed/cumulative hours + ranks + drill-down; My Info top boxes recomputed
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** both

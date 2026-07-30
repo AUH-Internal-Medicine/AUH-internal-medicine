@@ -297,6 +297,47 @@ the holiday or workday row depending on `isHolidayDate(dateIso)`.
 
 ---
 
+## 9. Second Source Spreadsheet — Year-2 On-call Schedule
+
+- **Spreadsheet ID** (`SID2` in code): `1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8`, tab `GID_O2 = '0'`, fetched as CSV.
+- Structurally different from everything above: **two merged header rows** instead of
+  one plain header row, and **no separate day-name column** (column A = date directly,
+  columns B onward = one resident name per column, ~45 data columns).
+  - Row 1 = the duty **group** name (e.g. "الاسعاف", "جناح السابع", "عناية قلبية"),
+    merged across every column that group occupies (so only the first column of each
+    group actually has text — Sheets/gviz leaves the rest of a merged range blank).
+  - Row 2 = a **sub-role** name, merged the same way, but only present under the
+    "الاسعاف" group: "الاسعاف النهاري" / "باب" / "بارد" (day shift: main hall / door /
+    cold-triage-room) and "الاسعاف الليلي" / "باب" / "بارد" (same three roles, night shift).
+  - Dates use a **backslash** separator (`1\8\2026`), which `extractDate()` in
+    `helpers.js` now also accepts (in addition to `/`, `-`, `.`).
+- `buildYear2CategoryLabels(row1, row2)` in `helpers.js` produces one clean category
+  label per column by **forward-filling** each merged header row (a blank cell inherits
+  the nearest earlier non-blank cell in the same row) — so it adapts automatically to
+  however many columns each group/sub-role spans; nothing is hardcoded. Inside "الاسعاف"
+  it also tracks which shift ("نهاري"/"ليلي") is currently active so "باب"/"بارد" become
+  unambiguous combined labels: `اسعاف باب نهاري`, `اسعاف بارد نهاري`, `اسعاف باب ليلي`,
+  `اسعاف بارد ليلي` (the group's own "الاسعاف النهاري"/"الاسعاف الليلي" sub-header rows
+  are already unambiguous and used as-is).
+- `parseOncallDataY2()` in `app.js` normalizes the result into the **same shape** as
+  Year-1's on-call data (`this.oncRows2` / `this.oncHeaders2`, with placeholder
+  `['اليوم','التاريخ', ...]` at index 0/1 so category columns start at index 2 for both
+  years) — this lets the rendering code (calendar day view, raw table) treat both years
+  uniformly instead of needing two separate code paths.
+- **Year-1 ↔ Year-2 category matching** (`YEAR2_CATEGORY_MAP` in `helpers.js`) is a
+  best-effort name correspondence used only to show "زملاء السنة الثانية" in My Info —
+  the two schedules don't track duty identically (Year-2 splits emergency duty into
+  hall/cold-room/door, which Year-1 doesn't), so categories with no clear equivalent
+  (e.g. Year-1's "أورام") are simply omitted rather than guessed. Edit that map in
+  `helpers.js` if a correspondence turns out to be wrong.
+- **UI**: the المناوبات tab has a year filter (`#oncallYearFilter`, three buttons —
+  أولى فقط / ثانية فقط / أولى + ثانية) driving `changeOncallYearFilter()` in `app.js`,
+  which re-renders both the day-view (`showOncallDate`) and the raw table
+  (`renderOncallRawTable`); when both years are selected, each renders as its own
+  clearly-headed section rather than merging category lists together.
+
+---
+
 ## Caching & refresh
 
 - The full fetched dataset is cached in `localStorage` under key pattern

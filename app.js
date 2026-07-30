@@ -8,6 +8,9 @@ class HospitalApp {
     this.res = [];
     this.oncRows = [];
     this.oncHeaders = [];
+    this.oncRows2 = [];
+    this.oncHeaders2 = [];
+    this.oncallYearFilter = 'y1';
     this.evalData = [];
     this.linksData = [];
     this.qaData = [];
@@ -25,6 +28,7 @@ class HospitalApp {
     this._resRaw = null;
     this._resCols = {};
     this._oncRaw = null;
+    this._onc2Raw = null;
 
     this.filterJoined = false;
     this.filterDetached = false;
@@ -170,6 +174,14 @@ class HospitalApp {
     if (c.oncall) {
       this._oncRaw = c.oncall;
       this.parseOncallData(c.oncall);
+    }
+
+    if (c.oncall2) {
+      this._onc2Raw = c.oncall2;
+      this.parseOncallDataY2(c.oncall2);
+    }
+
+    if (c.oncall || c.oncall2) {
       this.renderMonthlyCalendar();
       this.showOncallDate(this.selectedOncallDate);
       this.renderOncallRawTable();
@@ -374,6 +386,7 @@ class HospitalApp {
         timestamp: Date.now(),
         residents: this._resRaw || null,
         oncall: this._oncRaw || null,
+        oncall2: this._onc2Raw || null,
         oncallRules: this.oncallRulesData || null,
         evaluation: this.evalData || null,
         links: this.linksData || null,
@@ -386,9 +399,10 @@ class HospitalApp {
 
   async loadFresh(silent) {
     try {
-      const [rd, od, ed, ld, qd, hd, ord] = await Promise.all([
+      const [rd, od, o2d, ed, ld, qd, hd, ord] = await Promise.all([
         this.fetchCSV(GID_R),
         this.fetchJSON(GID_O),
+        this.fetchCSV(GID_O2, SID2),
         this.fetchCSV(GID_E),
         this.fetchCSV(GID_L),
         this.fetchJSON(GID_Q),
@@ -398,6 +412,7 @@ class HospitalApp {
 
       this._resRaw = rd;
       this._oncRaw = od;
+      this._onc2Raw = o2d;
 
       if (!silent) this.updateProgress(60, 'جاري عرض البيانات...');
 
@@ -407,9 +422,10 @@ class HospitalApp {
         this.renderShiftsFromResidents();
       }
 
-      if (od) {
+      if (od) this.parseOncallData(od);
+      if (o2d) this.parseOncallDataY2(o2d);
+      if (od || o2d) {
         const keepDate = this.selectedOncallDate || this.today;
-        this.parseOncallData(od);
         this.renderMonthlyCalendar();
         this.showOncallDate(keepDate);
         this.renderOncallRawTable();
@@ -442,8 +458,8 @@ class HospitalApp {
     }
   }
 
-  async fetchCSV(gid) {
-    const url = `https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:csv&gid=${gid}&_=${Date.now()}`;
+  async fetchCSV(gid, sid = SID) {
+    const url = `https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:csv&gid=${gid}&_=${Date.now()}`;
     try {
       const r = await fetch(url, { cache: 'no-store' });
       if (!r.ok) return null;
@@ -1947,6 +1963,31 @@ class HospitalApp {
     }
   }
 
+  // Second-year on-call schedule: row 0 = merged group headers, row 1 = merged sub-role
+  // headers (only meaningful inside "الاسعاف"), data starts row 2. Column 0 = date,
+  // columns 1+ = one resident name per column. Normalized into the SAME shape/column
+  // convention as Year-1 (`oncHeaders2[0]`/`[1]` placeholders, categories from index 2)
+  // so the rendering code can treat both years uniformly.
+  parseOncallDataY2(d) {
+    this.oncRows2 = [];
+    this.oncHeaders2 = [];
+    if (!d || d.length < 3) return;
+
+    const labels = buildYear2CategoryLabels(d[0] || [], d[1] || []);
+    this.oncHeaders2 = ['اليوم', 'التاريخ', ...labels];
+
+    for (let i = 2; i < d.length; i++) {
+      const row = d[i];
+      if (!row || !row.length) continue;
+
+      const ds = extractDate(row[0] || '') || '';
+      if (!ds) continue;
+
+      const normalizedRow = ['', ds, ...row.slice(1)];
+      this.oncRows2.push({ date: ds, day: getDayName(ds), row: normalizedRow });
+    }
+  }
+
   parseOncallRules(d) {
     // Duty times/durations are now FIXED in code (see ONCALL_SCHEDULE_OLD /
     // ONCALL_SCHEDULE_NEW / ONCALL_SCHEDULE_SWITCH_DATE in helpers.js) and are
@@ -2140,21 +2181,13 @@ class HospitalApp {
     return Math.max(lastUsed, 1);
   }
 
-  renderOncallRawTable() {
-    const wrap = document.getElementById('oncallRawTableWrap');
-    if (!wrap) return;
-
-    const d = this._oncRaw;
-    if (!d || d.length < 2) {
-      wrap.innerHTML = '<p style="padding:16px;color:#888;">لا توجد بيانات.</p>';
-      return;
-    }
+  oncallRawTableHtml(d, startIdx) {
+    if (!d || d.length <= startIdx) return '<p style="padding:16px;color:#888;">لا توجد بيانات.</p>';
 
     const headers = d[0] || [];
-    const startIdx = (d[1] && (d[1][0] || '').trim() === 'اليوم') ? 2 : 1;
     const lastUsedCol = this.getOncallRawLastUsedCol(d, startIdx);
 
-    let html = '<div class="oncall-raw-modal-head"><h4><i class="fas fa-table"></i> جدول المناوبات كاملاً</h4><button class="oncall-raw-close-btn" onclick="app.toggleOncallRawTable()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button></div><div class="table-wrapper oncall-raw-table-wrap"><table class="oncall-raw-table"><thead><tr>';
+    let html = '<div class="table-wrapper oncall-raw-table-wrap"><table class="oncall-raw-table"><thead><tr>';
     for (let j = 0; j <= lastUsedCol; j++) {
       const h = headers[j] || '';
       const cls = j === 0 ? 'oncall-raw-sticky-col-1' : j === 1 ? 'oncall-raw-sticky-col-2' : '';
@@ -2163,9 +2196,11 @@ class HospitalApp {
     }
     html += '</tr></thead><tbody>';
 
+    let anyRow = false;
     for (let i = startIdx; i < d.length; i++) {
       const row = d[i] || [];
       if (!row.slice(0, lastUsedCol + 1).some(x => String(x || '').trim())) continue;
+      anyRow = true;
       html += '<tr>';
       for (let j = 0; j <= lastUsedCol; j++) {
         const raw = (row[j] || '').toString();
@@ -2180,7 +2215,32 @@ class HospitalApp {
     }
 
     html += '</tbody></table></div>';
-    wrap.innerHTML = html;
+    return anyRow ? html : '<p style="padding:16px;color:#888;">لا توجد بيانات.</p>';
+  }
+
+  renderOncallRawTable() {
+    const wrap = document.getElementById('oncallRawTableWrap');
+    if (!wrap) return;
+
+    const showY1 = this.oncallYearFilter === 'y1' || this.oncallYearFilter === 'y1y2';
+    const showY2 = this.oncallYearFilter === 'y2' || this.oncallYearFilter === 'y1y2';
+    const showBoth = this.oncallYearFilter === 'y1y2';
+
+    let body = '';
+    if (showY1) {
+      const d1 = this._oncRaw;
+      const startIdx1 = (d1 && d1[1] && (d1[1][0] || '').trim() === 'اليوم') ? 2 : 1;
+      if (showBoth) body += '<h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الأولى</h4>';
+      body += this.oncallRawTableHtml(d1, startIdx1);
+    }
+    if (showY2) {
+      const d2 = this.oncHeaders2.length ? [this.oncHeaders2, ...this.oncRows2.map(r => r.row)] : null;
+      if (showBoth) body += '<h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الثانية</h4>';
+      body += this.oncallRawTableHtml(d2, 1);
+    }
+
+    const headHtml = '<div class="oncall-raw-modal-head"><h4><i class="fas fa-table"></i> جدول المناوبات كاملاً</h4><button class="oncall-raw-close-btn" onclick="app.toggleOncallRawTable()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button></div>';
+    wrap.innerHTML = headHtml + body;
   }
 
   toggleOncallRawTable() {
@@ -2200,28 +2260,14 @@ class HospitalApp {
     }
   }
 
-  showOncallDate(ds) {
-    const dp = document.getElementById('oncallDayDisplay');
-    const dstr = ds || this.selectedOncallDate || this.today;
-    if (!dstr || !dp || !this.oncRows.length) return;
-
-    this.selectedOncallDate = dstr;
-    const picker = document.getElementById('oncallDatePicker');
-    if (picker && picker.value !== dstr) picker.value = dstr;
-
-    const oncRow = this.getOncRow(dstr);
-    if (!oncRow) {
-      dp.innerHTML = `<div class="oncall-day-card"><h3><i class="fas fa-calendar-day"></i> ${dstr} - ${getDayName(dstr)}</h3><p style="color:#888;">لا توجد مناوبات لهذا التاريخ.</p></div>`;
-      return;
-    }
-
-    const now = new Date();
-    const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
+  buildOncallCategoriesForDate(dstr, oncRows, oncHeaders) {
+    const row = (oncRows || []).find(r => r.date === dstr);
     const cats = {};
-    for (let col = 2; col < this.oncHeaders.length; col++) {
-      const cn = this.oncHeaders[col] || 'أخرى';
-      const cc = (oncRow.row[col] || '').trim();
+    if (!row) return cats;
+
+    for (let col = 2; col < oncHeaders.length; col++) {
+      const cn = oncHeaders[col] || 'أخرى';
+      const cc = (row.row[col] || '').trim();
       if (!cc) continue;
       const names = splitNames(cc);
       if (!names.length) continue;
@@ -2235,28 +2281,71 @@ class HospitalApp {
         if (!cats[cn].find(x => x.abbr === ab)) cats[cn].push({ abbr: ab, name: fn, phone: ph, resAbbr: ab });
       }
     }
+    return cats;
+  }
+
+  oncallCategoriesSectionHtml(catEntries, dstr, isYear1) {
+    if (!catEntries.length) return '';
+    let h = '<div class="oncall-categories-grid">';
+    for (const [cn, names] of catEntries) {
+      const schedule = isYear1 ? this.getCategorySchedule(cn, dstr) : null;
+      const scheduleHtml = schedule && (schedule.time || schedule.duration) ? `<div class="oncall-schedule-meta${schedule.isHoliday ? ' holiday' : ''}"><span>${schedule.time || '-'}</span><span>${schedule.duration || '-'}</span></div>` : '';
+
+      h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}<div class="oncall-names-list">`;
+      for (const n of names) h += `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}</span>`;
+      h += '</div></div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  changeOncallYearFilter(val) {
+    this.oncallYearFilter = val;
+    document.querySelectorAll('.oncall-year-btn').forEach(b => b.classList.toggle('active', b.dataset.year === val));
+    this.showOncallDate(this.selectedOncallDate);
+    this.renderOncallRawTable();
+  }
+
+  showOncallDate(ds) {
+    const dp = document.getElementById('oncallDayDisplay');
+    const dstr = ds || this.selectedOncallDate || this.today;
+    if (!dstr || !dp || (!this.oncRows.length && !this.oncRows2.length)) return;
+
+    this.selectedOncallDate = dstr;
+    const picker = document.getElementById('oncallDatePicker');
+    if (picker && picker.value !== dstr) picker.value = dstr;
+
+    const showY1 = this.oncallYearFilter === 'y1' || this.oncallYearFilter === 'y1y2';
+    const showY2 = this.oncallYearFilter === 'y2' || this.oncallYearFilter === 'y1y2';
+    const showBoth = this.oncallYearFilter === 'y1y2';
+
+    const cats1 = showY1 ? this.buildOncallCategoriesForDate(dstr, this.oncRows, this.oncHeaders) : {};
+    const cats2 = showY2 ? this.buildOncallCategoriesForDate(dstr, this.oncRows2, this.oncHeaders2) : {};
+    const entries1 = Object.entries(cats1);
+    const entries2 = Object.entries(cats2);
+
+    if (!entries1.length && !entries2.length) {
+      dp.innerHTML = `<div class="oncall-day-card"><h3><i class="fas fa-calendar-day"></i> ${dstr} - ${getDayName(dstr)}</h3><p style="color:#888;">لا توجد مناوبات لهذا التاريخ.</p></div>`;
+      return;
+    }
+
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
     const dn = getDayName(dstr);
     const we = this.isHolidayDate(dstr);
-    const catEntries = Object.entries(cats);
-    const catCount = catEntries.length;
-    const totalDoctors = catEntries.reduce((a, [, n]) => a + n.length, 0);
+    const catCount = entries1.length + entries2.length;
+    const totalDoctors = entries1.reduce((a, [, n]) => a + n.length, 0) + entries2.reduce((a, [, n]) => a + n.length, 0);
 
     let h = `<div class="oncall-day-card" id="oncallCardContent"><div class="oncall-card-head"><h3 class="${we ? 'weekend' : ''}"><i class="fas fa-calendar-day"></i> ${dstr} - ${dn}${we ? ' <span class="day-badge weekend">عطلة</span>' : ''}</h3><div class="oncall-card-stats"><span class="oncall-stat-pill"><i class="fas fa-layer-group"></i> ${catCount} فئة</span><span class="oncall-stat-pill"><i class="fas fa-user-doctor"></i> ${totalDoctors} طبيب</span></div></div><div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div>`;
 
-    if (!catCount) {
-      h += '<p style="color:#888;">لا توجد مناوبات مسجلة لهذا التاريخ.</p>';
+    if (showBoth) {
+      h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الأولى</h4>${entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>'}</div>`;
+      h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الثانية</h4>${entries2.length ? this.oncallCategoriesSectionHtml(entries2, dstr, false) : '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>'}</div>`;
+    } else if (showY1) {
+      h += entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:#888;">لا توجد مناوبات مسجلة لهذا التاريخ.</p>';
     } else {
-      h += '<div class="oncall-categories-grid">';
-      for (const [cn, names] of catEntries) {
-        const schedule = this.getCategorySchedule(cn, dstr);
-        const scheduleHtml = schedule && (schedule.time || schedule.duration) ? `<div class="oncall-schedule-meta${schedule.isHoliday ? ' holiday' : ''}"><span>${schedule.time || '-'}</span><span>${schedule.duration || '-'}</span></div>` : '';
-
-        h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}<div class="oncall-names-list">`;
-        for (const n of names) h += `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}</span>`;
-        h += '</div></div>';
-      }
-      h += '</div>';
+      h += entries2.length ? this.oncallCategoriesSectionHtml(entries2, dstr, false) : '<p style="color:#888;">لا توجد مناوبات مسجلة لهذا التاريخ.</p>';
     }
 
     h += `<div class="oncall-export-actions"><button class="download-btn" onclick="app.downloadOncallImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل المناوبات كصورة</button></div></div>`;
@@ -2622,6 +2711,26 @@ class HospitalApp {
     setTimeout(() => matches.forEach(r => r.classList.remove('myinfo-row-focus')), 1900);
   }
 
+  getYear2ColleaguesForDate(dateIso, y1Category) {
+    const y2Cats = YEAR2_CATEGORY_MAP[y1Category];
+    if (!y2Cats || !y2Cats.length || !this.oncHeaders2.length) return [];
+
+    const row = this.oncRows2.find(x => x.date === dateIso);
+    if (!row) return [];
+
+    const names = [];
+    for (let col = 2; col < this.oncHeaders2.length; col++) {
+      const cn = this.oncHeaders2[col] || '';
+      if (!y2Cats.includes(cn)) continue;
+      const cc = (row.row[col] || '').trim();
+      if (!cc) continue;
+      splitNames(cc).forEach(n => {
+        if (n && !names.includes(n)) names.push(n);
+      });
+    }
+    return names;
+  }
+
   showMe(r) {
     const rd = document.getElementById('myInfoResult');
     if (!rd) return;
@@ -2651,12 +2760,14 @@ class HospitalApp {
         }
 
         const schedule = this.getCategorySchedule(cn, onc.date);
+        const year2Colleagues = this.getYear2ColleaguesForDate(onc.date, cn);
         allOncalls.push({
           date: onc.date,
           day: onc.day || getDayName(onc.date),
           dayIdx: getDayIndex(onc.date),
           cat: cn,
           colleagues,
+          year2Colleagues,
           schedule
         });
       }
@@ -2765,6 +2876,7 @@ class HospitalApp {
         h += `<div class="oncall-info-row${we ? ' holiday' : ''}${isPast ? ' past done' : ''}" id="${rowId}" data-oncall-date="${o.date}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot holiday"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}${we ? '<span class="oncall-holiday-badge">عطلة</span>' : ''}</span><span class="oc-type">${o.cat}${isPast ? ' <span class="oncall-done-badge"><i class="fas fa-check"></i> تم</span>' : ''}</span></div>`;
         if (sch && (sch.time || sch.duration)) h += `<div class="myinfo-oncall-meta${sch.isHoliday ? ' holiday' : ''}"><span><i class="fas fa-clock"></i> ${sch.time || '-'}</span><span><i class="fas fa-hourglass-half"></i> ${sch.duration || '-'}</span></div>`;
         if (o.colleagues.length) h += `<div class="colleague-row"><span class="cl-label"><i class="fas fa-users"></i> الزملاء:</span><span class="cl-names">${o.colleagues.map((c, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${mcn(c.name, c.phone, c.abbr)}`).join('')}</span></div>`;
+        if (o.year2Colleagues && o.year2Colleagues.length) h += `<div class="colleague-row colleague-row-y2"><span class="cl-label"><i class="fas fa-user-graduate"></i> السنة الثانية:</span><span class="cl-names">${o.year2Colleagues.map((n, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${this.escapeHtml(n)}`).join('')}</span></div>`;
         h += '</div>';
       });
       h += '</div>';

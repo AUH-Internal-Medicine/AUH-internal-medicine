@@ -27,13 +27,13 @@ The app presents resident data across **11 primary tabs** (Arabic label → mean
 | `residents` | لائحة المقيمين | Full roster: name, specialty, phone, status, shift. Search, filter, multi-select, export to phone contacts (vCard). |
 | `lectures` | رزنامة المحاضرات | Medical lectures/activities calendar with smart search, category/department/year filters, today highlights, upcoming list, optional old-events view, and optional registration/announcement links. |
 | `shifts` | الفروز | Monthly "shift assignment" (فرز) groups — which residents are assigned where, per month. |
-| `oncall` | المناوبات | On-call schedule. Monthly calendar + per-day breakdown by category. Exportable as an image. |
+| `oncall` | المناوبات | On-call schedule. Monthly calendar + per-day breakdown by category, with a year filter (أولى فقط / ثانية فقط / أولى + ثانية) that also pulls in a second, structurally different Year-2 spreadsheet. Exportable as an image. |
 | `exams` | الامتحانات والاختبارات | Placeholder page for upcoming exams/tests features (work in progress). |
 | `clinicalcases` | مشروع الحالات السريرية | Placeholder page for clinical-cases project features (work in progress). |
 | `doctorstats` | احصائيات الأطباء | Doctor analytics **computed by the app** (not read from a sheet tab): days since join, cumulative vs. completed on-calls, ward/ICU/emergency/misc breakdown, holiday/night counts, and total hours — shown as cards with smart search and sorting by hours. |
 | `evaluation` | التقييم السنوي | Annual evaluation scores per resident across 8 skill areas, plus praises (ثناءات) and penalties (عقوبات). |
 | `links` | روابط هامة | Important links / channels (e.g. group chats, resources). |
-| `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see a personal summary card with an identity header (name, abbreviation, sequence number), static cumulative/join-day counters, cumulative on-call distribution, extra resident info, evaluation, shift data, and a month-selectable on-call calendar. On-call days jump to their cards, past days/cards are visually marked as completed, and holiday shifts are distinguished without recoloring the whole card. Exportable as an image. |
+| `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see a personal summary card with an identity header (name, abbreviation, sequence number), static cumulative/join-day counters, cumulative on-call distribution, extra resident info, evaluation, shift data, computed doctor statistics, and a month-selectable on-call calendar. Each on-call entry lists Year-1 colleagues in the same shift plus, where a matching category exists, Year-2 colleagues on that same date. On-call days jump to their cards, past days/cards are visually marked as completed, and holiday shifts are distinguished without recoloring the whole card. Exportable as an image. |
 | `qa` | Q&A (الأسئلة والأجوبة) | Categorized, collapsible frequently-asked questions. |
 
 A separate floating **الشكاوي** support shortcut (outside the primary tab row)
