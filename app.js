@@ -423,7 +423,11 @@ class HospitalApp {
       }
 
       if (od) this.parseOncallData(od);
-      if (o2d) this.parseOncallDataY2(o2d);
+      if (o2d) {
+        this.parseOncallDataY2(o2d);
+      } else {
+        console.warn('[Year2] fetchCSV(GID_O2, SID2) returned null — check sheet sharing permissions ("Anyone with the link can view") and that GID_O2 is correct.');
+      }
       if (od || o2d) {
         const keepDate = this.selectedOncallDate || this.today;
         this.renderMonthlyCalendar();
@@ -1971,21 +1975,40 @@ class HospitalApp {
   parseOncallDataY2(d) {
     this.oncRows2 = [];
     this.oncHeaders2 = [];
-    if (!d || d.length < 3) return;
+    if (!d || d.length < 3) {
+      console.warn('[Year2] raw data too short or missing:', d && d.length);
+      return;
+    }
 
     const labels = buildYear2CategoryLabels(d[0] || [], d[1] || []);
     this.oncHeaders2 = ['اليوم', 'التاريخ', ...labels];
 
+    const failedDates = [];
     for (let i = 2; i < d.length; i++) {
       const row = d[i];
       if (!row || !row.length) continue;
 
-      const ds = extractDate(row[0] || '') || '';
-      if (!ds) continue;
+      const rawDate = row[0] || '';
+      const ds = extractDate(rawDate) || '';
+      if (!ds) {
+        if (rawDate.trim()) failedDates.push(rawDate);
+        continue;
+      }
 
       const normalizedRow = ['', ds, ...row.slice(1)];
       this.oncRows2.push({ date: ds, day: getDayName(ds), row: normalizedRow });
     }
+
+    // Diagnostic log — remove once Year-2 parsing is confirmed working end-to-end.
+    if (this.oncRows2.length) {
+      const dates = this.oncRows2.map(r => r.date).sort();
+      console.log(`[Year2] parsed ${this.oncRows2.length} day(s): ${dates[0]} .. ${dates[dates.length - 1]}`);
+      console.log('[Year2] sample row 0:', this.oncRows2[0]);
+      console.log('[Year2] category labels:', labels);
+    } else {
+      console.warn('[Year2] parsed 0 rows from', d.length, 'raw rows. Raw row 2 (first expected data row):', d[2]);
+    }
+    if (failedDates.length) console.warn('[Year2] failed to parse these date cells:', failedDates);
   }
 
   parseOncallRules(d) {
