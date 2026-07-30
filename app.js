@@ -126,6 +126,10 @@ class HospitalApp {
       const r = await fetch(`index.html?__check=${Date.now()}`, { cache: 'no-store' });
       if (!r.ok) return;
 
+      const html = await r.text();
+      const remoteBuild = this.extractBuildIdFromHtml(html);
+      if (!remoteBuild || remoteBuild === this._buildId) return;
+
       this.clearOldAppCaches();
       location.replace(`./?v=${encodeURIComponent(remoteBuild)}`);
     } catch (e) {
@@ -2041,15 +2045,15 @@ class HospitalApp {
     return this.oncallRules.annualHolidaySet.has(dateIso);
   }
 
-  getRuleSetForToday() {
+  getRuleSetForDate(dateIso) {
     if (!this.oncallRules) return null;
     const { switchDate, oldSet, newSet } = this.oncallRules;
-    if (switchDate && this.today >= switchDate) return newSet;
+    if (switchDate && dateIso && dateIso >= switchDate) return newSet;
     return oldSet;
   }
 
   getCategorySchedule(cat, dateIso) {
-    const ruleSet = this.getRuleSetForToday();
+    const ruleSet = this.getRuleSetForDate(dateIso);
     if (!ruleSet) return null;
 
     const pickByNorm = name => {
@@ -2610,7 +2614,6 @@ class HospitalApp {
     const fd = new Date(yr, mo, 1).getDay();
     const afd = fd === 0 ? 6 : fd - 1;
     const dns = ['اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
-    const todayDay = parseInt(this.today.split('-')[2], 10);
 
     const byDate = {};
     (monthOncalls || []).forEach(o => {
@@ -2629,7 +2632,7 @@ class HospitalApp {
       const ds = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const d = new Date(yr, mo, day);
       const di = d.getDay();
-      const isToday = day === todayDay;
+      const isToday = ds === this.today;
       const isPast = ds < this.today;
       const cats = byDate[ds] || [];
       const hasOncall = cats.length > 0;

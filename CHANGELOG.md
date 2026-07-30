@@ -47,6 +47,26 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Remove hospital name from loading screen, modernize loader design
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** code
+- **What:** Removed the "مشفى حلب الجامعي" title text from the loading screen (`.loader-title` div removed from `index.html`). Replaced it with an animated pulsing heart-pulse icon inside two counter-rotating rings. Redesigned the loading screen visuals: animated shifting gradient background, glowing progress bar, restyled percentage/subtitle text.
+- **Files:** index.html, styles.css, CHANGELOG.md
+- **Docs synced:** no — purely visual, no behavior/data-contract change.
+- **Notes / follow-ups:** `.loader-title` class was removed entirely (confirmed no JS references it). New classes added: `.loader-orb`, `.loader-orb-ring`, `.loader-orb-ring-2`, `.loader-icon`, plus keyframes `loaderBgShift`, `loaderSpin`, `loaderPulse`.
+
+## 2026-07-30 — Fix auto-update, My Info calendar "today" bug, and on-call rules switch date; calendar polish
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** Fixed three real bugs and polished calendar visuals:
+  1. `checkForAppUpdate()` referenced an undefined `remoteBuild` variable and never read the fetched `index.html` response, so it always threw silently and the documented auto-update-on-new-deploy feature never actually worked. Now it reads the response text, extracts the build id via the existing (previously unused) `extractBuildIdFromHtml()`, compares it to the current build, and only clears caches + reloads when a genuinely newer build is detected.
+  2. `renderMyInfoMonthCalendar()` marked a day as "today" using `day === todayDay` (day-of-month only), so viewing a different month highlighted whichever day-of-month matched today's date-of-month (e.g. day 30 in next month lit up as if it were today). Now compares the full `YYYY-MM-DD` string against `this.today`.
+  3. `getRuleSetForToday()` (on-call duty time/duration rules) compared the real current date against the `B6` switch date and applied the same old/new schedule to every displayed on-call day, instead of comparing each on-call day's own date to `B6`. Renamed to `getRuleSetForDate(dateIso)` and it now decides old vs. new schedule per displayed date, so days before `B6` correctly show the old times and days on/after `B6` show the new ones, even within the same month.
+  4. Calendar CSS polish (main on-call calendar, My Info calendar, day headers): added weekend background tinting (light + dark mode), replaced the jarring `scale(1.2)` hover with a smoother lift + shadow, added a separating border under the calendar header, and consistent shadows/borders across calendar containers.
+- **Files:** app.js, styles.css, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md (clarified that the `B6` switch date is evaluated per on-call date, not real-world "today").
+- **Notes / follow-ups:** No cache-key bump needed — these are logic/rendering fixes, not data-shape changes. Verified with `node --check` on app.js/helpers.js and a brace-balance check on styles.css. Recommend a manual check in a browser against real sheet data (especially an on-call month straddling the `B6` date) since the fetched sheet content couldn't be verified in this offline session (no network access in this session).
+
 ## 2026-07-10 — Make My Info calendar identical to main calendar + dots/tooltip
 - **Who:** Cline (Claude)
 - **Type:** code

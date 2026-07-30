@@ -203,8 +203,12 @@ This tab defines duty time/duration metadata for each on-call type.
   - row 4: holiday time
   - row 5: holiday duration
 - `B6` (`تاريخ بدء حساب المواعيد الجديد`) acts as the switch date.
-  - if today is before it, use rows 2–5
-  - if today is on/after it, use rows 7–10
+  - This is evaluated **per on-call date being displayed**, not against the
+    real-world "today". For the on-call day in question: if its date is before
+    `B6`, use rows 2–5 (old schedule); if its date is on/after `B6`, use rows
+    7–10 (new schedule). So a single displayed month can show a mix of old- and
+    new-schedule days around the switch date. `getRuleSetForDate(dateIso)` in
+    `app.js` implements this.
 - Annual holiday dates are read from the section under `العطل السنوية`
   (`B14`, `B15`, ... when present).
 
