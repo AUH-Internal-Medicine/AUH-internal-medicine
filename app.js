@@ -14,7 +14,6 @@ class HospitalApp {
     this.lecturesData = [];
     this.lectures = [];
 
-    this.doctorStatsData = [];
     this.doctorStats = [];
     this.doctorStatsSearchTerm = '';
     this.doctorStatsSort = { key: '', dir: '' };
@@ -191,11 +190,8 @@ class HospitalApp {
       this.renderLectures();
     }
 
-    if (c.doctorStats) {
-      this.doctorStatsData = c.doctorStats;
-      this.parseDoctorStatsData(c.doctorStats);
-      this.renderDoctorStats();
-    }
+    this.computeDoctorStats();
+    this.renderDoctorStats();
 
     this.updateTime();
   }
@@ -382,8 +378,7 @@ class HospitalApp {
         evaluation: this.evalData || null,
         links: this.linksData || null,
         qa: this.qaData || null,
-        lectures: this.lecturesData || null,
-        doctorStats: this.doctorStatsData || null
+        lectures: this.lecturesData || null
       };
       localStorage.setItem(CK, JSON.stringify(d));
     } catch (e) {}
@@ -391,14 +386,13 @@ class HospitalApp {
 
   async loadFresh(silent) {
     try {
-      const [rd, od, ed, ld, qd, hd, dsd, ord] = await Promise.all([
+      const [rd, od, ed, ld, qd, hd, ord] = await Promise.all([
         this.fetchCSV(GID_R),
         this.fetchJSON(GID_O),
         this.fetchCSV(GID_E),
         this.fetchCSV(GID_L),
         this.fetchJSON(GID_Q),
         this.fetchCSV(GID_LEC),
-        this.fetchCSV(GID_DS),
         this.fetchCSV(GID_OR)
       ]);
 
@@ -436,11 +430,8 @@ class HospitalApp {
         this.renderLectures();
       }
 
-      if (dsd) {
-        this.doctorStatsData = dsd;
-        this.parseDoctorStatsData(dsd);
-        this.renderDoctorStats();
-      }
+      this.computeDoctorStats();
+      this.renderDoctorStats();
 
       this.saveToCache();
       if (!silent) this.updateProgress(100, 'تم التحميل');
@@ -1745,135 +1736,106 @@ class HospitalApp {
     }
   }
 
-  parseDoctorStatsData(d) {
-    this.doctorStats = [];
-    if (!d || d.length < 2) return;
+  classifyOncallGroup(cat) {
+    const n = normAr(cat || '');
+    if (n.startsWith(normAr('اسعاف')) || n.startsWith(normAr('إسعاف'))) return 'emergency';
+    if (n.includes(normAr('عناية'))) return 'icu';
+    if (['اورام', 'أورام', 'ديال'].some(x => n === normAr(x))) return 'misc';
+    if (['تاني', 'ثاني', 'تالت', 'ثالث', 'رابع', 'خارجيات', 'سابع'].some(x => n === normAr(x))) return 'wards';
+    return 'other';
+  }
 
-    const headers = d[0] || [];
-    const col = {
-      name: this.getHeaderIndex(headers, ['الاسم الكامل', 'الاسم الثلاثي', 'الاسم']),
-      abbr: this.getHeaderIndex(headers, ['الاختصار الرسمي', 'الاختصار']),
-      spec: this.getHeaderIndex(headers, ['الاختصاص']),
-      status: this.getHeaderIndex(headers, ['الحالة']),
-      shift: this.getHeaderIndex(headers, ['فرز شهر']),
-      shiftsCount: this.getHeaderIndex(headers, ['عدد_المناوبات', 'عدد المناوبات']),
-      totalHours: this.getHeaderIndex(headers, ['مجموع_الساعات', 'مجموع الساعات']),
-      avgPerShift: this.getHeaderIndex(headers, ['متوسط ساعات/مناوبة']),
-      icuTotal: this.getHeaderIndex(headers, ['العنايات']),
-      wardsTotal: this.getHeaderIndex(headers, ['الأجنحة']),
-      emergencyTotal: this.getHeaderIndex(headers, ['الإسعاف']),
-      miscTotal: this.getHeaderIndex(headers, ['المنوعات']),
-      workDaysShifts: this.getHeaderIndex(headers, ['مناوبات أيام الدوام']),
-      holidayShifts: this.getHeaderIndex(headers, ['العطل']),
-      nightShifts: this.getHeaderIndex(headers, ['المناوبات الليلية']),
-      hoursDiff: this.getHeaderIndex(headers, ['فرق الساعات عن متوسط الملتحقين']),
-      shiftsDiff: this.getHeaderIndex(headers, ['فرق المناوبات عن متوسط الملتحقين']),
-      hoursRank: this.getHeaderIndex(headers, ['ترتيب الساعات']),
-      shiftsRank: this.getHeaderIndex(headers, ['ترتيب عدد المناوبات']),
-      firstOncall: this.getHeaderIndex(headers, ['أول مناوبة']),
-      lastOncall: this.getHeaderIndex(headers, ['آخر مناوبة']),
-      joinDate: this.getHeaderIndex(headers, ['تاريخ الالتحاق'])
-    };
+  computeDoctorStats() {
+    // Doctor statistics are computed directly from the on-call log (GID_O) cross-referenced
+    // with the residents roster (GID_R) — NOT read from a separately hand-maintained sheet
+    // tab anymore, since that manual approach was unreliable. See DATA-MODEL.md.
+    const statsMap = new Map();
 
-    const detailSets = {
-      icu: [
-        { label: 'عناية قلبية', tokens: ['عناية قلب', 'قلبي'] },
-        { label: 'عناية مركز', tokens: ['عناية مركز', 'المركز'] },
-        { label: 'عناية داخلية', tokens: ['عناية داخل', 'داخلي'] }
-      ],
-      wards: [
-        { label: 'سابع', tokens: ['سابع'] },
-        { label: 'رابع', tokens: ['رابع'] },
-        { label: 'تالت', tokens: ['تالت', 'ثالث'] },
-        { label: 'تاني', tokens: ['تاني', 'ثاني'] },
-        { label: 'خارجيات', tokens: ['خارجيات', 'خارجي'] }
-      ],
-      misc: [
-        { label: 'ديال', tokens: ['ديال'] },
-        { label: 'أورام', tokens: ['اورام', 'أورام'] }
-      ]
-    };
+    (this.res || []).forEach(r => {
+      if (!r || !r.name) return;
+      const key = r.abbr || r.name;
+      statsMap.set(key, {
+        name: r.name,
+        abbr: r.abbr || '',
+        spec: r.spec || '',
+        status: r.st || '',
+        join: r.join || '',
+        joinDaysSince: daysSinceDate(extractDate(r.join)),
+        total: 0,
+        completed: 0,
+        remaining: 0,
+        wards: 0,
+        icu: 0,
+        emergency: 0,
+        misc: 0,
+        holiday: 0,
+        night: 0,
+        hours: 0
+      });
+    });
 
-    const findIdxByTokens = tokens => {
-      const normalizedTokens = tokens.map(t => normAr(t));
-      for (let i = 0; i < headers.length; i++) {
-        const hn = normAr(headers[i] || '');
-        if (!hn) continue;
-        if (normalizedTokens.some(t => hn.includes(t))) return i;
+    (this.oncRows || []).forEach(oncRow => {
+      const ds = oncRow.date;
+      const holiday = this.isHolidayDate(ds);
+
+      for (let col = 2; col < this.oncHeaders.length; col++) {
+        const cat = this.oncHeaders[col] || '';
+        const cellVal = (oncRow.row[col] || '').trim();
+        if (!cellVal) continue;
+
+        const names = splitNames(cellVal);
+        if (!names.length) continue;
+
+        const sched = this.getCategorySchedule(cat, ds);
+        const hrs = parseDurationHours(sched ? sched.duration : '');
+        const isNight = normAr(cat).includes(normAr('ليلي'));
+        const group = this.classifyOncallGroup(cat);
+
+        const seenInCell = new Set();
+        names.forEach(nm => {
+          const resident = this.findRbyExact(nm);
+          const key = resident ? resident.abbr || resident.name : nm;
+          if (seenInCell.has(key)) return;
+          seenInCell.add(key);
+
+          let entry = statsMap.get(key);
+          if (!entry) {
+            entry = {
+              name: resident ? resident.name : nm,
+              abbr: resident ? resident.abbr : '',
+              spec: resident ? resident.spec : '',
+              status: '',
+              join: resident ? resident.join : '',
+              joinDaysSince: resident ? daysSinceDate(extractDate(resident.join)) : null,
+              total: 0,
+              completed: 0,
+              remaining: 0,
+              wards: 0,
+              icu: 0,
+              emergency: 0,
+              misc: 0,
+              holiday: 0,
+              night: 0,
+              hours: 0
+            };
+            statsMap.set(key, entry);
+          }
+
+          entry.total++;
+          if (ds < this.today) entry.completed++;
+          else entry.remaining++;
+          if (group === 'wards') entry.wards++;
+          else if (group === 'icu') entry.icu++;
+          else if (group === 'emergency') entry.emergency++;
+          else if (group === 'misc') entry.misc++;
+          if (holiday) entry.holiday++;
+          if (isNight) entry.night++;
+          entry.hours += hrs;
+        });
       }
-      return -1;
-    };
+    });
 
-    const emergencyIndexes = headers
-      .map((h, i) => ({ h, i }))
-      .filter(x => {
-        const n = normAr(x.h || '');
-        return n.startsWith(normAr('إسعاف')) || n.startsWith(normAr('اسعاف'));
-      })
-      .map(x => x.i);
-
-    const findDetail = defs => {
-      const out = [];
-      defs.forEach(def => {
-        const idx = findIdxByTokens(def.tokens || [def.label]);
-        if (idx >= 0) out.push({ key: def.label, idx });
-      });
-      return out;
-    };
-
-    const icuDetail = findDetail(detailSets.icu);
-    const wardsDetail = findDetail(detailSets.wards);
-    const miscDetail = findDetail(detailSets.misc);
-    const emergencyDetail = emergencyIndexes.map(i => ({ key: headers[i], idx: i }));
-
-    const cell = (row, idx) => {
-      if (!Number.isInteger(idx) || idx < 0) return '';
-      return (row[idx] || '').trim();
-    };
-
-    const makeGroup = (row, totalIdx, detailList) => {
-      const explicitTotal = safeNum(cell(row, totalIdx));
-      const details = detailList.map(x => ({ name: x.key, value: safeNum(cell(row, x.idx)) }));
-      const detailsTotal = details.reduce((a, x) => a + x.value, 0);
-      return {
-        total: explicitTotal || detailsTotal,
-        details
-      };
-    };
-
-    for (let i = 1; i < d.length; i++) {
-      const row = d[i] || [];
-      const name = cell(row, col.name);
-      if (!name || name.includes('الاسم')) continue;
-
-      const joinDate = extractDate(cell(row, col.joinDate));
-      this.doctorStats.push({
-        seq: i,
-        name,
-        abbr: cell(row, col.abbr),
-        spec: cell(row, col.spec),
-        status: cell(row, col.status),
-        monthShift: cell(row, col.shift),
-        shiftsCount: safeNum(cell(row, col.shiftsCount)),
-        totalHours: safeNum(cell(row, col.totalHours)),
-        avgPerShift: safeNum(cell(row, col.avgPerShift)),
-        icu: makeGroup(row, col.icuTotal, icuDetail),
-        wards: makeGroup(row, col.wardsTotal, wardsDetail),
-        emergency: makeGroup(row, col.emergencyTotal, emergencyDetail),
-        misc: makeGroup(row, col.miscTotal, miscDetail),
-        workDaysShifts: safeNum(cell(row, col.workDaysShifts)),
-        holidayShifts: safeNum(cell(row, col.holidayShifts)),
-        nightShifts: safeNum(cell(row, col.nightShifts)),
-        hoursDiff: safeNum(cell(row, col.hoursDiff)),
-        shiftsDiff: safeNum(cell(row, col.shiftsDiff)),
-        hoursRank: safeNum(cell(row, col.hoursRank)),
-        shiftsRank: safeNum(cell(row, col.shiftsRank)),
-        firstOncall: extractDate(cell(row, col.firstOncall)) || cell(row, col.firstOncall),
-        lastOncall: extractDate(cell(row, col.lastOncall)) || cell(row, col.lastOncall),
-        joinDate: joinDate || cell(row, col.joinDate),
-        daysSinceJoin: daysSinceDate(joinDate)
-      });
-    }
+    this.doctorStats = Array.from(statsMap.values());
   }
 
   getFilteredDoctorStats() {
@@ -1886,10 +1848,9 @@ class HospitalApp {
 
     if (this.doctorStatsSort.key === 'hours' && this.doctorStatsSort.dir) {
       const dir = this.doctorStatsSort.dir === 'asc' ? 1 : -1;
-      list.sort((a, b) => (a.totalHours - b.totalHours) * dir);
-    } else if (this.doctorStatsSort.key === 'shifts' && this.doctorStatsSort.dir) {
-      const dir = this.doctorStatsSort.dir === 'asc' ? 1 : -1;
-      list.sort((a, b) => (a.shiftsCount - b.shiftsCount) * dir);
+      list.sort((a, b) => (a.hours - b.hours) * dir);
+    } else {
+      list.sort((a, b) => b.hours - a.hours);
     }
 
     return list;
@@ -1897,68 +1858,44 @@ class HospitalApp {
 
   toggleDoctorStatsSort(key) {
     if (this.doctorStatsSort.key !== key) {
-      this.doctorStatsSort = { key, dir: 'asc' };
-    } else if (this.doctorStatsSort.dir === 'asc') {
       this.doctorStatsSort = { key, dir: 'desc' };
     } else if (this.doctorStatsSort.dir === 'desc') {
-      this.doctorStatsSort = { key: '', dir: '' };
-    } else {
       this.doctorStatsSort = { key, dir: 'asc' };
+    } else {
+      this.doctorStatsSort = { key: '', dir: '' };
     }
 
     this.renderDoctorStats();
   }
 
-  detailGroupHtml(group) {
-    const lines = group.details.map(d => `<span class="doctor-detail-chip">${d.name}: ${this.formatNumDisplay(d.value)}</span>`).join('');
-    return `<div class="doctor-group-total">${this.formatNumDisplay(group.total)}</div><div class="doctor-detail-list">${lines}</div>`;
+  doctorStatCardHtml(r) {
+    return `<div class="doctor-stat-card"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div><div class="dsc-hours-badge"><i class="fas fa-clock"></i> ${this.formatNumDisplay(r.hours)} ساعة</div></div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}</span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups"><div class="dsc-group"><i class="fas fa-bed"></i><span>أجنحة</span><strong>${this.formatNumDisplay(r.wards)}</strong></div><div class="dsc-group"><i class="fas fa-heart-pulse"></i><span>عنايات</span><strong>${this.formatNumDisplay(r.icu)}</strong></div><div class="dsc-group"><i class="fas fa-truck-medical"></i><span>اسعاف</span><strong>${this.formatNumDisplay(r.emergency)}</strong></div><div class="dsc-group"><i class="fas fa-shapes"></i><span>منوع</span><strong>${this.formatNumDisplay(r.misc)}</strong></div></div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div></div>`;
   }
 
   renderDoctorStats() {
-    const head = document.getElementById('doctorStatsHead');
-    const body = document.getElementById('doctorStatsBody');
-    const cards = document.getElementById('doctorStatsCards');
-    if (!head || !body || !cards) return;
+    const grid = document.getElementById('doctorStatsGrid');
+    const countEl = document.getElementById('doctorStatsCount');
+    if (!grid) return;
 
     const list = this.getFilteredDoctorStats();
+    if (countEl) countEl.textContent = list.length;
 
     const sortHoursBtn = document.getElementById('sortHoursBtn');
-    const sortShiftsBtn = document.getElementById('sortShiftsBtn');
     if (sortHoursBtn) {
       const active = this.doctorStatsSort.key === 'hours';
       sortHoursBtn.classList.toggle('active-filter', active);
-      const label = active ? (this.doctorStatsSort.dir === 'asc' ? 'تصاعدي' : this.doctorStatsSort.dir === 'desc' ? 'تنازلي' : 'بدون') : 'بدون';
-      sortHoursBtn.innerHTML = `<i class="fas fa-arrow-up-wide-short"></i> ترتيب الساعات (${label})`;
+      const label = active ? (this.doctorStatsSort.dir === 'asc' ? 'تصاعدي' : 'تنازلي') : 'تنازلي (تلقائي)';
+      sortHoursBtn.innerHTML = `<i class="fas fa-arrow-down-wide-short"></i> ترتيب حسب عدد الساعات (${label})`;
     }
-    if (sortShiftsBtn) {
-      const active = this.doctorStatsSort.key === 'shifts';
-      sortShiftsBtn.classList.toggle('active-filter', active);
-      const label = active ? (this.doctorStatsSort.dir === 'asc' ? 'تصاعدي' : this.doctorStatsSort.dir === 'desc' ? 'تنازلي' : 'بدون') : 'بدون';
-      sortShiftsBtn.innerHTML = `<i class="fas fa-arrow-up-wide-short"></i> ترتيب عدد المناوبات (${label})`;
-    }
-
-    head.innerHTML = '<tr><th>الاسم</th><th>الاختصار</th><th>الاختصاص</th><th>الحالة</th><th>الفرز</th><th>عدد المناوبات</th><th>مجموع الساعات</th><th>متوسط ساعات/مناوبة</th><th>العنايات</th><th>الأجنحة</th><th>الإسعاف</th><th>المنوعات</th><th>مناوبات أيام الدوام</th><th>العطل</th><th>المناوبات الليلية</th><th>فرق الساعات</th><th>فرق المناوبات</th><th>ترتيب الساعات</th><th>ترتيب عدد المناوبات</th><th>أول مناوبة</th><th>آخر مناوبة</th><th>تاريخ الالتحاق</th><th>أيام الدوام منذ الالتحاق</th></tr>';
-
-    body.innerHTML = '';
-    cards.innerHTML = '';
 
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="23" style="text-align:center;padding:30px;">لا توجد بيانات</td></tr>';
-      cards.innerHTML = '<div class="no-results"><i class="fas fa-magnifying-glass"></i> لا يوجد نتائج مطابقة.</div>';
+      grid.innerHTML = '<div class="no-results"><i class="fas fa-magnifying-glass"></i> لا يوجد نتائج مطابقة.</div>';
       return;
     }
 
-    for (const r of list) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td style="text-align:right;">${r.name}</td><td>${r.abbr || '-'}</td><td>${r.spec || '-'}</td><td>${r.status || '-'}</td><td>${r.monthShift || '-'}</td><td>${this.formatNumDisplay(r.shiftsCount)}</td><td>${this.formatNumDisplay(r.totalHours)}</td><td>${this.formatNumDisplay(r.avgPerShift)}</td><td>${this.detailGroupHtml(r.icu)}</td><td>${this.detailGroupHtml(r.wards)}</td><td>${this.detailGroupHtml(r.emergency)}</td><td>${this.detailGroupHtml(r.misc)}</td><td>${this.formatNumDisplay(r.workDaysShifts)}</td><td>${this.formatNumDisplay(r.holidayShifts)}</td><td>${this.formatNumDisplay(r.nightShifts)}</td><td>${this.formatNumDisplay(r.hoursDiff)}</td><td>${this.formatNumDisplay(r.shiftsDiff)}</td><td>${this.formatNumDisplay(r.hoursRank)}</td><td>${this.formatNumDisplay(r.shiftsRank)}</td><td>${r.firstOncall || '-'}</td><td>${r.lastOncall || '-'}</td><td>${r.joinDate || '-'}</td><td>${r.daysSinceJoin ?? '-'}</td>`;
-      body.appendChild(tr);
-
-      const card = document.createElement('div');
-      card.className = 'resident-card doctor-stats-card';
-      card.innerHTML = `<div class="card-header"><span class="card-name">${r.name}</span><span class="card-abbr">${r.abbr || '-'}</span></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${r.spec || '-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value">${r.status || '-'}</span></div><div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${r.monthShift || '-'}</span></div><div class="card-row"><span class="card-label">عدد المناوبات</span><span class="card-value">${this.formatNumDisplay(r.shiftsCount)}</span></div><div class="card-row"><span class="card-label">مجموع الساعات</span><span class="card-value">${this.formatNumDisplay(r.totalHours)}</span></div><div class="card-row"><span class="card-label">متوسط ساعات/مناوبة</span><span class="card-value">${this.formatNumDisplay(r.avgPerShift)}</span></div><details class="doctor-mobile-details"><summary>العنايات (${this.formatNumDisplay(r.icu.total)})</summary>${r.icu.details.map(d => `<div class="card-row"><span class="card-label">${d.name}</span><span class="card-value">${this.formatNumDisplay(d.value)}</span></div>`).join('')}</details><details class="doctor-mobile-details"><summary>الأجنحة (${this.formatNumDisplay(r.wards.total)})</summary>${r.wards.details.map(d => `<div class="card-row"><span class="card-label">${d.name}</span><span class="card-value">${this.formatNumDisplay(d.value)}</span></div>`).join('')}</details><details class="doctor-mobile-details"><summary>الإسعاف (${this.formatNumDisplay(r.emergency.total)})</summary>${r.emergency.details.map(d => `<div class="card-row"><span class="card-label">${d.name}</span><span class="card-value">${this.formatNumDisplay(d.value)}</span></div>`).join('')}</details><details class="doctor-mobile-details"><summary>المنوعات (${this.formatNumDisplay(r.misc.total)})</summary>${r.misc.details.map(d => `<div class="card-row"><span class="card-label">${d.name}</span><span class="card-value">${this.formatNumDisplay(d.value)}</span></div>`).join('')}</details><div class="card-row"><span class="card-label">مناوبات أيام الدوام</span><span class="card-value">${this.formatNumDisplay(r.workDaysShifts)}</span></div><div class="card-row"><span class="card-label">العطل</span><span class="card-value">${this.formatNumDisplay(r.holidayShifts)}</span></div><div class="card-row"><span class="card-label">المناوبات الليلية</span><span class="card-value">${this.formatNumDisplay(r.nightShifts)}</span></div><div class="card-row"><span class="card-label">فرق الساعات</span><span class="card-value">${this.formatNumDisplay(r.hoursDiff)}</span></div><div class="card-row"><span class="card-label">فرق المناوبات</span><span class="card-value">${this.formatNumDisplay(r.shiftsDiff)}</span></div><div class="card-row"><span class="card-label">ترتيب الساعات</span><span class="card-value">${this.formatNumDisplay(r.hoursRank)}</span></div><div class="card-row"><span class="card-label">ترتيب عدد المناوبات</span><span class="card-value">${this.formatNumDisplay(r.shiftsRank)}</span></div><div class="card-row"><span class="card-label">أول مناوبة</span><span class="card-value">${r.firstOncall || '-'}</span></div><div class="card-row"><span class="card-label">آخر مناوبة</span><span class="card-value">${r.lastOncall || '-'}</span></div><div class="card-row"><span class="card-label">تاريخ الالتحاق</span><span class="card-value">${r.joinDate || '-'}</span></div><div class="card-row"><span class="card-label">أيام الدوام منذ الالتحاق</span><span class="card-value">${r.daysSinceJoin ?? '-'}</span></div>`;
-      cards.appendChild(card);
-    }
+    grid.innerHTML = list.map(r => this.doctorStatCardHtml(r)).join('');
   }
+
 
   parseOncallData(d) {
     this.oncRows = [];
@@ -2300,7 +2237,7 @@ class HospitalApp {
       h += '</div>';
     }
 
-    h += `<div class="oncall-export-actions"><button class="download-btn" onclick="app.downloadOncallImage(false,this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل المناوبات (عادي)</button><button class="download-btn hq-btn" onclick="app.downloadOncallImage(true,this)"><i class="fas fa-wand-magic-sparkles btn-icon"></i><span class="btn-spinner"></span> تحميل المناوبات (دقة فائقة)</button></div></div>`;
+    h += `<div class="oncall-export-actions"><button class="download-btn" onclick="app.downloadOncallImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل المناوبات كصورة</button></div></div>`;
     dp.innerHTML = h;
   }
 
@@ -2310,7 +2247,7 @@ class HospitalApp {
     btn.disabled = !!loading;
   }
 
-  async _captureImage(el, fn, bg, btn, mode = 'normal') {
+  async _captureImage(el, fn, bg, btn) {
     if (this._id) return;
     this._id = true;
     this.setDownloadBtnState(btn, true);
@@ -2321,10 +2258,11 @@ class HospitalApp {
     try {
       await new Promise(requestAnimationFrame);
       const isOncall = el.id === 'oncallCardContent';
-      const isHQ = isOncall && mode === 'hq';
       const baseW = isOncall ? 840 : 920;
       const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const sc = isHQ ? Math.min(3.6, Math.max(2.85, dpr * 1.35)) : isOncall ? Math.min(3.0, Math.max(2.35, dpr * 1.2)) : Math.min(2.95, Math.max(2.2, dpr * 1.2));
+      // Always render at the highest quality tier — a single render scale for a crisp,
+      // well anti-aliased source image (the on-screen "quality" the resident sees on their phone).
+      const sc = Math.min(3.6, Math.max(2.85, dpr * 1.35));
 
       stage = document.createElement('div');
       stage.style.position = 'fixed';
@@ -2365,7 +2303,12 @@ class HospitalApp {
       ctx.fillRect(0, 0, nc.width, nc.height);
       ctx.drawImage(canvas, pd, pd);
 
-      const maxSide = isHQ ? 3400 : isOncall ? 2850 : 3500;
+      // Cap the FINAL exported dimensions to a size that WhatsApp/Telegram won't crush further
+      // when the image is sent as a "photo": their own auto-compression is what causes the
+      // "looks fine on the phone, blurry after sending" effect, and it hits oversized images
+      // much harder. Keeping the output around ~2200px (instead of 3400+) means their pass has
+      // far less downscaling to do, so what arrives on the other end looks noticeably sharper.
+      const maxSide = 2200;
       const side = Math.max(nc.width, nc.height);
       let outCanvas = nc;
 
@@ -2399,7 +2342,7 @@ class HospitalApp {
         hideDownloadProgress();
         this._id = false;
         this.setDownloadBtnState(btn, false);
-        showToast(isHQ ? 'تم التحميل بدقة فائقة!' : 'تم التحميل بجودة عالية وبحجم أنسب للمشاركة!');
+        showToast('تم التحميل بجودة عالية! لأفضل نتيجة عند المشاركة عبر واتساب/تلغرام، اختر إرسالها "كملف/document" لا "كصورة" لتفادي إعادة الضغط.');
       }, 450);
     } catch (e) {
       console.error(e);
@@ -2412,12 +2355,12 @@ class HospitalApp {
     }
   }
 
-  downloadOncallImage(hq = false, triggerBtn = null) {
+  downloadOncallImage(triggerBtn = null) {
     const el = document.getElementById('oncallCardContent');
     if (!el) return;
     const btn = triggerBtn || el.querySelector('.download-btn');
     const bg = document.body.classList.contains('dark-mode') ? '#1e293b' : '#ffffff';
-    this._captureImage(el, `مناوبات_${document.getElementById('oncallDatePicker').value || this.today}.png`, bg, btn, hq ? 'hq' : 'normal');
+    this._captureImage(el, `مناوبات_${document.getElementById('oncallDatePicker').value || this.today}.png`, bg, btn);
   }
 
   downloadMyInfoImage() {
@@ -2727,7 +2670,7 @@ class HospitalApp {
     const evalInfo = this.getEvalForResident(r.name, r.abbr);
     const doctorStats = this.getDoctorStatsForResident(r.name, r.abbr);
     const cumDetails = this.buildOncallCategoryBreakdown(allOncalls);
-    const joinDateIso = extractDate(r.join) || extractDate(doctorStats?.joinDate) || doctorStats?.joinDate || '';
+    const joinDateIso = extractDate(r.join) || extractDate(doctorStats?.join) || '';
     const joinDays = daysSinceDate(joinDateIso);
 
     if (!monthOncalls.find(o => o.date === this.myInfoFocusedOncallDate)) {
@@ -2748,7 +2691,7 @@ class HospitalApp {
     }
 
     if (doctorStats) {
-      h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-chart-column"></i> احصائيات</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid"><div class="info-item"><div class="info-label">عدد المناوبات</div><div class="info-value">${this.formatNumDisplay(doctorStats.shiftsCount)}</div></div><div class="info-item"><div class="info-label">مجموع الساعات</div><div class="info-value">${this.formatNumDisplay(doctorStats.totalHours)}</div></div><div class="info-item"><div class="info-label">متوسط ساعات/مناوبة</div><div class="info-value">${this.formatNumDisplay(doctorStats.avgPerShift)}</div></div><div class="info-item"><div class="info-label">العنايات</div><div class="info-value">${this.formatNumDisplay(doctorStats.icu.total)}</div></div><div class="info-item"><div class="info-label">الأجنحة</div><div class="info-value">${this.formatNumDisplay(doctorStats.wards.total)}</div></div><div class="info-item"><div class="info-label">الإسعاف</div><div class="info-value">${this.formatNumDisplay(doctorStats.emergency.total)}</div></div><div class="info-item"><div class="info-label">المنوعات</div><div class="info-value">${this.formatNumDisplay(doctorStats.misc.total)}</div></div><div class="info-item"><div class="info-label">ترتيب الساعات</div><div class="info-value">${this.formatNumDisplay(doctorStats.hoursRank)}</div></div><div class="info-item"><div class="info-label">ترتيب عدد المناوبات</div><div class="info-value">${this.formatNumDisplay(doctorStats.shiftsRank)}</div></div></div></div></div>`;
+      h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-chart-column"></i> احصائيات المناوبات</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="myinfo-stat-card-wrap">${this.doctorStatCardHtml(doctorStats)}</div></div></div>`;
     }
 
     const allMonths = this.getAllShiftMonths();

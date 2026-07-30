@@ -76,8 +76,9 @@ constructor, lines 349–357):
   hides the loading screen, and triggers `loadFresh()` in the background.
   If there is no valid cache, it waits for a foreground fetch and the same
   header-image readiness before hiding the loading screen.
-3. **`loadFresh(silent)`**: fetches all eight sheet tabs in parallel
-   via `Promise.all`, parses, renders, and writes the new snapshot to cache.
+3. **`loadFresh(silent)`**: fetches all seven sheet tabs in parallel
+   via `Promise.all`, parses, renders, computes doctor statistics (see below),
+   and writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).
 
 ### Data fetching & parsing
@@ -100,7 +101,9 @@ constructor, lines 349–357):
 - **`loadFromCache`** / **`saveToCache`**: JSON blob in
   `localStorage` under `CK` (`hc_v63_<buildId>`) with a `timestamp`; entries older than
   `CD` (10 minutes) are treated as stale. Cache stores the **raw** resident/oncall
-  data plus evaluation, links, Q&A, lectures, doctor statistics, and on-call rules.
+  data plus evaluation, links, Q&A, lectures, and on-call rules. Doctor statistics are
+  **not** cached as raw data — they're recomputed from the cached residents +
+  on-call data via `computeDoctorStats()` every time cached or fresh data is applied.
 - On-call background refresh now preserves user reading context by re-rendering
   with the currently selected date instead of forcing a fallback to today's date.
 
@@ -121,6 +124,7 @@ constructor, lines 349–357):
 | `renderMyInfoMonthCalendar` / `focusMyInfoOncallDate` / `toggleMyInfoMonthBreakdown` | "My Info" on-call UX: month calendar with inline on-call labels, click-to-scroll + highlight for matching cards, and a fixed monthly breakdown panel. |
 | `toggleMyInfoDetail` / `getResidentShiftDaysDistribution` / `changeMyInfoMonth` | Legacy helper paths from the earlier interactive-counter layout; current "My Info" uses static top counters and a dropdown-based month switch for on-calls. |
 | `updateMyInfoShift` | The shift sub-section inside "my info", switchable by month. |
+| `computeDoctorStats` / `classifyOncallGroup` / `renderDoctorStats` / `doctorStatCardHtml` | Doctor statistics — computed (not sheet-read, see DATA-MODEL.md) from residents + the on-call log; renders one card per resident into a grid, reused inside "my info" for the resident's own stats. |
 
 ### Cross-referencing logic (the interesting part)
 
@@ -152,12 +156,26 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
   residents and triggers a `contacts.vcf` download (Blob + temporary `<a>`).
 - **`_captureImage`** (505) + `downloadOncallImage` / `downloadMyInfoImage`:
   use `html2canvas` to rasterize a DOM card to PNG, add padding, and download it.
-  Uses DPR-aware scaling, an off-screen capture clone, and per-view width caps
-  before export to keep output crisp while reducing oversized image dimensions.
+  Uses DPR-aware scaling and an off-screen capture clone to keep the source render
+  crisp, then caps the **final exported dimensions to ~2200px** on the longer side —
+  deliberately smaller than the render itself, since WhatsApp/Telegram recompress
+  images sent as a "photo" and do noticeably less damage to an already-reasonably-sized
+  image than to an oversized one. There is a single quality tier now (the old separate
+  "normal" vs "دقة فائقة" buttons were merged into one "تحميل ... كصورة" button).
   On-call export uses a compact capture mode that hides the download button and
-  reflows category blocks for cleaner sharing-ready cards. The on-call card now
-  exposes normal vs high-quality download actions that route to different export
-  scaling/cap settings.
+  reflows category blocks for cleaner sharing-ready cards.
+
+- **Doctor statistics** (see DATA-MODEL.md "Computed Doctor Statistics"): computed
+  from residents + the on-call log rather than read from a sheet tab, and rendered
+  as a card grid (`renderDoctorStats`, `doctorStatCardHtml`) reused inside "my info".
+
+- **On-call raw table on mobile**: "عرض كجدول" opens as a fixed near-fullscreen modal
+  (`#oncallRawTableWrap` + `#oncallRawBackdrop`, toggled together by
+  `toggleOncallRawTable()`) under `max-width:768px`, instead of an inline panel. Both
+  frozen columns (day name + date) stay frozen, just shrunk (52px/66px) so more data
+  columns are visible per horizontal scroll; the table area uses `flex:1; min-height:0`
+  so it scrolls internally in both directions (the `min-height:0` matters — without it
+  a flex child with `overflow:auto` won't actually become scrollable).
 
 - **Header background strategy**: the header now uses an eager-loaded `<img>`
   layer inside `.header-bg-image` (instead of relying only on CSS background)

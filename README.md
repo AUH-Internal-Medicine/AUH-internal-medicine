@@ -30,7 +30,7 @@ The app presents resident data across **11 primary tabs** (Arabic label → mean
 | `oncall` | المناوبات | On-call schedule. Monthly calendar + per-day breakdown by category. Exportable as an image. |
 | `exams` | الامتحانات والاختبارات | Placeholder page for upcoming exams/tests features (work in progress). |
 | `clinicalcases` | مشروع الحالات السريرية | Placeholder page for clinical-cases project features (work in progress). |
-| `doctorstats` | احصائيات الأطباء | Monthly doctor analytics (hours, shifts, totals + detailed category breakdowns, rankings, first/last shift, and days since join) with smart search and sorting by hours/shifts. |
+| `doctorstats` | احصائيات الأطباء | Doctor analytics **computed by the app** (not read from a sheet tab): days since join, cumulative vs. completed on-calls, ward/ICU/emergency/misc breakdown, holiday/night counts, and total hours — shown as cards with smart search and sorting by hours. |
 | `evaluation` | التقييم السنوي | Annual evaluation scores per resident across 8 skill areas, plus praises (ثناءات) and penalties (عقوبات). |
 | `links` | روابط هامة | Important links / channels (e.g. group chats, resources). |
 | `myinfo` | معلوماتي | "My info" — search yourself by name/abbreviation and see a personal summary card with an identity header (name, abbreviation, sequence number), static cumulative/join-day counters, cumulative on-call distribution, extra resident info, evaluation, shift data, and a month-selectable on-call calendar. On-call days jump to their cards, past days/cards are visually marked as completed, and holiday shifts are distinguished without recoloring the whole card. Exportable as an image. |
@@ -45,7 +45,7 @@ opens the technical-contact view when needed.
 - **Strong non-disruptive refresh**: background updates fetch from network with `no-store` + cache-busting, while preserving user context (especially selected on-call date) to avoid jumping to today.
 - **Deployment cache busting**: each GitHub Pages deploy now injects a unique build id into `index.html`, appends it to local asset URLs (`styles.css`, `helpers.js`, `app.js`, images), and exposes it via `<meta name="app-build">`.
 - **Automatic client update**: running clients periodically fetch the latest `index.html` with `no-store`; when a newer build id is detected, stale local app caches are cleared and the page reloads to the latest version.
-- **Doctor statistics tab** sourced from a dedicated sheet tab with grouped totals and detailed per-category counts.
+- **Doctor statistics tab** computed directly by the app from the residents roster + the on-call log (no separate hand-maintained sheet tab), shown as cards with group breakdowns, holiday/night counts, and total hours.
 - **On-call timing rules** sourced from a dedicated sheet tab to show duty times/durations and holiday-aware highlights (Fri/Sat + annual holidays from sheet).
 - **My Info on-call UX upgrade**: the personal card now uses a cleaner identity header, static cumulative/join-day cards, an always-visible cumulative distribution panel, a month dropdown for on-calls, cleaner month statistics, and a denser month calendar with on-call labels inside each active day.
 - **My Info completed/holiday styling**: finished on-calls are highlighted in green with a clear `تم` badge, while holiday on-calls keep the normal card color and only use a red dot / `عطلة` badge.
@@ -109,9 +109,11 @@ itself comes from Google Sheets.
 
 On load, `HospitalApp` reads any cached snapshot from `localStorage` (key
 `hc_v63`) and renders it immediately, then fetches fresh data from the Google
-Sheet in the background. Eight sheet tabs are fetched in parallel by their
+Sheet in the background. Seven sheet tabs are fetched in parallel by their
 **GID** (numeric tab id): residents, on-call, evaluation, links, Q&A,
-lectures calendar, doctor statistics, and on-call rules. CSV
+lectures calendar, and on-call rules (used only for annual holiday dates now — see
+[DATA-MODEL.md](DATA-MODEL.md)). Doctor statistics are **computed by the app**
+from the residents + on-call data, not read from a sheet tab. CSV
 tabs are parsed by a hand-written CSV parser; JSON tabs use the gviz JSON
 response. The parsed rows are stored on the app instance and rendered into the
 relevant tab. A `setInterval` re-fetches every 120 seconds (network-first),

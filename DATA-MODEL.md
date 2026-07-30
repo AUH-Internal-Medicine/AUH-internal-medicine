@@ -10,7 +10,7 @@ There is no server and no write path — the app is read-only against the sheet.
 - The sheet must be shared as **"Anyone with the link can view"**, or the
   browser fetch fails and the page shows cached/empty data.
 
-Each tab (worksheet) is addressed by its numeric **GID**. The app fetches eight tabs:
+Each tab (worksheet) is addressed by its numeric **GID**. The app fetches seven tabs:
 
 | Constant | GID | Tab content | Fetched as |
 |---|---|---|---|
@@ -20,8 +20,14 @@ Each tab (worksheet) is addressed by its numeric **GID**. The app fetches eight 
 | `GID_L` | `1649404909` | Links / channels (روابط) | CSV |
 | `GID_Q` | `680270268` | Q&A (الأسئلة والأجوبة) | JSON |
 | `GID_LEC` | `393274093` | Lectures & medical activities calendar (رزنامة المحاضرات والانشطة الطبية) | CSV |
-| `GID_DS` | `811980834` | Doctor statistics (احصائيات الأطباء) | CSV |
-| `GID_OR` | `1364488029` | On-call rules (modes/times/holiday dates) | CSV |
+| `GID_OR` | `1364488029` | On-call rules (annual holiday dates only — see note below) | CSV |
+
+> ⚠️ **As of 2026-07-30, there is no "doctor statistics" sheet tab anymore.**
+> A `GID_DS` tab (`811980834`) used to be hand-maintained and read directly,
+> but that manual process was unreliable, so it was removed entirely. Doctor
+> statistics are now **computed by the app itself** from `GID_R` (residents)
+> and `GID_O` (the on-call log) — see the "Computed Doctor Statistics"
+> section near the end of this file.
 
 ### Endpoint shapes
 - CSV: `https://docs.google.com/spreadsheets/d/{SID}/gviz/tq?tqx=out:csv&gid={GID}`
@@ -172,23 +178,49 @@ Rendering behavior:
 
 ---
 
-## 7. Doctor Statistics (`GID_DS = 811980834`, CSV)
+## 7. Computed Doctor Statistics (no sheet tab — computed by the app)
 
-Row 0 is the header and is parsed by header names. Core columns include:
+There is no "doctor statistics" sheet tab. `computeDoctorStats()` in `app.js`
+builds `this.doctorStats` (one entry per resident) by:
 
-- `الاسم الكامل`, `الاختصار الرسمي`, `الاختصاص`, `الحالة`, `فرز شهر <x>`
-- `عدد_المناوبات`, `مجموع_الساعات`, `متوسط ساعات/مناوبة`
-- Group totals: `العنايات`, `الأجنحة`, `الإسعاف`, `المنوعات`
-- Detail columns used to build grouped views:
-  - ICU: `عناية قلبية`, `عناية مركز`, `عناية داخلية`
-  - Wards: `سابع`, `رابع`, `تالت`, `تاني`, `خارجيات`
-  - Emergency: all columns whose names start with `إسعاف`/`اسعاف`
-  - Misc: `ديال`, `أورام`
-- Additional analytics: `مناوبات أيام الدوام`, `العطل`, `المناوبات الليلية`,
-  `فرق الساعات عن متوسط الملتحقين`, `فرق المناوبات عن متوسط الملتحقين`,
-  `ترتيب الساعات`, `ترتيب عدد المناوبات`, `أول مناوبة`, `آخر مناوبة`, `تاريخ الالتحاق`.
+1. Starting from every resident in `this.res` (parsed from `GID_R`): `name`,
+   `abbr`, `spec`, `status`, `join`, and `joinDaysSince` (via `daysSinceDate`).
+2. Scanning **every row of the on-call log** (`this.oncRows`, from `GID_O`) —
+   for every category column on every day, `splitNames()` the cell, resolve
+   each name/abbreviation back to a resident via `findRbyExact()`, and
+   increment that resident's counters:
+   - `total` — every on-call assignment found for them, past or future.
+   - `completed` / `remaining` — split by whether the on-call date is before
+     or on/after `this.today`.
+   - `wards` / `icu` / `emergency` / `misc` — via `classifyOncallGroup(cat)`,
+     which buckets the on-call category name:
+     - **أجنحة (wards):** تاني/ثاني، تالت/ثالث، رابع، خارجيات، سابع
+     - **عنايات (icu):** any category name containing "عناية"
+     - **اسعاف (emergency):** any category name starting with "اسعاف"/"إسعاف"
+     - **منوع (misc):** أورام، ديال
+   - `holiday` — incremented when `isHolidayDate(date)` is true for that day.
+   - `night` — incremented when the category name contains "ليلي".
+   - `hours` — looks up that day's fixed schedule via
+     `getCategorySchedule(cat, date)` (see the `ONCALL_SCHEDULE_OLD`/`_NEW`
+     tables below) and adds the parsed duration (`parseDurationHours()` in
+     `helpers.js`, e.g. "7 ساعات ونصف" → `7.5`).
+3. A resident found in the on-call log but missing from `GID_R` (e.g. an old
+   abbreviation) still gets an entry, built from whatever name/abbr appeared
+   in the log, so no on-call assignment is silently dropped from the totals.
 
-The UI also computes **days since join** from `تاريخ الالتحاق`.
+`renderDoctorStats()` renders one card per resident into `#doctorStatsGrid`
+(`.doctor-stat-card`, see `styles.css`) — no desktop table anymore, the same
+card grid is used at every screen width. `getFilteredDoctorStats()` applies
+the search box (`smartSearch` over name/abbr/spec) and sorts by `hours`
+(descending by default; `toggleDoctorStatsSort('hours')` cycles
+desc → asc → off). The same computed entry (looked up by
+`getDoctorStatsForResident(name, abbr)`) is reused inside "معلوماتي" (My
+Info) via `doctorStatCardHtml()`, so a resident sees the identical stat card
+for themselves that appears in the main احصائيات الأطباء tab.
+
+Because this depends on both `GID_R` and `GID_O`, `computeDoctorStats()` is
+called only after both have been parsed (end of `loadFresh()` and
+`applyCachedData()`).
 
 ---
 
