@@ -2195,7 +2195,7 @@ class HospitalApp {
     const startIdx = (d[1] && (d[1][0] || '').trim() === 'اليوم') ? 2 : 1;
     const lastUsedCol = this.getOncallRawLastUsedCol(d, startIdx);
 
-    let html = '<div class="table-wrapper oncall-raw-table-wrap"><table class="oncall-raw-table"><thead><tr>';
+    let html = '<div class="oncall-raw-modal-head"><h4><i class="fas fa-table"></i> جدول المناوبات كاملاً</h4><button class="oncall-raw-close-btn" onclick="app.toggleOncallRawTable()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button></div><div class="table-wrapper oncall-raw-table-wrap"><table class="oncall-raw-table"><thead><tr>';
     for (let j = 0; j <= lastUsedCol; j++) {
       const h = headers[j] || '';
       const cls = j === 0 ? 'oncall-raw-sticky-col-1' : j === 1 ? 'oncall-raw-sticky-col-2' : '';
@@ -2226,13 +2226,18 @@ class HospitalApp {
 
   toggleOncallRawTable() {
     const wrap = document.getElementById('oncallRawTableWrap');
+    const backdrop = document.getElementById('oncallRawBackdrop');
     if (!wrap) return;
-    if (wrap.style.display === 'none') {
+    if (wrap.style.display === 'none' || !wrap.style.display) {
       this.renderOncallRawTable();
       wrap.style.display = 'block';
+      if (backdrop) backdrop.classList.add('show');
+      document.body.classList.add('oncall-raw-modal-open');
       wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       wrap.style.display = 'none';
+      if (backdrop) backdrop.classList.remove('show');
+      document.body.classList.remove('oncall-raw-modal-open');
     }
   }
 
@@ -2610,7 +2615,7 @@ class HospitalApp {
       // Dot indicators instead of text labels
       let dotsHtml = '';
       if (hasOncall) {
-        const dotColors = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#0ea5a4'];
+        const dotColors = ['#2f7d5c', '#1b3a5c', '#d4a24c', '#c06b4a', '#4f9d7a'];
         const maxDots = Math.min(cats.length, 4);
         dotsHtml = '<div class="calendar-day-dots">';
         for (let ci = 0; ci < maxDots; ci++) {

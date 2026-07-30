@@ -47,6 +47,20 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Full visual redesign (new medical color identity) + on-call raw table as a mobile modal
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** code
+- **What:** Complete visual identity redesign per the resident's request for something new that reads as internal medicine / doctors, replacing the earlier blue-teal unification entirely:
+  - New `:root` palette: `--primary` deep clinical navy `#1b3a5c`, `--secondary` sage/scrub green `#2f7d5c`, `--accent`/`--success` aligned sage-greens, `--danger`/`--weekend-color` warm clinical red `#c0392b`, `--warning` warm amber `#d98c3d`, header gradient navy → sage → warm gold (`#1b3a5c → #2f7d5c → #d4a24c`). Dark mode got matching brighter navy/sage/gold variants for contrast on dark backgrounds.
+  - Every hardcoded occurrence of the old blue/teal/gold/purple-remnant hexes (and their `rgba()` equivalents) across `styles.css` and the two leftover text-color spots in `app.js` was swept to the new palette — buttons, calendar "today"/hover, collapsible headers, badges, nav-btn active state, contacts/links buttons, support-shortcut button, on-call raw-table header, and the ambient decorative background (`.animated-bg`/`.bg-orb-*`, previously a generic lavender/pink/mint wash with a bright pink orb) which is now a soft navy/sage/cream wash.
+  - The My Info calendar's category dot-indicator palette (`app.js`) was also updated to sage/navy/gold/terracotta tones instead of indigo/pink.
+  - Loading screen: recolored to navy→sage gradient + warm-gold ring/progress bar, and the icon was changed from a generic heart-pulse to a stethoscope (`fa-stethoscope`), more specifically evocative of doctors/internal medicine.
+  - Left untouched intentionally: neutral grays/text colors, and the many small semantic status colors (status badges like "not joined"/"detached", praise/penalty boxes, has-lecture/has-oncall tinting) — these encode meaning distinct from brand identity and weren't part of what was asked to be re-themed.
+  - On-call "عرض كجدول" (raw table) UX on mobile: replaced the previous "unstick one column" workaround with a proper modal. A backdrop element (`#oncallRawBackdrop`) was added in `helpers.js`'s on-call tab markup; `toggleOncallRawTable()` now also toggles the backdrop and a `body.oncall-raw-modal-open` class (which disables background scroll on mobile); `renderOncallRawTable()` now prepends a small header bar with a title and a close (×) button. Under `max-width:768px`, the table wrap becomes a fixed, near-fullscreen rounded panel over a dimmed backdrop; both frozen columns (day name + date) stay frozen as requested, just shrunk to 52px/66px so more data columns are visible per horizontal scroll, and the panel itself scrolls both directions. Desktop behavior (inline panel, larger frozen columns) is unchanged.
+- **Files:** styles.css, app.js, helpers.js, index.html, CHANGELOG.md
+- **Docs synced:** no — visual/UX only, no data-contract or documented-feature change.
+- **Notes / follow-ups:** If any specific element still looks off-brand (e.g. a status badge color), it was left as-is deliberately for semantic clarity — flag it and it can be re-themed individually. The raw-table modal reuses the existing `#oncallRawTableWrap` element (styled as a modal via CSS only on narrow screens), so no duplicate rendering logic was introduced.
+
 ## 2026-07-30 — Unify site colors around a medical blue/teal identity
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** code
