@@ -198,25 +198,46 @@ builds `this.doctorStats` (one entry per resident) by:
      - **عنايات (icu):** any category name containing "عناية"
      - **اسعاف (emergency):** any category name starting with "اسعاف"/"إسعاف"
      - **منوع (misc):** أورام، ديال
+   - `groupDetails.{group}[categoryName]` — a per-category count *within* each
+     group (e.g. `groupDetails.emergency = {'اسعاف بارد صباحي': 2, ...}`), so
+     the UI can drill into "اسعاف: 4" and show which sub-types made it up.
+   - `catDates[categoryName]` — every date that category occurred for this
+     resident, so the UI can show "تالت: 4" → the 4 actual dates on click.
    - `holiday` — incremented when `isHolidayDate(date)` is true for that day.
    - `night` — incremented when the category name contains "ليلي".
-   - `hours` — looks up that day's fixed schedule via
-     `getCategorySchedule(cat, date)` (see the `ONCALL_SCHEDULE_OLD`/`_NEW`
-     tables below) and adds the parsed duration (`parseDurationHours()` in
-     `helpers.js`, e.g. "7 ساعات ونصف" → `7.5`).
-3. A resident found in the on-call log but missing from `GID_R` (e.g. an old
+   - `hoursTotal` — sums the duration for **every** assignment (past+future).
+   - `hoursCompleted` — sums the duration only for assignments before today —
+     this is the primary "hours worked so far" figure shown first in the UI.
+   - `firstOncall` / `lastOncall` — the earliest/latest on-call date found.
+   Durations come from `getCategorySchedule(cat, date)` (the fixed
+   `ONCALL_SCHEDULE_OLD`/`_NEW` tables) parsed by `parseDurationHours()` in
+   `helpers.js` (e.g. "7 ساعات ونصف" → `7.5`).
+3. After the scan, ranks are computed by sorting copies of the list: `rankCompleted`
+   (by `hoursCompleted` descending) and `rankTotal` (by `hoursTotal` descending) —
+   shown next to each hours figure in the UI.
+4. A resident found in the on-call log but missing from `GID_R` (e.g. an old
    abbreviation) still gets an entry, built from whatever name/abbr appeared
    in the log, so no on-call assignment is silently dropped from the totals.
 
 `renderDoctorStats()` renders one card per resident into `#doctorStatsGrid`
 (`.doctor-stat-card`, see `styles.css`) — no desktop table anymore, the same
-card grid is used at every screen width. `getFilteredDoctorStats()` applies
-the search box (`smartSearch` over name/abbr/spec) and sorts by `hours`
-(descending by default; `toggleDoctorStatsSort('hours')` cycles
-desc → asc → off). The same computed entry (looked up by
-`getDoctorStatsForResident(name, abbr)`) is reused inside "معلوماتي" (My
-Info) via `doctorStatCardHtml()`, so a resident sees the identical stat card
-for themselves that appears in the main احصائيات الأطباء tab.
+card grid is used at every screen width. Each of the four group chips
+(`groupDetailHtml()`) is a clickable button that expands to show the
+per-category breakdown for that group (reuses the existing `toggleCollapsible`
+pattern). `getFilteredDoctorStats()` applies the search box (`smartSearch`
+over name/abbr/spec) and sorts by `hoursCompleted` (descending by default;
+`toggleDoctorStatsSort('hours')` cycles desc → asc → off). The same computed
+entry (looked up by `getDoctorStatsForResident(name, abbr)`) is reused inside
+"معلوماتي" (My Info) via `doctorStatCardHtml()`, so a resident sees the
+identical stat card for themselves that appears in the main احصائيات
+الأطباء tab — including first/last on-call date and clickable group detail.
+
+My Info's own top summary (separate from the reused stat card) now shows
+**three** boxes instead of two — cumulative on-calls + cumulative hours,
+completed on-calls + completed hours, and days since join — all sourced from
+this computed data instead of the residents sheet's manual "المناوبات+"
+column. Its "توزيع المناوبات التراكمية" breakdown items are also clickable,
+expanding to show the exact dates for that category (from `catDates`).
 
 Because this depends on both `GID_R` and `GID_O`, `computeDoctorStats()` is
 called only after both have been parsed (end of `loadFresh()` and

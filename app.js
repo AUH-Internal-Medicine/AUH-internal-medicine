@@ -1751,27 +1751,34 @@ class HospitalApp {
     // tab anymore, since that manual approach was unreliable. See DATA-MODEL.md.
     const statsMap = new Map();
 
+    const blankEntry = (name, abbr, spec, join) => ({
+      name,
+      abbr: abbr || '',
+      spec: spec || '',
+      status: '',
+      join: join || '',
+      joinDaysSince: daysSinceDate(extractDate(join)),
+      total: 0,
+      completed: 0,
+      remaining: 0,
+      wards: 0,
+      icu: 0,
+      emergency: 0,
+      misc: 0,
+      holiday: 0,
+      night: 0,
+      hoursCompleted: 0,
+      hoursTotal: 0,
+      firstOncall: '',
+      lastOncall: '',
+      groupDetails: { wards: {}, icu: {}, emergency: {}, misc: {}, other: {} },
+      catDates: {}
+    });
+
     (this.res || []).forEach(r => {
       if (!r || !r.name) return;
       const key = r.abbr || r.name;
-      statsMap.set(key, {
-        name: r.name,
-        abbr: r.abbr || '',
-        spec: r.spec || '',
-        status: r.st || '',
-        join: r.join || '',
-        joinDaysSince: daysSinceDate(extractDate(r.join)),
-        total: 0,
-        completed: 0,
-        remaining: 0,
-        wards: 0,
-        icu: 0,
-        emergency: 0,
-        misc: 0,
-        holiday: 0,
-        night: 0,
-        hours: 0
-      });
+      statsMap.set(key, blankEntry(r.name, r.abbr, r.spec, r.join));
     });
 
     (this.oncRows || []).forEach(oncRow => {
@@ -1790,6 +1797,7 @@ class HospitalApp {
         const hrs = parseDurationHours(sched ? sched.duration : '');
         const isNight = normAr(cat).includes(normAr('ليلي'));
         const group = this.classifyOncallGroup(cat);
+        const isCompleted = ds < this.today;
 
         const seenInCell = new Set();
         names.forEach(nm => {
@@ -1800,42 +1808,45 @@ class HospitalApp {
 
           let entry = statsMap.get(key);
           if (!entry) {
-            entry = {
-              name: resident ? resident.name : nm,
-              abbr: resident ? resident.abbr : '',
-              spec: resident ? resident.spec : '',
-              status: '',
-              join: resident ? resident.join : '',
-              joinDaysSince: resident ? daysSinceDate(extractDate(resident.join)) : null,
-              total: 0,
-              completed: 0,
-              remaining: 0,
-              wards: 0,
-              icu: 0,
-              emergency: 0,
-              misc: 0,
-              holiday: 0,
-              night: 0,
-              hours: 0
-            };
+            entry = blankEntry(resident ? resident.name : nm, resident ? resident.abbr : '', resident ? resident.spec : '', resident ? resident.join : '');
             statsMap.set(key, entry);
           }
 
           entry.total++;
-          if (ds < this.today) entry.completed++;
+          if (isCompleted) entry.completed++;
           else entry.remaining++;
+
           if (group === 'wards') entry.wards++;
           else if (group === 'icu') entry.icu++;
           else if (group === 'emergency') entry.emergency++;
           else if (group === 'misc') entry.misc++;
+
+          const gd = entry.groupDetails[group] || entry.groupDetails.other;
+          gd[cat] = (gd[cat] || 0) + 1;
+
+          if (!entry.catDates[cat]) entry.catDates[cat] = [];
+          entry.catDates[cat].push(ds);
+
           if (holiday) entry.holiday++;
           if (isNight) entry.night++;
-          entry.hours += hrs;
+
+          entry.hoursTotal += hrs;
+          if (isCompleted) entry.hoursCompleted += hrs;
+
+          if (!entry.firstOncall || ds < entry.firstOncall) entry.firstOncall = ds;
+          if (!entry.lastOncall || ds > entry.lastOncall) entry.lastOncall = ds;
         });
       }
     });
 
-    this.doctorStats = Array.from(statsMap.values());
+    const list = Array.from(statsMap.values());
+
+    const byCompleted = list.slice().sort((a, b) => b.hoursCompleted - a.hoursCompleted);
+    byCompleted.forEach((e, i) => (e.rankCompleted = i + 1));
+    const byTotal = list.slice().sort((a, b) => b.hoursTotal - a.hoursTotal);
+    byTotal.forEach((e, i) => (e.rankTotal = i + 1));
+
+    this.doctorStats = list;
   }
 
   getFilteredDoctorStats() {
@@ -1846,11 +1857,10 @@ class HospitalApp {
       list = list.filter(x => smartSearch(`${x.name} ${x.abbr} ${x.spec}`, q));
     }
 
-    if (this.doctorStatsSort.key === 'hours' && this.doctorStatsSort.dir) {
-      const dir = this.doctorStatsSort.dir === 'asc' ? 1 : -1;
-      list.sort((a, b) => (a.hours - b.hours) * dir);
+    if (this.doctorStatsSort.key === 'hours' && this.doctorStatsSort.dir === 'asc') {
+      list.sort((a, b) => a.hoursCompleted - b.hoursCompleted);
     } else {
-      list.sort((a, b) => b.hours - a.hours);
+      list.sort((a, b) => b.hoursCompleted - a.hoursCompleted);
     }
 
     return list;
@@ -1868,8 +1878,20 @@ class HospitalApp {
     this.renderDoctorStats();
   }
 
+  groupDetailHtml(groupKey, groupDetails, uid) {
+    const labels = { wards: 'أجنحة', icu: 'عنايات', emergency: 'اسعاف', misc: 'منوع' };
+    const entries = Object.entries(groupDetails[groupKey] || {}).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((a, [, v]) => a + v, 0);
+    const chips = entries.length
+      ? entries.map(([k, v]) => `<span class="dsc-detail-chip">${this.escapeHtml(k)}: <strong>${v}</strong></span>`).join('')
+      : '<span class="dsc-detail-empty">لا توجد تفاصيل</span>';
+    const icons = { wards: 'fa-bed', icu: 'fa-heart-pulse', emergency: 'fa-truck-medical', misc: 'fa-shapes' };
+    return `<button type="button" class="dsc-group" onclick="toggleCollapsible(this)"><i class="fas ${icons[groupKey]}"></i><span>${labels[groupKey]}</span><strong>${this.formatNumDisplay(total)}</strong><i class="fas fa-chevron-down dsc-group-chevron"></i></button><div class="collapsible-content dsc-group-detail" id="dscDetail-${uid}-${groupKey}">${chips}</div>`;
+  }
+
   doctorStatCardHtml(r) {
-    return `<div class="doctor-stat-card"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div><div class="dsc-hours-badge"><i class="fas fa-clock"></i> ${this.formatNumDisplay(r.hours)} ساعة</div></div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}</span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups"><div class="dsc-group"><i class="fas fa-bed"></i><span>أجنحة</span><strong>${this.formatNumDisplay(r.wards)}</strong></div><div class="dsc-group"><i class="fas fa-heart-pulse"></i><span>عنايات</span><strong>${this.formatNumDisplay(r.icu)}</strong></div><div class="dsc-group"><i class="fas fa-truck-medical"></i><span>اسعاف</span><strong>${this.formatNumDisplay(r.emergency)}</strong></div><div class="dsc-group"><i class="fas fa-shapes"></i><span>منوع</span><strong>${this.formatNumDisplay(r.misc)}</strong></div></div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div></div>`;
+    const uid = `${(r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_')}`;
+    return `<div class="doctor-stat-card"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div></div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursCompleted)}</div><div class="dsc-hours-lbl">ساعة (مناوبات تمّت)</div><div class="dsc-hours-rank">الترتيب: #${r.rankCompleted}</div></div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursTotal)}</div><div class="dsc-hours-lbl">ساعة (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}</span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}</div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
   }
 
   renderDoctorStats() {
@@ -2670,14 +2692,25 @@ class HospitalApp {
     const evalInfo = this.getEvalForResident(r.name, r.abbr);
     const doctorStats = this.getDoctorStatsForResident(r.name, r.abbr);
     const cumDetails = this.buildOncallCategoryBreakdown(allOncalls);
+    const catDates = doctorStats?.catDates || {};
     const joinDateIso = extractDate(r.join) || extractDate(doctorStats?.join) || '';
     const joinDays = daysSinceDate(joinDateIso);
+    const miUid = (r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_');
 
     if (!monthOncalls.find(o => o.date === this.myInfoFocusedOncallDate)) {
       this.myInfoFocusedOncallDate = monthOncalls[0]?.date || '';
     }
 
-    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(r.cumulativeOnc || '0')}</div><div class="cum-lbl">إجمالي المناوبات التراكمية</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v]) => `<div class="myinfo-breakdown-item"><span>${k}</span><strong>${v}</strong></div>`).join('')}</div>` : '<p>لا توجد بيانات لعرض التوزيع.</p>'}</div>`;
+    const cumTotal = doctorStats?.total ?? allOncalls.length;
+    const cumHours = doctorStats?.hoursTotal ?? 0;
+    const doneTotal = doctorStats?.completed ?? allOncalls.filter(o => o.date < this.today).length;
+    const doneHours = doctorStats?.hoursCompleted ?? 0;
+
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
+      const dates = (catDates[k] || []).slice().sort();
+      const detId = `miCatDates-${miUid}-${idx}`;
+      return `<button type="button" class="myinfo-breakdown-item" onclick="toggleCollapsible(this)"><span>${this.escapeHtml(k)}</span><strong>${v}</strong></button><div class="collapsible-content myinfo-breakdown-detail" id="${detId}">${dates.length ? dates.map(d => `<span class="dsc-detail-chip">${d}</span>`).join('') : '<span class="dsc-detail-empty">لا توجد تواريخ</span>'}</div>`;
+    }).join('')}</div>` : '<p>لا توجد بيانات لعرض التوزيع.</p>'}</div>`;
 
     h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-circle-info"></i> معلومات إضافية</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid"><div class="info-item"><div class="info-label">الاسم</div><div class="info-value">${r.name}</div></div><div class="info-item"><div class="info-label">الاختصار</div><div class="info-value">${r.abbr || '-'}</div></div><div class="info-item"><div class="info-label">الرقم التسلسلي</div><div class="info-value">#${r.seq || '-'}</div></div><div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div><div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div><div class="info-item"><div class="info-label">تاريخ الالتحاق</div><div class="info-value">${r.join || '-'}</div></div><div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok ? 'status-joined' : getStatusBadgeClass(r.st)}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${r.st || 'غير محدد'}</span></div></div></div></div></div>`;
 

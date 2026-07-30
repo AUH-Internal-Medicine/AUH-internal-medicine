@@ -47,6 +47,19 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Doctor stats: split completed/cumulative hours + ranks + drill-down; My Info top boxes recomputed
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** Refined the computed doctor-statistics feature added earlier this session:
+  1. `computeDoctorStats()` now tracks `hoursCompleted` (sum of durations for on-calls whose date is before today) separately from `hoursTotal` (all on-calls, past+future) — previously there was only one combined `hours` figure. `hoursCompleted` is now the primary figure shown first everywhere hours are displayed.
+  2. Added `rankCompleted` and `rankTotal` — each resident's rank (1 = most hours) among all residents by `hoursCompleted` and by `hoursTotal` respectively, computed once after the scan and shown next to each hours number in the UI ("الترتيب: #3").
+  3. Added `groupDetails` (per-category counts *within* each of the four groups, e.g. `اسعاف بارد صباحي: 2` inside the "اسعاف" group) and `catDates` (every date a category occurred for that resident). The four group chips on each doctor-stat-card (`groupDetailHtml()`) are now clickable — expanding (reusing the existing `toggleCollapsible` pattern) to show the sub-category breakdown, e.g. clicking "اسعاف: 4" reveals "اسعاف بارد صباحي: 2، اسعاف مركز صباحي: 1، ...".
+  4. Added `firstOncall`/`lastOncall` (earliest/latest on-call date) to each computed entry, now shown on every doctor-stat-card.
+  5. My Info's own top summary was rebuilt from **two** boxes to **three** (right → left in the RTL layout): cumulative on-calls + cumulative hours, completed on-calls + completed hours, and days since join. It no longer reads "المناوبات التراكمية" from the residents sheet's manual "المناوبات+" column at all — both the count and the hours now come entirely from the computed on-call log data. The "توزيع المناوبات التراكمية" breakdown items are now clickable too, expanding to show the exact dates of that category's on-calls (e.g. clicking "تالت: 4" shows the 4 dates), reusing `catDates` from the shared computed stats.
+- **Files:** app.js, styles.css, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md ("Computed Doctor Statistics" section rewritten with the new fields and My Info's three-box summary).
+- **Notes / follow-ups:** Fixed a CSS specificity bug introduced while building the collapsible group/breakdown detail panels: `.dsc-group-detail.collapsible-content`/`.myinfo-breakdown-detail.collapsible-content` were setting `display:flex` unconditionally (same specificity as, and appearing after, the base `.collapsible-content{display:none}` rule), which would have made every detail panel permanently visible regardless of the `.show` toggle state. `display:flex` is now scoped to `&.show` only, so the panels correctly start hidden. Sorting in the main تبويب still defaults to `hoursCompleted` descending (matches "الأعلى عدد الساعات" from the request); `hoursTotal`'s own rank is shown but isn't a separate sort option, to keep the one sort control simple.
+
 ## 2026-07-30 — Dark-mode text contrast, single high-quality image download, mobile scroll fix, computed doctor statistics
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** both
