@@ -236,8 +236,30 @@ const CD=10*60*1000;
 
 // Fixed on-call duty times/durations (manually set — these rarely change, so
 // they are no longer read from the Google Sheet's "on-call rules" tab).
-// Update these values directly here if the hospital changes the schedule.
-const ONCALL_SCHEDULE={
+// There are TWO fixed schedules because the duty system genuinely changed on
+// a specific date (شفتات جزئية before, شفتات كاملة on/after): dates before
+// ONCALL_SCHEDULE_SWITCH_DATE use ONCALL_SCHEDULE_OLD, dates on/after it use
+// ONCALL_SCHEDULE_NEW. To adjust any time, edit the values below directly.
+const ONCALL_SCHEDULE_SWITCH_DATE='2026-07-23';
+
+const ONCALL_SCHEDULE_OLD={
+  'عناية قلبية':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'عناية مركز':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'عناية داخلية':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'سابع':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'رابع':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'تالت':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'تاني':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'خارجيات':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'ديال':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'أورام':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'إسعاف مركز صباحي':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'إسعاف مركز ليلي':{workTime:'10:00 ليلاً حتى 8:30 صباحاً',workDuration:'10 ساعات ونصف',holidayTime:'10:00 ليلاً حتى 9:00 صباحاً',holidayDuration:'11 ساعة'},
+  'اسعاف بارد صباحي':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+  'اسعاف بارد ليلي':{workTime:'10:00 ليلاً حتى 8:30 صباحاً',workDuration:'10 ساعات ونصف',holidayTime:'10:00 ليلاً حتى 9:00 صباحاً',holidayDuration:'11 ساعة'}
+};
+
+const ONCALL_SCHEDULE_NEW={
   'عناية قلبية':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
   'عناية مركز':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
   'عناية داخلية':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},

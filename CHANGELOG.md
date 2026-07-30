@@ -47,6 +47,22 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Unify site colors around a medical blue/teal identity
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** code
+- **What:** The site had two competing "brand" colors: the official `:root` primary/secondary (medical blue `#0f6ecf` / teal `#0f766e`, already used in the header gradient) vs. a generic indigo-purple (`#667eea`/`#764ba2`, plus a related `#4f46e5`/`#7c3aed`) hardcoded 90+ times across buttons, calendar highlights, hover states, collapsible headers, badges, and the loading screen — nothing to do with medicine and visually inconsistent with the header. Replaced every purple/indigo occurrence with the existing blue/teal identity: `#667eea`→`#0f6ecf`, `#764ba2`→`#0f766e`, `#4f46e5`→`#0f6ecf` (plus their `rgba()` equivalents), including the one instance URL-encoded inside an inline SVG dropdown-arrow icon, and the two matching text-color usages in `app.js`. Also updated the loading-screen background gradient (added in an earlier session) from indigo/violet/teal to blue/teal/deep-teal to match.
+- **Files:** styles.css, app.js, CHANGELOG.md
+- **Docs synced:** no — visual-only, no behavior/data-contract change.
+- **Notes / follow-ups:** The whole site's interactive color (buttons, "today" highlights, hover states, badges, collapsible headers, loading screen) is now a single blue→teal gradient (`#0f6ecf → #0f766e`), matching the header and the official `:root` `--primary`/`--secondary` variables — chosen deliberately as calm, clinical, trustworthy colors associated with internal medicine, distinct from the generic "web app purple" that was there before. Green (`--accent #10b981`, plus `#22c55e`/`#16a34a` used for on-call/has-data highlighting) and red (`--danger #e74c3c`, weekend/holiday marking) were left untouched since they carry semantic meaning (success/positive vs. warning/holiday) rather than being decorative. As a possible future refinement, the hardcoded `#0f6ecf`/`#0f766e` literals introduced by this change could be swapped for `var(--primary)`/`var(--secondary)` so the whole palette derives from one place — not done in this pass to keep the diff safe and reviewable.
+
+## 2026-07-30 — Correct: two fixed on-call schedules (old/new), not one; fix mobile raw-table freeze
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** Corrected the previous change: on-call duty was genuinely partial (جزئي) before 2026-07-23 and became full (كاملة) on/after that date, with two different real time/duration sets — not just one fixed schedule. Replaced the single `ONCALL_SCHEDULE` constant with `ONCALL_SCHEDULE_OLD`, `ONCALL_SCHEDULE_NEW`, and a fixed `ONCALL_SCHEDULE_SWITCH_DATE = '2026-07-23'` in `helpers.js` (values taken from the sheet's rows 2–5 and 7–10 before removing sheet-reading). `getCategorySchedule(cat, dateIso)` in `app.js` now picks old vs. new based on comparing the on-call day's own date to the fixed switch date (same per-date logic as before, but against a hardcoded date instead of a sheet cell). Also fixed the on-call raw table ("عرض كجدول") on mobile: the two frozen columns (day name + date) were together consuming ~250px on narrow screens, leaving only a sliver of one data column visible per scroll step. Under `max-width:768px`, only the date column stays frozen (shrunk to 78px), the day-name column becomes a normal scrolling column, and the table's min-width was reduced from 1200px to 820px so more columns fit per screen width.
+- **Files:** helpers.js, app.js, styles.css, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md (documented both fixed schedule tables + switch date instead of one).
+- **Notes / follow-ups:** To change any duty time/duration, edit `ONCALL_SCHEDULE_OLD`/`ONCALL_SCHEDULE_NEW` in `helpers.js`; to change the cutover date, edit `ONCALL_SCHEDULE_SWITCH_DATE`. Desktop raw-table behavior (both columns frozen) is unchanged.
+
 ## 2026-07-30 — Fix schedule times not updating; make on-call duty schedule a fixed table in code
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** both

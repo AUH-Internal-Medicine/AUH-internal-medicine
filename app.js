@@ -1173,7 +1173,7 @@ class HospitalApp {
       const mb = row[4] || '';
       const lk = row[5] || '';
 
-      th += `<tr><td style="font-weight:700;color:#667eea;">${seq}</td><td><strong>${nm}</strong></td><td>${tp}</td><td>${pp}</td><td>${mb}</td><td>${this.formatLink(lk)}</td></tr>`;
+      th += `<tr><td style="font-weight:700;color:#0f6ecf;">${seq}</td><td><strong>${nm}</strong></td><td>${tp}</td><td>${pp}</td><td>${mb}</td><td>${this.formatLink(lk)}</td></tr>`;
       ch += `<div class="link-card"><span style="font-size:11px;color:var(--text-secondary);">#${seq}</span><div class="link-title"><span class="link-label">الاسم:</span> ${nm}</div>${tp ? `<div><span class="link-label">النوع:</span> <span class="link-type">${tp}</span></div>` : ''}${pp ? `<div class="link-desc"><span class="link-label">الغاية والهدف:</span> ${pp}</div>` : ''}${mb ? `<div class="link-members"><span class="link-label">الاعضاء:</span> ${mb}</div>` : ''}<div style="margin-top:8px;"><span class="link-label">رابط الانضمام:</span> ${this.formatLink(lk)}</div></div>`;
     }
 
@@ -1989,9 +1989,10 @@ class HospitalApp {
   }
 
   parseOncallRules(d) {
-    // Duty times/durations are now FIXED in code (see ONCALL_SCHEDULE in helpers.js) and
-    // are no longer read from the sheet. This tab is only still used (if present) to read
-    // annual holiday dates listed under a "العطل السنوية" row.
+    // Duty times/durations are now FIXED in code (see ONCALL_SCHEDULE_OLD /
+    // ONCALL_SCHEDULE_NEW / ONCALL_SCHEDULE_SWITCH_DATE in helpers.js) and are
+    // no longer read from the sheet. This tab is only still used (if present)
+    // to read annual holiday dates listed under a "العطل السنوية" row.
     this.oncallRules = null;
     if (!d || d.length < 2) return;
 
@@ -2017,18 +2018,20 @@ class HospitalApp {
   }
 
   getCategorySchedule(cat, dateIso) {
+    const scheduleSet = (dateIso && dateIso >= ONCALL_SCHEDULE_SWITCH_DATE) ? ONCALL_SCHEDULE_NEW : ONCALL_SCHEDULE_OLD;
+
     const pickByNorm = name => {
       const target = normAr(name || '');
-      const k = Object.keys(ONCALL_SCHEDULE).find(x => normAr(x) === target);
-      return k ? ONCALL_SCHEDULE[k] : null;
+      const k = Object.keys(scheduleSet).find(x => normAr(x) === target);
+      return k ? scheduleSet[k] : null;
     };
 
     let cfg = pickByNorm(cat);
     if (!cfg && (normAr(cat).startsWith(normAr('إسعاف')) || normAr(cat).startsWith(normAr('اسعاف')))) {
-      cfg = Object.keys(ONCALL_SCHEDULE)
+      cfg = Object.keys(scheduleSet)
         .map(k => ({ k, n: normAr(k) }))
         .find(x => x.n.startsWith(normAr('إسعاف')) || x.n.startsWith(normAr('اسعاف')));
-      cfg = cfg ? ONCALL_SCHEDULE[cfg.k] : null;
+      cfg = cfg ? scheduleSet[cfg.k] : null;
     }
     if (!cfg) return null;
 
@@ -2444,7 +2447,7 @@ class HospitalApp {
     } else {
       this._sm = mt;
       rl.innerHTML = mt
-        .map((m, i) => `<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#667eea;">${m.spec}</span></div>`)
+        .map((m, i) => `<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#0f6ecf;">${m.spec}</span></div>`)
         .join('');
       rd.classList.remove('show');
     }
