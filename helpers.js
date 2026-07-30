@@ -234,6 +234,26 @@ const APP_BUILD_ID=(window.__APP_BUILD_ID__||'dev').trim();
 const CK='hc_v63_'+APP_BUILD_ID;
 const CD=10*60*1000;
 
+// Fixed on-call duty times/durations (manually set — these rarely change, so
+// they are no longer read from the Google Sheet's "on-call rules" tab).
+// Update these values directly here if the hospital changes the schedule.
+const ONCALL_SCHEDULE={
+  'عناية قلبية':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'عناية مركز':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'عناية داخلية':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'سابع':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'رابع':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'تالت':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'تاني':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'خارجيات':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'ديال':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'أورام':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
+  'إسعاف مركز صباحي':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9:00 حتى 10:00',holidayDuration:'13 ساعة'},
+  'إسعاف مركز ليلي':{workTime:'10:00 حتى 8:30',workDuration:'10 ساعات ونصف',holidayTime:'10:00 حتى 9:00',holidayDuration:'11 ساعة'},
+  'اسعاف بارد صباحي':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9:00 حتى 10:00',holidayDuration:'13 ساعة'},
+  'اسعاف بارد ليلي':{workTime:'10:00 حتى 8:30',workDuration:'10 ساعات ونصف',holidayTime:'10:00 حتى 9:00',holidayDuration:'11 ساعة'}
+};
+
 const TABS=[
   {id:'residents',icon:'<i class="fas fa-user-doctor"></i>',label:'لائحة المقيمين'},
   {id:'lectures',icon:'<i class="fas fa-calendar-check"></i>',label:'رزنامة المحاضرات'},

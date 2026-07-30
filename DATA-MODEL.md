@@ -194,27 +194,39 @@ The UI also computes **days since join** from `تاريخ الالتحاق`.
 
 ## 8. On-call Rules (`GID_OR = 1364488029`, CSV)
 
-This tab defines duty time/duration metadata for each on-call type.
+> ⚠️ **As of 2026-07-30, the duty time/duration schedule is a FIXED table in
+> code** (`ONCALL_SCHEDULE` in `helpers.js`), not read from this tab anymore.
+> The old/new schedule + `B6` switch-date mechanism was removed because the
+> real values almost never change and the switch-date logic was error-prone.
+> To change a duty time or duration now, edit `ONCALL_SCHEDULE` directly in
+> `helpers.js` — editing the sheet's rows 1–10 no longer has any effect.
 
-- Row 1 contains on-call type names (`B1...`) that map to on-call category headers.
-- Rows 2–5 are the old schedule block:
-  - row 2: workday time
-  - row 3: workday duration
-  - row 4: holiday time
-  - row 5: holiday duration
-- `B6` (`تاريخ بدء حساب المواعيد الجديد`) acts as the switch date.
-  - This is evaluated **per on-call date being displayed**, not against the
-    real-world "today". For the on-call day in question: if its date is before
-    `B6`, use rows 2–5 (old schedule); if its date is on/after `B6`, use rows
-    7–10 (new schedule). So a single displayed month can show a mix of old- and
-    new-schedule days around the switch date. `getRuleSetForDate(dateIso)` in
-    `app.js` implements this.
+This tab is still fetched only to read **annual holiday dates**, if present.
+
 - Annual holiday dates are read from the section under `العطل السنوية`
-  (`B14`, `B15`, ... when present).
+  (`B14`, `B15`, ... when present). `parseOncallRules()` in `app.js` still
+  looks for this section; everything above it (rows 1–10, the old
+  time/duration/switch-date block) is now ignored by the app.
 
 Holiday definition used by the app:
 - Fridays + Saturdays
-- annual holidays from the rules sheet
+- annual holidays from the rules sheet (if the "العطل السنوية" section exists)
+
+### Fixed duty schedule (`ONCALL_SCHEDULE`, in `helpers.js`)
+
+One entry per on-call category name, each with `workTime`, `workDuration`,
+`holidayTime`, `holidayDuration` (Arabic strings, shown as-is in the UI):
+
+| Category | Workday | Duration | Holiday | Duration |
+|---|---|---|---|---|
+| عناية قلبية / عناية مركز / عناية داخلية / سابع / رابع / تالت / تاني / خارجيات / ديال / أورام | 2:30 حتى 8:30 | 18 ساعة | 9:00 حتى 9:00 | 24 ساعة |
+| إسعاف مركز صباحي / اسعاف بارد صباحي | 2:30 حتى 10:00 | 7 ساعات ونصف | 9:00 حتى 10:00 | 13 ساعة |
+| إسعاف مركز ليلي / اسعاف بارد ليلي | 10:00 حتى 8:30 | 10 ساعات ونصف | 10:00 حتى 9:00 | 11 ساعة |
+
+`getCategorySchedule(cat, dateIso)` in `app.js` looks up the category by
+normalized-name match against `ONCALL_SCHEDULE` (with a fallback for any
+"إسعاف/اسعاف"-prefixed category name), then picks the holiday or workday
+row depending on `isHolidayDate(dateIso)`.
 
 ---
 

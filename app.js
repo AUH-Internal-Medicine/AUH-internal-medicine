@@ -1989,37 +1989,11 @@ class HospitalApp {
   }
 
   parseOncallRules(d) {
+    // Duty times/durations are now FIXED in code (see ONCALL_SCHEDULE in helpers.js) and
+    // are no longer read from the sheet. This tab is only still used (if present) to read
+    // annual holiday dates listed under a "العطل السنوية" row.
     this.oncallRules = null;
     if (!d || d.length < 2) return;
-
-    const typeHeaders = d[0] || [];
-    const categoryCols = {};
-    for (let i = 1; i < typeHeaders.length; i++) {
-      const name = (typeHeaders[i] || '').trim();
-      if (name) categoryCols[name] = i;
-    }
-
-    const getRowVal = (rowIndex, colIndex) => {
-      const row = d[rowIndex] || [];
-      return (row[colIndex] || '').trim();
-    };
-
-    const buildSet = baseRow => {
-      const out = {};
-      Object.entries(categoryCols).forEach(([cat, idx]) => {
-        out[cat] = {
-          workTime: getRowVal(baseRow, idx),
-          workDuration: getRowVal(baseRow + 1, idx),
-          holidayTime: getRowVal(baseRow + 2, idx),
-          holidayDuration: getRowVal(baseRow + 3, idx)
-        };
-      });
-      return out;
-    };
-
-    const switchDate = extractDate((d[5] || [])[1] || '');
-    const oldSet = buildSet(1);
-    const newSet = buildSet(6);
 
     const annualHolidayDates = [];
     const annualStart = d.findIndex(r => normAr((r[0] || '').trim()).includes(normAr('العطل السنوية')));
@@ -2031,9 +2005,6 @@ class HospitalApp {
     }
 
     this.oncallRules = {
-      switchDate,
-      oldSet,
-      newSet,
       annualHolidaySet: new Set(annualHolidayDates)
     };
   }
@@ -2045,29 +2016,19 @@ class HospitalApp {
     return this.oncallRules.annualHolidaySet.has(dateIso);
   }
 
-  getRuleSetForDate(dateIso) {
-    if (!this.oncallRules) return null;
-    const { switchDate, oldSet, newSet } = this.oncallRules;
-    if (switchDate && dateIso && dateIso >= switchDate) return newSet;
-    return oldSet;
-  }
-
   getCategorySchedule(cat, dateIso) {
-    const ruleSet = this.getRuleSetForDate(dateIso);
-    if (!ruleSet) return null;
-
     const pickByNorm = name => {
       const target = normAr(name || '');
-      const k = Object.keys(ruleSet).find(x => normAr(x) === target);
-      return k ? ruleSet[k] : null;
+      const k = Object.keys(ONCALL_SCHEDULE).find(x => normAr(x) === target);
+      return k ? ONCALL_SCHEDULE[k] : null;
     };
 
     let cfg = pickByNorm(cat);
     if (!cfg && (normAr(cat).startsWith(normAr('إسعاف')) || normAr(cat).startsWith(normAr('اسعاف')))) {
-      cfg = Object.keys(ruleSet)
+      cfg = Object.keys(ONCALL_SCHEDULE)
         .map(k => ({ k, n: normAr(k) }))
         .find(x => x.n.startsWith(normAr('إسعاف')) || x.n.startsWith(normAr('اسعاف')));
-      cfg = cfg ? ruleSet[cfg.k] : null;
+      cfg = cfg ? ONCALL_SCHEDULE[cfg.k] : null;
     }
     if (!cfg) return null;
 

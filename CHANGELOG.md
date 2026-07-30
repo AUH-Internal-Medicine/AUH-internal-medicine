@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Fix schedule times not updating; make on-call duty schedule a fixed table in code
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** Per the resident's request, stopped reading duty times/durations from the "on-call rules" sheet tab (`GID_OR`). Read the tab's actual current values via its share link, confirmed the `B6` switch date (2026-07-23) had already passed so the "new" schedule block (rows 7–10) is the one currently in effect, and hardcoded those values as `ONCALL_SCHEDULE` in `helpers.js` (one entry per on-call category with workTime/workDuration/holidayTime/holidayDuration). Removed `switchDate`/`oldSet`/`newSet` and the old/new selection logic (`getRuleSetForDate`) from `app.js`; `getCategorySchedule()` now looks up `ONCALL_SCHEDULE` directly with the same normalized-name + "إسعاف/اسعاف" fallback matching as before. `parseOncallRules()` still runs but now only extracts annual holiday dates (if a "العطل السنوية" section exists in the tab) — everything else in that tab is now ignored.
+- **Files:** helpers.js, app.js, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md (rewrote the "On-call Rules" section to document `ONCALL_SCHEDULE` as the source of truth and mark rows 1–10 of that tab as no longer read).
+- **Notes / follow-ups:** To change any duty time/duration going forward, edit `ONCALL_SCHEDULE` directly in `helpers.js` — editing the Google Sheet's rows 1–10 in that tab has no effect anymore. The tab is still fetched only for a possible future "العطل السنوية" (annual holidays) list; if that section is never used, `GID_OR` fetching could be removed entirely in a future session. No cache-key bump needed (removing this from `saveToCache`/`loadFromCache` wasn't necessary since `oncallRulesData`/`this.oncallRules` shape didn't change format, just lost two now-unused keys).
+
 ## 2026-07-30 — Remove hospital name from loading screen, modernize loader design
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** code
