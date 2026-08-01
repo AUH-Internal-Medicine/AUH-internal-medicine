@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Excel export: order rows by roster order instead of hours
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** code
+- **What:** `downloadDoctorStatsExcel()` now sorts the exported rows by each resident's position in the residents roster (`GID_R`/`this.res`, i.e. the order they appear in the sheet) instead of by completed hours descending. Only affects the Excel file; the in-app احصائيات الأطباء tab (cards, search, hours sort toggle) is unchanged.
+- **Files:** app.js, CHANGELOG.md
+- **Docs synced:** no — export-only behavior change, not a documented data contract.
+- **Notes / follow-ups:** Residents present in the on-call log but missing from the current roster snapshot (e.g. an old/renamed abbreviation) sort to the end of the file rather than being dropped.
+
 ## 2026-07-30 — Fix: on-call adjustments sheet dates weren't parsing at all (space-padded separators)
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** code

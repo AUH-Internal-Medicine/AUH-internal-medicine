@@ -1985,7 +1985,13 @@ class HospitalApp {
 
     const round1 = v => Math.round((safeNum(v) || 0) * 10) / 10;
 
-    const list = this.doctorStats.slice().sort((a, b) => b.hoursCompleted - a.hoursCompleted);
+    const rosterOrder = new Map();
+    (this.res || []).forEach((r, i) => rosterOrder.set(r.abbr || r.name, i));
+    const list = this.doctorStats.slice().sort((a, b) => {
+      const ai = rosterOrder.has(a.abbr || a.name) ? rosterOrder.get(a.abbr || a.name) : Infinity;
+      const bi = rosterOrder.has(b.abbr || b.name) ? rosterOrder.get(b.abbr || b.name) : Infinity;
+      return ai - bi;
+    });
     const rows = list.map(r => ({
       'الاسم': r.name || '',
       'الاختصار': r.abbr || '',
