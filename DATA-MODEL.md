@@ -218,19 +218,52 @@ builds `this.doctorStats` (one entry per resident) by:
 4. A resident found in the on-call log but missing from `GID_R` (e.g. an old
    abbreviation) still gets an entry, built from whatever name/abbr appeared
    in the log, so no on-call assignment is silently dropped from the totals.
+5. **`status`** carries the resident's raw "الحالة" text from `GID_R`, and
+   `isDetachedOrNotJoined` (`!isJoined(status)`) flags anyone detached or not
+   yet joined — their card gets a red-tinted style and a status badge in the UI.
+6. **`praiseCount`** — from `getEvalForResident(name, abbr).praise` (the
+   evaluation sheet's "الثناءات" free-text cell), counted by
+   `countPraiseEntries()` in `helpers.js`. It only splits on line breaks
+   (never commas/semicolons, since a single praise sentence may legitimately
+   contain those) — an empty/`-` cell is 0, any other non-empty cell is at
+   least 1.
+7. **`rotations`** / **`rotationsCount`** — via `getRotationsSoFarForResident(name, abbr)`:
+   scans the residents sheet's own "فرز شهر N" columns (`getAllShiftMonths()`)
+   for every month from 1 up to the currently-displayed month, collecting the
+   ones with a non-empty value for that resident. This is "rotations done so
+   far" — future months are excluded by construction (only months ≤ the
+   current month are even considered), not because they're empty.
 
 `renderDoctorStats()` renders one card per resident into `#doctorStatsGrid`
 (`.doctor-stat-card`, see `styles.css`) — no desktop table anymore, the same
 card grid is used at every screen width. Each of the four group chips
-(`groupDetailHtml()`) is a clickable button that expands to show the
-per-category breakdown for that group (reuses the existing `toggleCollapsible`
-pattern). `getFilteredDoctorStats()` applies the search box (`smartSearch`
-over name/abbr/spec) and sorts by `hoursCompleted` (descending by default;
-`toggleDoctorStatsSort('hours')` cycles desc → asc → off). The same computed
-entry (looked up by `getDoctorStatsForResident(name, abbr)`) is reused inside
-"معلوماتي" (My Info) via `doctorStatCardHtml()`, so a resident sees the
-identical stat card for themselves that appears in the main احصائيات
-الأطباء tab — including first/last on-call date and clickable group detail.
+(`groupDetailHtml()`) plus a fifth full-width "الفروز حتى الآن" chip
+(`rotationsDetailHtml()`) is a clickable button that expands to show detail
+(reuses the existing `toggleCollapsible` pattern). A checkmark badge sits next
+to the "تمّت" (completed) count, and a gold "ثناءات" badge sits between the
+"عطل"/"ليلية" counts in the bottom row.
+
+**Sorting** (`doctor-sort-panel` in the tab, `getFilteredDoctorStats()`):
+a metric dropdown (`#doctorStatsSortMetric`) plus a direction toggle button
+(`#doctorStatsSortDirBtn`, `toggleDoctorStatsSortDir()`) — any of `hoursCompleted`,
+`hoursTotal`, `total`, `praiseCount`, `emergency`, `holiday`, ascending or
+descending (`this.doctorStatsSort = {key, dir}`, defaults to `hoursCompleted`
+descending). `setDoctorStatsSortMetric(key)` switches the metric without
+resetting the chosen direction. Also applies the search box (`smartSearch`
+over name/abbr/spec).
+
+The same computed entry (looked up by `getDoctorStatsForResident(name, abbr)`)
+is reused inside "معلوماتي" (My Info) via `doctorStatCardHtml()`, so a resident
+sees the identical stat card for themselves that appears in the main احصائيات
+الأطباء tab — including first/last on-call date and clickable group/rotation
+detail.
+
+The residents list's "المناوبات التراكمية" column (`لائحة المقيمين` tab) now
+shows this computed `total` too, via `getComputedCumulativeOncalls()` —
+**not** the residents sheet's own manually-maintained "المناوبات+" cell
+value (that raw value is still used as a fallback only before stats have
+finished computing on first load). `displayResidents()` re-runs once
+`computeDoctorStats()` finishes so the column updates to the computed number.
 
 My Info's own top summary (separate from the reused stat card) now shows
 **three** boxes instead of two — cumulative on-calls + cumulative hours,

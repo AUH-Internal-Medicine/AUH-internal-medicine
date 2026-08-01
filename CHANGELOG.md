@@ -47,6 +47,20 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Doctor statistics: praise count, rotations, detached-status styling, computed roster column, full sort panel
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** A batch of doctor-statistics improvements:
+  1. **Residents list "المناوبات التراكمية" column** no longer shows the residents sheet's manually-maintained raw cell — `getComputedCumulativeOncalls()` now shows the computed `total` from `this.doctorStats` instead (falls back to the raw value only before stats have finished computing on first load). `displayResidents()` re-runs right after `computeDoctorStats()` in both `loadFresh()` and `applyCachedData()` so the column reliably updates.
+  2. **الثناءات (praise)** added to computed stats: `countPraiseEntries()` (`helpers.js`) counts entries in the evaluation sheet's free-text "الثناءات" cell (splits only on line breaks, deliberately not commas/semicolons). Shown as a distinct gold badge between "عطل" and "ليلية" on every stat card, as requested.
+  3. **مناوبات تمّت** now has a small green checkmark badge next to the count.
+  4. **Detached / not-yet-joined residents** (`GID_R`'s "الحالة" column, via the existing `isJoined()`) get a red-tinted card (`.detached-card`) with a status badge, so they stand out at a glance in the tab.
+  5. **الفروز (rotations)** added: `getRotationsSoFarForResident()` scans the residents sheet's "فرز شهر N" columns for every month up to the current one, collecting filled-in values. Shown as a 5th, full-width clickable chip ("الفروز حتى الآن") on each card, expanding to the month-by-month list — same collapsible pattern as the four group chips.
+  6. **Full sort panel**: replaced the single "ترتيب حسب عدد الساعات" cycling button with a proper metric dropdown (`#doctorStatsSortMetric`: completed hours / cumulative hours / total shifts / praise count / emergency-shift count / holiday-shift count) plus a direction toggle button (ascending/descending), all wired through a generalized `getFilteredDoctorStats()` that sorts by whichever field is selected.
+- **Files:** app.js, helpers.js, styles.css, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md ("Computed Doctor Statistics" section expanded with status/praise/rotations fields, the sort panel, and the residents-list column change).
+- **Notes / follow-ups:** `countPraiseEntries()`'s line-break-only heuristic assumes multiple praises get added as separate lines in that cell — if staff instead separate them with commas or semicolons within a single line, the count will under-report (as 1 instead of several); flag this if the numbers look off and it can be adjusted. Rotation "so far" is scoped to the currently *displayed* month (`this.m`), not necessarily today's real-world month, matching how the rest of the on-call tab already treats "the displayed month" as the reference point.
+
 ## 2026-07-30 — On-call times now show am/pm; added a manual "refresh now" button
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** both

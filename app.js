@@ -22,7 +22,7 @@ class HospitalApp {
 
     this.doctorStats = [];
     this.doctorStatsSearchTerm = '';
-    this.doctorStatsSort = { key: '', dir: '' };
+    this.doctorStatsSort = { key: 'hoursCompleted', dir: 'desc' };
 
     this.oncallRulesData = [];
     this.oncallRules = null;
@@ -214,6 +214,7 @@ class HospitalApp {
 
     this.computeDoctorStats();
     this.renderDoctorStats();
+    if (c.residents) this.displayResidents();
 
     this.updateTime();
   }
@@ -468,6 +469,7 @@ class HospitalApp {
 
       this.computeDoctorStats();
       this.renderDoctorStats();
+      if (rd) this.displayResidents();
 
       this.saveToCache();
       if (!silent) this.updateProgress(100, 'تم التحميل');
@@ -684,6 +686,29 @@ class HospitalApp {
       if (m) months.push({ month: parseInt(m[1], 10), col: i, label: ht });
     }
     return months.sort((a, b) => a.month - b.month);
+  }
+
+  getRotationsSoFarForResident(name, abbr) {
+    if (!this._resRaw || this._resRaw.length < 2) return [];
+
+    const currentMonth = this.m + 1;
+    const months = this.getAllShiftMonths().filter(mo => mo.month <= currentMonth);
+    if (!months.length) return [];
+
+    for (let i = 1; i < this._resRaw.length; i++) {
+      const row = this._resRaw[i];
+      if (!row || !row.length) continue;
+
+      const rn = this.getResidentCell(row, 'name');
+      const ra = this.getResidentCell(row, 'abbr');
+      if (!rn && !ra) continue;
+      if ((abbr && ra === abbr) || exactNameMatch(rn, name) || (abbr && exactNameMatch(ra, abbr))) {
+        return months
+          .map(mo => ({ month: mo.month, label: mo.label, value: (row[mo.col] || '').trim() }))
+          .filter(x => x.value);
+      }
+    }
+    return [];
   }
 
   isFutureShiftMonthAutoCopy(month) {
@@ -951,6 +976,12 @@ class HospitalApp {
     this.displayResidents();
   }
 
+  getComputedCumulativeOncalls(res) {
+    if (!res) return 0;
+    const stat = this.doctorStats.find(x => (res.abbr && x.abbr === res.abbr) || exactNameMatch(x.name, res.name));
+    return stat ? stat.total : (res.onc || 0);
+  }
+
   displayResidents() {
     const tb = document.getElementById('residentsBody');
     const cd = document.getElementById('residentsCards');
@@ -968,12 +999,12 @@ class HospitalApp {
       const statusClass = getStatusBadgeClass(res.st);
 
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="seq-cell">${res.seq}</td><td><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g, '&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g, "\\'")}')"></td><td style="text-align:right;">${mcn(res.name, res.phone)}</td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.monthlyShift || '-'}</td><td>${res.join || '-'}</td><td>${res.onc || '-'}</td><td><span class="status-badge ${ok ? 'status-joined' : statusClass}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${res.st || 'غير محدد'}</span></td>`;
+      tr.innerHTML = `<td class="seq-cell">${res.seq}</td><td><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g, '&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g, "\\'")}')"></td><td style="text-align:right;">${mcn(res.name, res.phone)}</td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.monthlyShift || '-'}</td><td>${res.join || '-'}</td><td>${this.formatNumDisplay(this.getComputedCumulativeOncalls(res))}</td><td><span class="status-badge ${ok ? 'status-joined' : statusClass}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${res.st || 'غير محدد'}</span></td>`;
       fg.appendChild(tr);
 
       const c = document.createElement('div');
       c.className = 'resident-card';
-      c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;"><span class="seq-badge">${res.seq}</span><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g, '&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g, "\\'")}')"><div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;"><span class="card-name" style="word-break:break-word;">${mcn(res.name, res.phone)}</span><span class="card-abbr">${res.abbr}</span></div></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec || '-'}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone || '-'}</span> ${res.phone ? `<button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button>` : ''}</span></div><div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${res.monthlyShift || '-'}</span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join || '-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${res.onc || '-'}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok ? 'status-joined' : statusClass}">${res.st || 'غير محدد'}</span></span></div>`;
+      c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;"><span class="seq-badge">${res.seq}</span><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g, '&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g, "\\'")}')"><div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;"><span class="card-name" style="word-break:break-word;">${mcn(res.name, res.phone)}</span><span class="card-abbr">${res.abbr}</span></div></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec || '-'}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone || '-'}</span> ${res.phone ? `<button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button>` : ''}</span></div><div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${res.monthlyShift || '-'}</span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${res.join || '-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${this.formatNumDisplay(this.getComputedCumulativeOncalls(res))}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok ? 'status-joined' : statusClass}">${res.st || 'غير محدد'}</span></span></div>`;
       cd.appendChild(c);
     });
 
@@ -1787,11 +1818,12 @@ class HospitalApp {
     // tab anymore, since that manual approach was unreliable. See DATA-MODEL.md.
     const statsMap = new Map();
 
-    const blankEntry = (name, abbr, spec, join) => ({
+    const blankEntry = (name, abbr, spec, join, status, rotations) => ({
       name,
       abbr: abbr || '',
       spec: spec || '',
-      status: '',
+      status: status || '',
+      isDetachedOrNotJoined: status ? !isJoined(status) : false,
       join: join || '',
       joinDaysSince: daysSinceDate(extractDate(join)),
       total: 0,
@@ -1808,13 +1840,20 @@ class HospitalApp {
       firstOncall: '',
       lastOncall: '',
       groupDetails: { wards: {}, icu: {}, emergency: {}, misc: {}, other: {} },
-      catDates: {}
+      catDates: {},
+      praiseCount: 0,
+      rotations: rotations || [],
+      rotationsCount: (rotations || []).length
     });
 
     (this.res || []).forEach(r => {
       if (!r || !r.name) return;
       const key = r.abbr || r.name;
-      statsMap.set(key, blankEntry(r.name, r.abbr, r.spec, r.join));
+      const rotations = this.getRotationsSoFarForResident(r.name, r.abbr);
+      const entry = blankEntry(r.name, r.abbr, r.spec, r.join, r.st, rotations);
+      const evalInfo = this.getEvalForResident(r.name, r.abbr);
+      if (evalInfo) entry.praiseCount = countPraiseEntries(evalInfo.praise);
+      statsMap.set(key, entry);
     });
 
     (this.oncRows || []).forEach(oncRow => {
@@ -1843,7 +1882,7 @@ class HospitalApp {
 
           let entry = statsMap.get(key);
           if (!entry) {
-            entry = blankEntry(resident ? resident.name : nm, resident ? resident.abbr : '', resident ? resident.spec : '', resident ? resident.join : '');
+            entry = blankEntry(resident ? resident.name : nm, resident ? resident.abbr : '', resident ? resident.spec : '', resident ? resident.join : '', resident ? resident.st : '');
             statsMap.set(key, entry);
           }
 
@@ -1936,24 +1975,20 @@ class HospitalApp {
       list = list.filter(x => smartSearch(`${x.name} ${x.abbr} ${x.spec}`, q));
     }
 
-    if (this.doctorStatsSort.key === 'hours' && this.doctorStatsSort.dir === 'asc') {
-      list.sort((a, b) => a.hoursCompleted - b.hoursCompleted);
-    } else {
-      list.sort((a, b) => b.hoursCompleted - a.hoursCompleted);
-    }
+    const key = this.doctorStatsSort.key || 'hoursCompleted';
+    const dir = this.doctorStatsSort.dir === 'asc' ? 1 : -1;
+    list.sort((a, b) => ((safeNum(a[key]) || 0) - (safeNum(b[key]) || 0)) * dir);
 
     return list;
   }
 
-  toggleDoctorStatsSort(key) {
-    if (this.doctorStatsSort.key !== key) {
-      this.doctorStatsSort = { key, dir: 'desc' };
-    } else if (this.doctorStatsSort.dir === 'desc') {
-      this.doctorStatsSort = { key, dir: 'asc' };
-    } else {
-      this.doctorStatsSort = { key: '', dir: '' };
-    }
+  setDoctorStatsSortMetric(key) {
+    this.doctorStatsSort.key = key;
+    this.renderDoctorStats();
+  }
 
+  toggleDoctorStatsSortDir() {
+    this.doctorStatsSort.dir = this.doctorStatsSort.dir === 'asc' ? 'desc' : 'asc';
     this.renderDoctorStats();
   }
 
@@ -1968,9 +2003,17 @@ class HospitalApp {
     return `<button type="button" class="dsc-group" onclick="toggleCollapsible(this)"><i class="fas ${icons[groupKey]}"></i><span>${labels[groupKey]}</span><strong>${this.formatNumDisplay(total)}</strong><i class="fas fa-chevron-down dsc-group-chevron"></i></button><div class="collapsible-content dsc-group-detail" id="dscDetail-${uid}-${groupKey}">${chips}</div>`;
   }
 
+  rotationsDetailHtml(r, uid) {
+    const chips = (r.rotations || []).length
+      ? r.rotations.map(x => `<span class="dsc-detail-chip">${this.escapeHtml(x.label)}: <strong>${this.escapeHtml(x.value)}</strong></span>`).join('')
+      : '<span class="dsc-detail-empty">لا توجد بيانات فروز حتى الآن</span>';
+    return `<button type="button" class="dsc-group dsc-rotations-btn" onclick="toggleCollapsible(this)"><i class="fas fa-route"></i><span>الفروز حتى الآن</span><strong>${this.formatNumDisplay(r.rotationsCount)}</strong><i class="fas fa-chevron-down dsc-group-chevron"></i></button><div class="collapsible-content dsc-group-detail" id="dscRotations-${uid}">${chips}</div>`;
+  }
+
   doctorStatCardHtml(r) {
     const uid = `${(r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_')}`;
-    return `<div class="doctor-stat-card"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div></div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursCompleted)}</div><div class="dsc-hours-lbl">ساعة (مناوبات تمّت)</div><div class="dsc-hours-rank">الترتيب: #${r.rankCompleted}</div></div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursTotal)}</div><div class="dsc-hours-lbl">ساعة (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}</span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}</div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
+    const detached = !!r.isDetachedOrNotJoined;
+    return `<div class="doctor-stat-card${detached ? ' detached-card' : ''}"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div>${detached ? `<span class="dsc-status-badge"><i class="fas fa-user-slash"></i> ${this.escapeHtml(r.status) || 'غير ملتحق/منفك'}</span>` : ''}</div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursCompleted)}</div><div class="dsc-hours-lbl">ساعة (مناوبات تمّت)</div><div class="dsc-hours-rank">الترتيب: #${r.rankCompleted}</div></div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursTotal)}</div><div class="dsc-hours-lbl">ساعة (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini dsc-mini-done"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}<span class="dsc-done-check" title="مناوبات مكتملة"><i class="fas fa-check"></i></span></span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}${this.rotationsDetailHtml(r, uid)}</div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span class="dsc-praise-badge"><i class="fas fa-star"></i> ثناءات: ${this.formatNumDisplay(r.praiseCount)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
   }
 
   downloadDoctorStatsExcel() {
@@ -2035,12 +2078,13 @@ class HospitalApp {
     const list = this.getFilteredDoctorStats();
     if (countEl) countEl.textContent = list.length;
 
-    const sortHoursBtn = document.getElementById('sortHoursBtn');
-    if (sortHoursBtn) {
-      const active = this.doctorStatsSort.key === 'hours';
-      sortHoursBtn.classList.toggle('active-filter', active);
-      const label = active ? (this.doctorStatsSort.dir === 'asc' ? 'تصاعدي' : 'تنازلي') : 'تنازلي (تلقائي)';
-      sortHoursBtn.innerHTML = `<i class="fas fa-arrow-down-wide-short"></i> ترتيب حسب عدد الساعات (${label})`;
+    const metricSelect = document.getElementById('doctorStatsSortMetric');
+    if (metricSelect && metricSelect.value !== this.doctorStatsSort.key) metricSelect.value = this.doctorStatsSort.key;
+
+    const dirBtn = document.getElementById('doctorStatsSortDirBtn');
+    if (dirBtn) {
+      const asc = this.doctorStatsSort.dir === 'asc';
+      dirBtn.innerHTML = asc ? '<i class="fas fa-arrow-up-wide-short"></i> تصاعدي' : '<i class="fas fa-arrow-down-wide-short"></i> تنازلي';
     }
 
     if (!list.length) {
