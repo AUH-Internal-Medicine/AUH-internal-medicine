@@ -47,6 +47,14 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Fix: on-call adjustments sheet dates weren't parsing at all (space-padded separators)
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** code
+- **What:** Fetched the actual `GID_ADJ` (`1181737768`) sheet content and found every date cell written as e.g. `"21 - 7 - 2026"` — with **spaces around the dashes**. `extractDate()`'s slash/dash/backslash regexes required the separator character to sit immediately next to the digits with no whitespace, so every single row in the adjustments sheet was silently failing to parse and getting skipped — which is why none of last session's override/addition logic appeared to have any effect. Fixed by allowing optional `\s*` around the separator in all three date regexes (ISO-ish `y-m-d`, `d/m/y` or `d-m-y` 4-digit year, and the 2-digit-year fallback). Re-verified directly against the real sheet's exact strings (`"21 - 7 - 2026"` → `2026-07-21`, `"22 - 6 - 2026"` → `2026-06-22`) and confirmed no regression on the previously-working formats (`السبت 1\8\2026`, `2026-07-21`, `21/7/2026`).
+- **Files:** helpers.js, app.js, CHANGELOG.md
+- **Docs synced:** no — this is a pure bugfix, no behavior/data-contract change beyond "it now actually works as designed last session."
+- **Notes / follow-ups:** Also added `console.log`/`console.warn` diagnostics in `parseOncallAdjustments()`/`resolveOncallAdjustments()` (row counts parsed/skipped, and how many were classified as overrides vs. additions) so this class of "silently parsed zero rows" issue is immediately visible in the browser console going forward, without needing another round-trip like this one. The override-vs-addition classification logic itself (compare against `GID_O`; add if missing, override hours if a difference exists) was already correct from last session — the entire issue was the date regex never matching, so nothing ever reached that logic.
+
 ## 2026-07-30 — Excel export for doctor statistics + manual on-call adjustments (hour corrections & volunteer shifts)
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** both

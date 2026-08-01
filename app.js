@@ -2123,11 +2123,15 @@ class HospitalApp {
   // Columns: A=name, B=abbr, C=date (day-month-year), D=category, E=hours.
   parseOncallAdjustments(d) {
     this.oncallAdjustments = [];
-    if (!d || d.length < 1) return;
+    if (!d || d.length < 1) {
+      console.warn('[Adjustments] raw data missing or empty:', d && d.length);
+      return;
+    }
 
     const headerCell = ((d[0] || [])[0] || '').trim();
     const startIdx = normAr(headerCell).includes(normAr('الاسم')) ? 1 : 0;
 
+    const skipped = [];
     for (let i = startIdx; i < d.length; i++) {
       const row = d[i];
       if (!row || !row.length) continue;
@@ -2142,12 +2146,15 @@ class HospitalApp {
       const ds = extractDate(dateRaw);
       const hours = safeNum(hoursRaw);
       if (!ds || !category || !Number.isFinite(hours)) {
-        console.warn('[Adjustments] skipped unparsable row:', row);
+        skipped.push(row);
         continue;
       }
 
       this.oncallAdjustments.push({ name, abbr, date: ds, category, hours });
     }
+
+    console.log(`[Adjustments] parsed ${this.oncallAdjustments.length} row(s) from ${d.length} raw row(s).`);
+    if (skipped.length) console.warn('[Adjustments] skipped unparsable rows:', skipped);
   }
 
   isResidentOnCallFor(dateIso, category, resAbbr) {
@@ -2187,6 +2194,10 @@ class HospitalApp {
         this.adjustmentAdditions.push({ date: adj.date, category: adj.category, name, abbr, hours: adj.hours });
       }
     });
+
+    if (this.oncallAdjustments.length) {
+      console.log(`[Adjustments] resolved: ${this.adjustmentOverrides.size} hour-override(s), ${this.adjustmentAdditions.length} new/volunteer addition(s).`);
+    }
   }
 
   getColleaguesForDateCategory(dateIso, category, excludeAbbr) {

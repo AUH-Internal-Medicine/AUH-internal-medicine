@@ -154,11 +154,11 @@ function extractDate(t){
   let c=String(t).replace(/السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday/gi,'');
   c=c.replace(/[\u0660-\u0669]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x0660+0x30));
   c=c.replace(/[٠-٩]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x0660+0x30));
-  let m=c.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  let m=c.match(/(\d{4})\s*-\s*(\d{1,2})\s*-\s*(\d{1,2})/);
   if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-  m=c.match(/(\d{1,2})[\/\-.\\](\d{1,2})[\/\-.\\](\d{4})/);
+  m=c.match(/(\d{1,2})\s*[\/\-.\\]\s*(\d{1,2})\s*[\/\-.\\]\s*(\d{4})/);
   if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-  m=c.match(/(\d{1,2})[\/\-.\\](\d{1,2})[\/\-.\\](\d{2})/);
+  m=c.match(/(\d{1,2})\s*[\/\-.\\]\s*(\d{1,2})\s*[\/\-.\\]\s*(\d{2})\b/);
   if(m){
     const y=parseInt(m[3],10)<50?'20'+m[3]:'19'+m[3];
     return`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
