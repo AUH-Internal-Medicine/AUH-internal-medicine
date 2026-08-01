@@ -11,6 +11,9 @@ class HospitalApp {
     this.oncRows2 = [];
     this.oncHeaders2 = [];
     this.oncallYearFilter = 'y1';
+    this.oncallAdjustments = [];
+    this.adjustmentOverrides = new Map();
+    this.adjustmentAdditions = [];
     this.evalData = [];
     this.linksData = [];
     this.qaData = [];
@@ -29,6 +32,7 @@ class HospitalApp {
     this._resCols = {};
     this._oncRaw = null;
     this._onc2Raw = null;
+    this._adjRaw = null;
 
     this.filterJoined = false;
     this.filterDetached = false;
@@ -180,6 +184,12 @@ class HospitalApp {
       this._onc2Raw = c.oncall2;
       this.parseOncallDataY2(c.oncall2);
     }
+
+    if (c.adjustments) {
+      this._adjRaw = c.adjustments;
+      this.parseOncallAdjustments(c.adjustments);
+    }
+    this.resolveOncallAdjustments();
 
     if (c.oncall || c.oncall2) {
       this.renderMonthlyCalendar();
@@ -387,6 +397,7 @@ class HospitalApp {
         residents: this._resRaw || null,
         oncall: this._oncRaw || null,
         oncall2: this._onc2Raw || null,
+        adjustments: this._adjRaw || null,
         oncallRules: this.oncallRulesData || null,
         evaluation: this.evalData || null,
         links: this.linksData || null,
@@ -399,7 +410,7 @@ class HospitalApp {
 
   async loadFresh(silent) {
     try {
-      const [rd, od, o2d, ed, ld, qd, hd, ord] = await Promise.all([
+      const [rd, od, o2d, ed, ld, qd, hd, ord, adjd] = await Promise.all([
         this.fetchCSV(GID_R),
         this.fetchJSON(GID_O),
         this.fetchCSV(GID_O2, SID2),
@@ -407,12 +418,14 @@ class HospitalApp {
         this.fetchCSV(GID_L),
         this.fetchJSON(GID_Q),
         this.fetchCSV(GID_LEC),
-        this.fetchCSV(GID_OR)
+        this.fetchCSV(GID_OR),
+        this.fetchCSV(GID_ADJ)
       ]);
 
       this._resRaw = rd;
       this._oncRaw = od;
       this._onc2Raw = o2d;
+      this._adjRaw = adjd;
 
       if (!silent) this.updateProgress(60, 'جاري عرض البيانات...');
 
@@ -428,6 +441,9 @@ class HospitalApp {
       } else {
         console.warn('[Year2] fetchCSV(GID_O2, SID2) returned null — check sheet sharing permissions ("Anyone with the link can view") and that GID_O2 is correct.');
       }
+      if (adjd) this.parseOncallAdjustments(adjd);
+      this.resolveOncallAdjustments();
+
       if (od || o2d) {
         const keepDate = this.selectedOncallDate || this.today;
         this.renderMonthlyCalendar();
@@ -1814,7 +1830,6 @@ class HospitalApp {
         if (!names.length) continue;
 
         const sched = this.getCategorySchedule(cat, ds);
-        const hrs = parseDurationHours(sched ? sched.duration : '');
         const isNight = normAr(cat).includes(normAr('ليلي'));
         const group = this.classifyOncallGroup(cat);
         const isCompleted = ds < this.today;
@@ -1831,6 +1846,9 @@ class HospitalApp {
             entry = blankEntry(resident ? resident.name : nm, resident ? resident.abbr : '', resident ? resident.spec : '', resident ? resident.join : '');
             statsMap.set(key, entry);
           }
+
+          const overrideKey = `${ds}|${key}|${normAr(cat)}`;
+          const hrs = this.adjustmentOverrides.has(overrideKey) ? this.adjustmentOverrides.get(overrideKey) : parseDurationHours(sched ? sched.duration : '');
 
           entry.total++;
           if (isCompleted) entry.completed++;
@@ -1857,6 +1875,47 @@ class HospitalApp {
           if (!entry.lastOncall || ds > entry.lastOncall) entry.lastOncall = ds;
         });
       }
+    });
+
+    // Volunteer/added shifts from the adjustments sheet that weren't already in the
+    // main on-call log for that person — added as brand-new entries.
+    this.adjustmentAdditions.forEach(add => {
+      const key = add.abbr || add.name;
+      let entry = statsMap.get(key);
+      if (!entry) {
+        entry = blankEntry(add.name, add.abbr, '', '');
+        statsMap.set(key, entry);
+      }
+
+      const ds = add.date;
+      const isCompleted = ds < this.today;
+      const holiday = this.isHolidayDate(ds);
+      const isNight = normAr(add.category).includes(normAr('ليلي'));
+      const group = this.classifyOncallGroup(add.category);
+
+      entry.total++;
+      if (isCompleted) entry.completed++;
+      else entry.remaining++;
+
+      if (group === 'wards') entry.wards++;
+      else if (group === 'icu') entry.icu++;
+      else if (group === 'emergency') entry.emergency++;
+      else if (group === 'misc') entry.misc++;
+
+      const gd = entry.groupDetails[group] || entry.groupDetails.other;
+      gd[add.category] = (gd[add.category] || 0) + 1;
+
+      if (!entry.catDates[add.category]) entry.catDates[add.category] = [];
+      entry.catDates[add.category].push(ds);
+
+      if (holiday) entry.holiday++;
+      if (isNight) entry.night++;
+
+      entry.hoursTotal += add.hours;
+      if (isCompleted) entry.hoursCompleted += add.hours;
+
+      if (!entry.firstOncall || ds < entry.firstOncall) entry.firstOncall = ds;
+      if (!entry.lastOncall || ds > entry.lastOncall) entry.lastOncall = ds;
     });
 
     const list = Array.from(statsMap.values());
@@ -1912,6 +1971,54 @@ class HospitalApp {
   doctorStatCardHtml(r) {
     const uid = `${(r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_')}`;
     return `<div class="doctor-stat-card"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div></div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursCompleted)}</div><div class="dsc-hours-lbl">ساعة (مناوبات تمّت)</div><div class="dsc-hours-rank">الترتيب: #${r.rankCompleted}</div></div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursTotal)}</div><div class="dsc-hours-lbl">ساعة (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}</span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}</div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
+  }
+
+  downloadDoctorStatsExcel() {
+    if (typeof XLSX === 'undefined') {
+      showToast('تعذر تحميل مكتبة إكسل، حدّث الصفحة وحاول مرة أخرى.');
+      return;
+    }
+    if (!this.doctorStats.length) {
+      showToast('لا توجد بيانات احصائيات لتصديرها.');
+      return;
+    }
+
+    const round1 = v => Math.round((safeNum(v) || 0) * 10) / 10;
+
+    const list = this.doctorStats.slice().sort((a, b) => b.hoursCompleted - a.hoursCompleted);
+    const rows = list.map(r => ({
+      'الاسم': r.name || '',
+      'الاختصار': r.abbr || '',
+      'أيام منذ الالتحاق': r.joinDaysSince ?? '',
+      'مناوبات تراكمية': r.total || 0,
+      'مناوبات تمت': r.completed || 0,
+      'ساعات تمت': round1(r.hoursCompleted),
+      'ترتيب الساعات (تمت)': r.rankCompleted || '',
+      'ساعات تراكمية': round1(r.hoursTotal),
+      'ترتيب الساعات (تراكمية)': r.rankTotal || '',
+      'أجنحة': r.wards || 0,
+      'عنايات': r.icu || 0,
+      'اسعاف': r.emergency || 0,
+      'منوع': r.misc || 0,
+      'مناوبات عطل': r.holiday || 0,
+      'مناوبات ليلية': r.night || 0,
+      'أول مناوبة': r.firstOncall || '',
+      'آخر مناوبة': r.lastOncall || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 24 }, { wch: 10 }, { wch: 16 }, { wch: 15 }, { wch: 13 },
+      { wch: 11 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 9 },
+      { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 13 }, { wch: 13 },
+      { wch: 13 }, { wch: 13 }
+    ];
+    ws['!autofilter'] = { ref: ws['!ref'] };
+
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(wb, ws, 'احصائيات الأطباء');
+    XLSX.writeFile(wb, `احصائيات_الاطباء_${this.today}.xlsx`);
   }
 
   renderDoctorStats() {
@@ -2009,6 +2116,105 @@ class HospitalApp {
       console.warn('[Year2] parsed 0 rows from', d.length, 'raw rows. Raw row 2 (first expected data row):', d[2]);
     }
     if (failedDates.length) console.warn('[Year2] failed to parse these date cells:', failedDates);
+  }
+
+  // Manual on-call adjustments (GID_ADJ): overtime-hour corrections for specific
+  // people on specific existing shifts, and/or brand-new volunteer shifts.
+  // Columns: A=name, B=abbr, C=date (day-month-year), D=category, E=hours.
+  parseOncallAdjustments(d) {
+    this.oncallAdjustments = [];
+    if (!d || d.length < 1) return;
+
+    const headerCell = ((d[0] || [])[0] || '').trim();
+    const startIdx = normAr(headerCell).includes(normAr('الاسم')) ? 1 : 0;
+
+    for (let i = startIdx; i < d.length; i++) {
+      const row = d[i];
+      if (!row || !row.length) continue;
+
+      const name = (row[0] || '').trim();
+      const abbr = (row[1] || '').trim();
+      const dateRaw = (row[2] || '').trim();
+      const category = (row[3] || '').trim();
+      const hoursRaw = (row[4] || '').trim();
+      if (!name && !abbr) continue;
+
+      const ds = extractDate(dateRaw);
+      const hours = safeNum(hoursRaw);
+      if (!ds || !category || !Number.isFinite(hours)) {
+        console.warn('[Adjustments] skipped unparsable row:', row);
+        continue;
+      }
+
+      this.oncallAdjustments.push({ name, abbr, date: ds, category, hours });
+    }
+  }
+
+  isResidentOnCallFor(dateIso, category, resAbbr) {
+    const oncRow = this.oncRows.find(r => r.date === dateIso);
+    if (!oncRow) return false;
+
+    const col = this.oncHeaders.findIndex((h, i) => i >= 2 && normAr(h || '') === normAr(category));
+    if (col < 0) return false;
+
+    const cellVal = (oncRow.row[col] || '').trim();
+    if (!cellVal) return false;
+
+    return splitNames(cellVal).some(n => {
+      const cr = this.findRbyExact(n);
+      return cr ? cr.abbr === resAbbr : normAr(n) === normAr(resAbbr);
+    });
+  }
+
+  // Turns raw adjustment rows into two things every other feature (stats, My Info,
+  // the day-view calendar) reads from: `adjustmentOverrides` (a corrected hours value
+  // for a person who WAS already on that shift) and `adjustmentAdditions` (a person who
+  // was NOT already on that shift — a brand-new/volunteer entry). Must run after both
+  // residents and the Year-1 on-call log are parsed (it needs both to tell the two cases apart).
+  resolveOncallAdjustments() {
+    this.adjustmentOverrides = new Map();
+    this.adjustmentAdditions = [];
+
+    this.oncallAdjustments.forEach(adj => {
+      const resident = (adj.abbr && this.findRbyExact(adj.abbr)) || this.findRbyExact(adj.name);
+      const abbr = resident ? resident.abbr || resident.name : adj.abbr || adj.name;
+      const name = resident ? resident.name : adj.name;
+
+      if (this.isResidentOnCallFor(adj.date, adj.category, abbr)) {
+        const key = `${adj.date}|${abbr}|${normAr(adj.category)}`;
+        this.adjustmentOverrides.set(key, adj.hours);
+      } else {
+        this.adjustmentAdditions.push({ date: adj.date, category: adj.category, name, abbr, hours: adj.hours });
+      }
+    });
+  }
+
+  getColleaguesForDateCategory(dateIso, category, excludeAbbr) {
+    const list = [];
+
+    const oncRow = this.oncRows.find(r => r.date === dateIso);
+    if (oncRow) {
+      const col = this.oncHeaders.findIndex((h, i) => i >= 2 && normAr(h || '') === normAr(category));
+      if (col >= 0) {
+        const cellVal = (oncRow.row[col] || '').trim();
+        if (cellVal) {
+          splitNames(cellVal).forEach(n => {
+            const cr = this.findRbyExact(n);
+            const abbr = cr ? cr.abbr || cr.name : n;
+            if (abbr === excludeAbbr) return;
+            if (!list.find(x => x.abbr === abbr)) list.push({ name: cr ? cr.name : n, abbr, phone: cr ? cr.phone : '' });
+          });
+        }
+      }
+    }
+
+    this.adjustmentAdditions.forEach(a => {
+      if (a.date !== dateIso || normAr(a.category) !== normAr(category)) return;
+      if (a.abbr === excludeAbbr) return;
+      if (!list.find(x => x.abbr === a.abbr)) list.push({ name: a.name, abbr: a.abbr, phone: '' });
+    });
+
+    return list;
   }
 
   parseOncallRules(d) {
@@ -2142,13 +2348,16 @@ class HospitalApp {
       const sel = ds === this.selectedOncallDate;
       const pa = ds < this.today;
 
+      const hasVolunteer = this.adjustmentAdditions.some(a => a.date === ds);
+
       let cls = 'calendar-day';
       if (it) cls += ' today';
       if (sel) cls += ' selected-day';
       if (pa && !sel) cls += ' past-day';
       if (di === 5 || di === 6) cls += ' weekend';
+      if (hasVolunteer) cls += ' has-volunteer';
 
-      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')">${day}</div>`;
+      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')">${day}${hasVolunteer ? '<span class="calendar-volunteer-dot" title="مناوبة تطوعية إضافية"></span>' : ''}</div>`;
     }
 
     h += '</div></div>';
@@ -2283,27 +2492,46 @@ class HospitalApp {
     }
   }
 
-  buildOncallCategoriesForDate(dstr, oncRows, oncHeaders) {
+  buildOncallCategoriesForDate(dstr, oncRows, oncHeaders, applyAdjustments) {
     const row = (oncRows || []).find(r => r.date === dstr);
     const cats = {};
-    if (!row) return cats;
 
-    for (let col = 2; col < oncHeaders.length; col++) {
-      const cn = oncHeaders[col] || 'أخرى';
-      const cc = (row.row[col] || '').trim();
-      if (!cc) continue;
-      const names = splitNames(cc);
-      if (!names.length) continue;
+    if (row) {
+      for (let col = 2; col < oncHeaders.length; col++) {
+        const cn = oncHeaders[col] || 'أخرى';
+        const cc = (row.row[col] || '').trim();
+        if (!cc) continue;
+        const names = splitNames(cc);
+        if (!names.length) continue;
 
-      if (!cats[cn]) cats[cn] = [];
-      for (const n of names) {
-        const resident = this.findRbyExact(n);
-        const fn = resident ? resident.name : n;
-        const ph = resident ? resident.phone : '';
-        const ab = resident ? resident.abbr : n;
-        if (!cats[cn].find(x => x.abbr === ab)) cats[cn].push({ abbr: ab, name: fn, phone: ph, resAbbr: ab });
+        if (!cats[cn]) cats[cn] = [];
+        for (const n of names) {
+          const resident = this.findRbyExact(n);
+          const fn = resident ? resident.name : n;
+          const ph = resident ? resident.phone : '';
+          const ab = resident ? resident.abbr : n;
+          if (cats[cn].find(x => x.abbr === ab)) continue;
+
+          const entryObj = { abbr: ab, name: fn, phone: ph, resAbbr: ab };
+          if (applyAdjustments) {
+            const overrideKey = `${dstr}|${ab}|${normAr(cn)}`;
+            if (this.adjustmentOverrides.has(overrideKey)) entryObj.hoursOverride = this.adjustmentOverrides.get(overrideKey);
+          }
+          cats[cn].push(entryObj);
+        }
       }
     }
+
+    if (applyAdjustments) {
+      this.adjustmentAdditions
+        .filter(a => a.date === dstr)
+        .forEach(a => {
+          if (!cats[a.category]) cats[a.category] = [];
+          if (cats[a.category].find(x => x.abbr === a.abbr)) return;
+          cats[a.category].push({ abbr: a.abbr, name: a.name, phone: '', resAbbr: a.abbr, isVolunteer: true, hoursOverride: a.hours });
+        });
+    }
+
     return cats;
   }
 
@@ -2315,7 +2543,12 @@ class HospitalApp {
       const scheduleHtml = schedule && (schedule.time || schedule.duration) ? `<div class="oncall-schedule-meta${schedule.isHoliday ? ' holiday' : ''}"><span>${schedule.time || '-'}</span><span>${schedule.duration || '-'}</span></div>` : '';
 
       h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}<div class="oncall-names-list">`;
-      for (const n of names) h += `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}</span>`;
+      for (const n of names) {
+        let extra = '';
+        if (n.isVolunteer) extra = ` <span class="oncall-mini-badge volunteer">تطوعي · ${this.formatNumDisplay(n.hoursOverride)} س</span>`;
+        else if (n.hoursOverride !== undefined) extra = ` <span class="oncall-mini-badge adjusted">${this.formatNumDisplay(n.hoursOverride)} س</span>`;
+        h += `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}${extra}</span>`;
+      }
       h += '</div></div>';
     }
     h += '</div>';
@@ -2342,8 +2575,8 @@ class HospitalApp {
     const showY2 = this.oncallYearFilter === 'y2' || this.oncallYearFilter === 'y1y2';
     const showBoth = this.oncallYearFilter === 'y1y2';
 
-    const cats1 = showY1 ? this.buildOncallCategoriesForDate(dstr, this.oncRows, this.oncHeaders) : {};
-    const cats2 = showY2 ? this.buildOncallCategoriesForDate(dstr, this.oncRows2, this.oncHeaders2) : {};
+    const cats1 = showY1 ? this.buildOncallCategoriesForDate(dstr, this.oncRows, this.oncHeaders, true) : {};
+    const cats2 = showY2 ? this.buildOncallCategoriesForDate(dstr, this.oncRows2, this.oncHeaders2, false) : {};
     const entries1 = Object.entries(cats1);
     const entries2 = Object.entries(cats2);
 
@@ -2773,16 +3006,14 @@ class HospitalApp {
         if (!found) continue;
 
         const cn = this.oncHeaders[col] || 'أخرى';
-        const colleagues = [];
-        for (const n of names) {
-          if (!exactNameMatch(n, r.abbr) && !exactNameMatch(n, r.name)) {
-            const cr = this.findRbyExact(n);
-            if (cr) colleagues.push({ name: cr.name, abbr: cr.abbr, phone: cr.phone });
-            else colleagues.push({ name: n, abbr: n, phone: '' });
-          }
-        }
+        const colleagues = this.getColleaguesForDateCategory(onc.date, cn, r.abbr);
 
         const schedule = this.getCategorySchedule(cn, onc.date);
+        const overrideKey = `${onc.date}|${r.abbr}|${normAr(cn)}`;
+        if (schedule && this.adjustmentOverrides.has(overrideKey)) {
+          schedule.duration = `${this.formatNumDisplay(this.adjustmentOverrides.get(overrideKey))} ساعة`;
+          schedule.isAdjusted = true;
+        }
         const year2Colleagues = this.getYear2ColleaguesForDate(onc.date, cn);
         allOncalls.push({
           date: onc.date,
@@ -2795,6 +3026,21 @@ class HospitalApp {
         });
       }
     }
+
+    this.adjustmentAdditions
+      .filter(a => a.abbr === r.abbr || a.name === r.name)
+      .forEach(a => {
+        const colleagues = this.getColleaguesForDateCategory(a.date, a.category, r.abbr);
+        allOncalls.push({
+          date: a.date,
+          day: getDayName(a.date),
+          dayIdx: getDayIndex(a.date),
+          cat: a.category,
+          colleagues,
+          year2Colleagues: this.getYear2ColleaguesForDate(a.date, a.category),
+          schedule: { isHoliday: this.isHolidayDate(a.date), time: '', duration: `${this.formatNumDisplay(a.hours)} ساعة`, isAdjusted: true, isVolunteer: true }
+        });
+      });
 
     allOncalls.sort((a, b) => a.date.localeCompare(b.date));
 
@@ -2896,7 +3142,7 @@ class HospitalApp {
         const sch = o.schedule;
         const isPast = o.date < this.today;
         const rowId = `myInfoOncall-${o.date}-${idx}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-        h += `<div class="oncall-info-row${we ? ' holiday' : ''}${isPast ? ' past done' : ''}" id="${rowId}" data-oncall-date="${o.date}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot holiday"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}${we ? '<span class="oncall-holiday-badge">عطلة</span>' : ''}</span><span class="oc-type">${o.cat}${isPast ? ' <span class="oncall-done-badge"><i class="fas fa-check"></i> تم</span>' : ''}</span></div>`;
+        h += `<div class="oncall-info-row${we ? ' holiday' : ''}${isPast ? ' past done' : ''}" id="${rowId}" data-oncall-date="${o.date}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot holiday"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}${we ? '<span class="oncall-holiday-badge">عطلة</span>' : ''}</span><span class="oc-type">${o.cat}${isPast ? ' <span class="oncall-done-badge"><i class="fas fa-check"></i> تم</span>' : ''}${sch && sch.isVolunteer ? ' <span class="oncall-volunteer-badge"><i class="fas fa-hand-holding-heart"></i> تطوعية</span>' : sch && sch.isAdjusted ? ' <span class="oncall-adjusted-badge"><i class="fas fa-pen"></i> ساعات معدّلة</span>' : ''}</span></div>`;
         if (sch && (sch.time || sch.duration)) h += `<div class="myinfo-oncall-meta${sch.isHoliday ? ' holiday' : ''}"><span><i class="fas fa-clock"></i> ${sch.time || '-'}</span><span><i class="fas fa-hourglass-half"></i> ${sch.duration || '-'}</span></div>`;
         if (o.colleagues.length) h += `<div class="colleague-row"><span class="cl-label"><i class="fas fa-users"></i> الزملاء:</span><span class="cl-names">${o.colleagues.map((c, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${mcn(c.name, c.phone, c.abbr)}`).join('')}</span></div>`;
         if (o.year2Colleagues && o.year2Colleagues.length) h += `<div class="colleague-row colleague-row-y2"><span class="cl-label"><i class="fas fa-user-graduate"></i> السنة الثانية:</span><span class="cl-names">${o.year2Colleagues.map((n, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${this.escapeHtml(n)}`).join('')}</span></div>`;

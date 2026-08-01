@@ -338,6 +338,71 @@ the holiday or workday row depending on `isHolidayDate(dateIso)`.
 
 ---
 
+## 10. On-call Adjustments (`GID_ADJ = 1181737768`, CSV, main spreadsheet)
+
+A manually-maintained tab for cases that can't be edited directly into the main
+on-call table (`GID_O`): per-person overtime-hour corrections, and brand-new
+volunteer shifts. Columns (no strict header-name matching — read by fixed
+position):
+
+| Col | Field | Notes |
+|---|---|---|
+| A | الاسم | Full name |
+| B | الاختصار | Abbreviation |
+| C | تاريخ المناوبة | Day-month-year (`extractDate()` handles `-`, `/`, `.`, `\`) |
+| D | نوع المناوبة | Category name — must match a category name in `GID_O`'s header row for an hours-override to be recognized; for a volunteer addition it can be any category name (existing or new) |
+| E | عدد الساعات | Numeric hours for that person on that shift |
+
+`parseOncallAdjustments()` in `app.js` parses this into `this.oncallAdjustments`
+(skips rows with an unparsable date/hours, logging a `console.warn`).
+`resolveOncallAdjustments()` (run once, after both residents and the Year-1
+on-call log are parsed) classifies each row into exactly one of:
+
+- **Override** — the person is *already* listed in `GID_O` for that
+  date+category (checked via `isResidentOnCallFor()`). Stored in
+  `this.adjustmentOverrides` (`Map`, key `` `${date}|${abbr}|${normAr(category)}` ``
+  → corrected hours). This lets 3 out of 5 people on the same shift get a
+  personal hour correction while the other 2 keep the standard duration.
+- **Addition** — the person is *not* already listed there (a new date, or an
+  existing date/category they simply weren't on). Stored in
+  `this.adjustmentAdditions` (array of `{date, category, name, abbr, hours}`) —
+  treated everywhere as if it were a real entry in `GID_O`.
+
+Consumed by:
+- **`computeDoctorStats()`** — overrides replace the computed duration for that
+  specific person+shift; additions are folded in as brand-new entries (same
+  group/holiday/night/hours accounting as a normal on-call row).
+- **My Info (`showMe`)** — `getColleaguesForDateCategory()` merges real on-call
+  names with same-day/category additions so colleague lists stay consistent in
+  both directions; overridden/volunteer entries show a "ساعات معدّلة" /
+  "تطوعية" badge.
+- **On-call day view (`showOncallDate` / `buildOncallCategoriesForDate`)** —
+  additions appear inside their category (creating the category if it's a
+  brand-new one for that day) with a "تطوعي" badge + their hours; people with
+  an override get a small hours badge next to just their name tag. Only
+  applied to Year-1 (`applyAdjustments` is `false` for the Year-2 render path).
+- **Main on-call calendar (`renderMonthlyCalendar`)** — any day with at least
+  one addition gets a small gold dot, so a brand-new volunteer date is
+  discoverable even though it wasn't previously a normal on-call day.
+
+Not applied to the raw "عرض كجدول" table, which intentionally mirrors `GID_O`'s
+literal cell contents.
+
+---
+
+## Doctor Statistics Excel export
+
+`downloadDoctorStatsExcel()` in `app.js` (button in the احصائيات الأطباء tab)
+uses SheetJS (loaded via CDN in `index.html`) to export `this.doctorStats` —
+sorted by `hoursCompleted` descending — as a 17-column `.xlsx` file (name,
+abbr, days since join, cumulative/completed on-call counts, hours + rank for
+both completed and cumulative, the four group counts, holiday/night counts,
+first/last on-call date). Column widths and an autofilter are set for
+readability; hour values are rounded to 1 decimal to avoid floating-point
+noise in the exported cells.
+
+---
+
 ## Caching & refresh
 
 - The full fetched dataset is cached in `localStorage` under key pattern

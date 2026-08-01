@@ -76,10 +76,12 @@ constructor, lines 349–357):
   hides the loading screen, and triggers `loadFresh()` in the background.
   If there is no valid cache, it waits for a foreground fetch and the same
   header-image readiness before hiding the loading screen.
-3. **`loadFresh(silent)`**: fetches all seven Year-1 sheet tabs, plus the Year-2
-   on-call tab from the second spreadsheet (`SID2`/`GID_O2`), in parallel via
-   `Promise.all`, parses, renders, computes doctor statistics (see below),
-   and writes the new snapshot to cache.
+3. **`loadFresh(silent)`**: fetches all seven Year-1 sheet tabs, the Year-2
+   on-call tab from the second spreadsheet (`SID2`/`GID_O2`), and the on-call
+   adjustments tab (`GID_ADJ`), in parallel via `Promise.all`, parses, resolves
+   adjustments (`resolveOncallAdjustments()` — must run after residents + the
+   Year-1 on-call log), renders, computes doctor statistics (see below), and
+   writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).
 
 ### Data fetching & parsing
@@ -169,6 +171,15 @@ The app's value is in **joining** data across sheets by matching names/abbreviat
 - **Doctor statistics** (see DATA-MODEL.md "Computed Doctor Statistics"): computed
   from residents + the on-call log rather than read from a sheet tab, and rendered
   as a card grid (`renderDoctorStats`, `doctorStatCardHtml`) reused inside "my info".
+  `downloadDoctorStatsExcel()` exports the full computed table as a 17-column `.xlsx`
+  via SheetJS (CDN-loaded in `index.html`).
+
+- **On-call adjustments** (see DATA-MODEL.md "On-call Adjustments"): a manual
+  correction/addition sheet (`GID_ADJ`) resolved once into `adjustmentOverrides`
+  (per-person hour corrections) and `adjustmentAdditions` (volunteer shifts),
+  consumed by `computeDoctorStats`, `showMe`, `showOncallDate`, and the main
+  on-call calendar (a gold dot marks days with an addition). Not applied to the
+  raw table, which mirrors `GID_O` literally.
 
 - **On-call raw table on mobile**: "عرض كجدول" opens as a fixed near-fullscreen modal
   (`#oncallRawTableWrap` + `#oncallRawBackdrop`, toggled together by
