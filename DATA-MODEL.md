@@ -278,16 +278,22 @@ on-call category with `workTime`, `workDuration`, `holidayTime`,
 
 | Category | Workday | Duration | Holiday | Duration |
 |---|---|---|---|---|
-| عناية قلبية / عناية مركز / عناية داخلية / سابع / رابع / تالت / تاني / خارجيات / ديال / أورام / إسعاف مركز صباحي / اسعاف بارد صباحي | 2:30 حتى 10:00 | 7 ساعات ونصف | 9 صباحاً حتى 10 ليلاً | 13 ساعة |
-| إسعاف مركز ليلي / اسعاف بارد ليلي | 10:00 ليلاً حتى 8:30 صباحاً | 10 ساعات ونصف | 10:00 ليلاً حتى 9:00 صباحاً | 11 ساعة |
+| عناية قلبية / عناية مركز / عناية داخلية / سابع / رابع / تالت / تاني / خارجيات / ديال / أورام / إسعاف مركز صباحي / اسعاف بارد صباحي / إسعاف باب نهاري | 2:30 حتى 10:00 | 7 ساعات ونصف | 9 صباحاً حتى 10 ليلاً | 13 ساعة |
+| إسعاف مركز ليلي / اسعاف بارد ليلي / اسعاف باب ليلي | 10:00 ليلاً حتى 8:30 صباحاً | 10 ساعات ونصف | 10:00 ليلاً حتى 9:00 صباحاً | 11 ساعة |
 
 **New schedule** (`ONCALL_SCHEDULE_NEW`, used for on-call days on/after the switch date — full/كاملة shifts):
 
 | Category | Workday | Duration | Holiday | Duration |
 |---|---|---|---|---|
 | عناية قلبية / عناية مركز / عناية داخلية / سابع / رابع / تالت / تاني / خارجيات / ديال / أورام | 2:30 حتى 8:30 | 18 ساعة | 9:00 حتى 9:00 | 24 ساعة |
-| إسعاف مركز صباحي / اسعاف بارد صباحي | 2:30 حتى 10:00 | 7 ساعات ونصف | 9:00 حتى 10:00 | 13 ساعة |
-| إسعاف مركز ليلي / اسعاف بارد ليلي | 10:00 حتى 8:30 | 10 ساعات ونصف | 10:00 حتى 9:00 | 11 ساعة |
+| إسعاف مركز صباحي / اسعاف بارد صباحي / إسعاف باب نهاري | 2:30 حتى 10:00 | 7 ساعات ونصف | 9:00 حتى 10:00 | 13 ساعة |
+| إسعاف مركز ليلي / اسعاف بارد ليلي / اسعاف باب ليلي | 10:00 حتى 8:30 | 10 ساعات ونصف | 10:00 حتى 9:00 | 11 ساعة |
+
+> Added 2026-07-30: `إسعاف باب نهاري` / `اسعاف باب ليلي` are two brand-new
+> on-call categories (a person stationed at the ER door/reception, day and
+> night shifts) — given the same single time/duration in both the old and new
+> tables since only one schedule was supplied for them (no historical
+> before/after-switch distinction was requested).
 
 `getCategorySchedule(cat, dateIso)` in `app.js` picks the old or new table by
 comparing `dateIso` (the on-call day being displayed) to

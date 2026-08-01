@@ -388,7 +388,6 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .oncall-schedule-meta span{display:inline-flex;align-items:center;padding:4px 9px;border-radius:var(--radius-full);font-size:10px;font-weight:700;background:#eef4ff;color:var(--primary);border:1px solid rgba(27,58,92,0.2)}
 .oncall-schedule-meta.holiday span{background:rgba(220,38,38,0.09);border-color:rgba(220,38,38,0.24);color:#b91c1c}
 .oncall-raw-wrap{margin-bottom:14px}
-.oncall-raw-backdrop{display:none}
 .oncall-raw-modal-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
 .oncall-raw-modal-head h4{margin:0;font-size:14px;display:flex;align-items:center;gap:6px;color:var(--text)}
 .oncall-raw-close-btn{border:none;background:var(--gray-100);color:var(--text);width:30px;height:30px;border-radius:50%;font-size:13px;cursor:pointer;flex-shrink:0;transition:var(--transition-fast)}
@@ -562,13 +561,10 @@ body.dark-mode .oncall-holiday-badge{background:rgba(248,113,113,0.14);border-co
 .myinfo-calendar-controls{flex-direction:column;align-items:stretch}
 .myinfo-calendar-controls .month-selector,.myinfo-month-label{width:100%}
 .myinfo-heading-row{justify-content:flex-start;text-align:right}
-.oncall-raw-backdrop.show{display:block;position:fixed;inset:0;background:rgba(19,37,55,0.55);z-index:4999}
-body.oncall-raw-modal-open{overflow:hidden}
-#oncallRawTableWrap{position:fixed;top:56px;left:8px;right:8px;bottom:56px;z-index:5000;background:var(--card-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow-xl);display:flex;flex-direction:column;overflow:hidden;margin-bottom:0}
-#oncallRawTableWrap .oncall-raw-table-wrap{flex:1;max-height:none;margin:0;min-height:0;-webkit-overflow-scrolling:touch}
-.oncall-raw-table{min-width:640px}
-.oncall-raw-table th.oncall-raw-sticky-col-1,.oncall-raw-table td.oncall-raw-sticky-col-1{min-width:52px!important;width:52px!important;font-size:9px;padding:5px 3px}
-.oncall-raw-table th.oncall-raw-sticky-col-2,.oncall-raw-table td.oncall-raw-sticky-col-2{right:52px;min-width:66px!important;width:66px!important;font-size:9px;padding:5px 3px}
+.oncall-raw-table th.oncall-raw-sticky-col-1,.oncall-raw-table td.oncall-raw-sticky-col-1{min-width:46px!important;width:46px!important;font-size:9px;padding:5px 2px}
+.oncall-raw-table th.oncall-raw-sticky-col-2,.oncall-raw-table td.oncall-raw-sticky-col-2{right:46px;min-width:60px!important;width:60px!important;font-size:9px;padding:5px 2px}
+.oncall-raw-table{min-width:560px}
+.oncall-raw-table-wrap{max-height:60vh;-webkit-overflow-scrolling:touch}
 }
 @media(max-width:480px){.info-grid{grid-template-columns:1fr}.nav-btn span{font-size:9px}.calendar-day{font-size:9px;padding:5px 1px}.calendar-day-header{font-size:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}.animated-bg,.bg-orb{display:none!important}}

@@ -2494,18 +2494,13 @@ class HospitalApp {
 
   toggleOncallRawTable() {
     const wrap = document.getElementById('oncallRawTableWrap');
-    const backdrop = document.getElementById('oncallRawBackdrop');
     if (!wrap) return;
     if (wrap.style.display === 'none' || !wrap.style.display) {
       this.renderOncallRawTable();
       wrap.style.display = 'block';
-      if (backdrop) backdrop.classList.add('show');
-      document.body.classList.add('oncall-raw-modal-open');
       wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       wrap.style.display = 'none';
-      if (backdrop) backdrop.classList.remove('show');
-      document.body.classList.remove('oncall-raw-modal-open');
     }
   }
 

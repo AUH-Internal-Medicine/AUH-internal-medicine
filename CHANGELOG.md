@@ -47,6 +47,16 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — Add "إسعاف باب نهاري/ليلي" duty categories; revert mobile raw-table to a simple inline panel (fixed scroll)
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** Two independent fixes:
+  1. Added two new fixed on-call categories, `إسعاف باب نهاري` (2:30–10:00, 7 ساعات ونصف workday / 9–10, 13 ساعة holiday) and `اسعاف باب ليلي` (10:00–8:30, 10 ساعات ونصف workday / 10–9, 11 ساعة holiday), to **both** `ONCALL_SCHEDULE_OLD` and `ONCALL_SCHEDULE_NEW` in `helpers.js` — only one schedule was given (no before/after-switch-date distinction requested for these), so both tables carry the same values. Verified directly against the extracted values.
+  2. Reverted the mobile "عرض كجدول" raw-table behavior: last session's fixed-position full-screen modal (with a backdrop and body-scroll lock) couldn't be scrolled to the bottom on some mobile browsers despite an earlier `min-height:0` fix. Went back to a simple **inline** panel (same approach as desktop) under `max-width:768px`, keeping both frozen columns but shrinking them further (46px/60px, down from 52px/66px) so more data columns fit per horizontal scroll. Removed the now-unused backdrop element (`#oncallRawBackdrop`), its CSS, and the modal-related body class from `toggleOncallRawTable()` for cleanliness.
+- **Files:** helpers.js, app.js, styles.css, DATA-MODEL.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md (added the two new categories to both fixed-schedule tables with a note on why they're identical in both).
+- **Notes / follow-ups:** If `إسعاف باب نهاري`/`اسعاف باب ليلي` ever need a different (historical) schedule before some date, split them out of `ONCALL_SCHEDULE_OLD` with their own values the same way the other categories are split. The simplified inline mobile table is a known-reliable pattern (no flex/fixed-position edge cases to worry about) — if frozen-column readability still isn't good enough on very narrow phones, the next lever to pull is shrinking the columns further rather than reintroducing a modal.
+
 ## 2026-07-30 — Excel export: order rows by roster order instead of hours
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** code
