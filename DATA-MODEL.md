@@ -285,9 +285,16 @@ on-call category with `workTime`, `workDuration`, `holidayTime`,
 
 | Category | Workday | Duration | Holiday | Duration |
 |---|---|---|---|---|
-| عناية قلبية / عناية مركز / عناية داخلية / سابع / رابع / تالت / تاني / خارجيات / ديال / أورام | 2:30 حتى 8:30 | 18 ساعة | 9:00 حتى 9:00 | 24 ساعة |
-| إسعاف مركز صباحي / اسعاف بارد صباحي / إسعاف باب نهاري | 2:30 حتى 10:00 | 7 ساعات ونصف | 9:00 حتى 10:00 | 13 ساعة |
-| إسعاف مركز ليلي / اسعاف بارد ليلي / اسعاف باب ليلي | 10:00 حتى 8:30 | 10 ساعات ونصف | 10:00 حتى 9:00 | 11 ساعة |
+| عناية قلبية / عناية مركز / عناية داخلية / سابع / رابع / تالت / تاني / خارجيات / ديال / أورام | 2:30 pm حتى 8:30 am | 18 ساعة | 9:00 am حتى 9:00 am | 24 ساعة |
+| إسعاف مركز صباحي / اسعاف بارد صباحي / إسعاف باب نهاري | 2:30 pm حتى 10:00 pm | 7 ساعات ونصف | 9:00 am حتى 10:00 pm | 13 ساعة |
+| إسعاف مركز ليلي / اسعاف بارد ليلي / اسعاف باب ليلي | 10:00 pm حتى 8:30 am | 10 ساعات ونصف | 10:00 pm حتى 9:00 am | 11 ساعة |
+
+> Updated 2026-07-30: `ONCALL_SCHEDULE_NEW`'s `workTime`/`holidayTime` strings
+> now include `am`/`pm` (e.g. `2:30 pm حتى 8:30 am`) for clarity — purely
+> display text, the underlying hour numbers and `workDuration`/
+> `holidayDuration` values are unchanged. `ONCALL_SCHEDULE_OLD` (historical,
+> before the switch date) was left as plain text since no AM/PM change was
+> requested for it.
 
 > Added 2026-07-30: `إسعاف باب نهاري` / `اسعاف باب ليلي` are two brand-new
 > on-call categories (a person stationed at the ER door/reception, day and

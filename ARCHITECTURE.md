@@ -84,6 +84,33 @@ constructor, lines 349–357):
    writes the new snapshot to cache.
    `silent=true` skips the progress bar (used for background refreshes).
 
+### Keeping data fresh (auto-refresh + manual refresh)
+
+The Google Sheet and the app's own code both change often, and not everyone
+remembers to reload the tab, so freshness is handled on several layers
+without requiring the person to do anything:
+
+- **Silent background data refresh**: `setInterval(..., 120000)` calls
+  `loadFresh(true)` every 2 minutes while the tab is visible
+  (`!document.hidden`); `silent=true` means no big progress bar, just a
+  re-render once the fetch resolves.
+- **Refresh on refocus**: a `visibilitychange` listener calls `loadFresh(true)`
+  (and `checkForAppUpdate()`) the moment a backgrounded tab becomes visible
+  again — covers the common case of a resident leaving the tab open for hours
+  and switching back to it.
+- **App-code update check**: a separate `setInterval(..., 90000)` calls
+  `checkForAppUpdate()`, which fetches `index.html` fresh, compares its build
+  id meta tag to the currently-running build, and if different, clears old
+  caches and reloads to the new build — so a code deploy doesn't require
+  anyone to manually hard-refresh either.
+- **Visible "last updated" badge + manual refresh button**: `updateTime()`
+  sets the `#lastUpdateTime` header badge's text every time data is
+  (re)loaded, so staleness is visible at a glance. That badge is now also a
+  button (`manualRefresh()` in `app.js`) — clicking it spins its icon,
+  force-runs `loadFresh(true)`, and shows a success/failure toast, giving
+  people an explicit "refresh now" action instead of only relying on the
+  background timers.
+
 ### Data fetching & parsing
 
 - **`fetchCSV(gid)`** (427): hits

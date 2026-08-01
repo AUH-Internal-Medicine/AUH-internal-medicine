@@ -3222,7 +3222,25 @@ class HospitalApp {
 
   updateTime() {
     const el = document.getElementById('lastUpdateTime');
-    if (el) el.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SA');
+    if (el) el.innerHTML = `<i class="fas fa-rotate"></i> آخر تحديث: ${new Date().toLocaleTimeString('ar-SA')}`;
+  }
+
+  async manualRefresh() {
+    if (this._manualRefreshRunning) return;
+    this._manualRefreshRunning = true;
+
+    const btn = document.getElementById('lastUpdateTime');
+    if (btn) btn.classList.add('refreshing');
+
+    try {
+      await this.loadFresh(true);
+      showToast('تم تحديث البيانات بنجاح ✅');
+    } catch (e) {
+      showToast('تعذر التحديث، حاول مرة أخرى.');
+    } finally {
+      if (btn) btn.classList.remove('refreshing');
+      this._manualRefreshRunning = false;
+    }
   }
 }
 

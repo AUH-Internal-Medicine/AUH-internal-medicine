@@ -84,6 +84,10 @@ body.dark-mode .header-bg-photo{opacity:0.78;filter:saturate(1.02) contrast(1.06
 .hospital-name{font-size:1.3em;margin-top:15px;opacity:0.95;font-weight:500}
 .header-stats{display:flex;justify-content:center;gap:14px;margin-top:20px;flex-wrap:wrap}
 .stat-badge{background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);padding:10px 22px;border-radius:var(--radius-full);font-size:14px;border:1px solid rgba(255,255,255,0.3);transition:var(--transition)}
+.refresh-badge-btn{color:var(--header-text);font-family:'Tajawal',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.refresh-badge-btn:hover{background:rgba(255,255,255,0.32);transform:translateY(-1px)}
+.refresh-badge-btn.refreshing i{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .stat-badge:hover{background:rgba(255,255,255,0.35);transform:translateY(-3px)}
 .main-nav{background:linear-gradient(180deg,rgba(255,255,255,0.93),rgba(255,255,255,0.86));backdrop-filter:blur(20px);position:relative;z-index:200;box-shadow:0 5px 30px rgba(0,0,0,0.1);padding:10px;border-bottom:2px solid rgba(27,58,92,0.12)}
 .nav-container{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;max-width:1200px;margin:0 auto}

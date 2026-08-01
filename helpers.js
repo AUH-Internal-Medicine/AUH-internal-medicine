@@ -335,22 +335,22 @@ const ONCALL_SCHEDULE_OLD={
 };
 
 const ONCALL_SCHEDULE_NEW={
-  'عناية قلبية':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'عناية مركز':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'عناية داخلية':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'سابع':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'رابع':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'تالت':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'تاني':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'خارجيات':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'ديال':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'أورام':{workTime:'2:30 حتى 8:30',workDuration:'18 ساعة',holidayTime:'9:00 حتى 9:00',holidayDuration:'24 ساعة'},
-  'إسعاف مركز صباحي':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9:00 حتى 10:00',holidayDuration:'13 ساعة'},
-  'إسعاف مركز ليلي':{workTime:'10:00 حتى 8:30',workDuration:'10 ساعات ونصف',holidayTime:'10:00 حتى 9:00',holidayDuration:'11 ساعة'},
-  'اسعاف بارد صباحي':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9:00 حتى 10:00',holidayDuration:'13 ساعة'},
-  'اسعاف بارد ليلي':{workTime:'10:00 حتى 8:30',workDuration:'10 ساعات ونصف',holidayTime:'10:00 حتى 9:00',holidayDuration:'11 ساعة'},
-  'إسعاف باب نهاري':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9:00 حتى 10:00',holidayDuration:'13 ساعة'},
-  'اسعاف باب ليلي':{workTime:'10:00 حتى 8:30',workDuration:'10 ساعات ونصف',holidayTime:'10:00 حتى 9:00',holidayDuration:'11 ساعة'}
+  'عناية قلبية':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'عناية مركز':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'عناية داخلية':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'سابع':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'رابع':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'تالت':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'تاني':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'خارجيات':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'ديال':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'أورام':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+  'إسعاف مركز صباحي':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
+  'إسعاف مركز ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'},
+  'اسعاف بارد صباحي':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
+  'اسعاف بارد ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'},
+  'إسعاف باب نهاري':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
+  'اسعاف باب ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'}
 };
 
 const TABS=[

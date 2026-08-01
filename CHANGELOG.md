@@ -47,6 +47,16 @@ When you make a change to **either the code (`index.html`) or any `.md` doc**:
 
 ## Entries
 
+## 2026-07-30 — On-call times now show am/pm; added a manual "refresh now" button
+- **Who:** Claude Sonnet 5 (claude.ai)
+- **Type:** both
+- **What:** Two independent changes:
+  1. `ONCALL_SCHEDULE_NEW` (`helpers.js`) — every `workTime`/`holidayTime` string now includes `am`/`pm` per the exact times given (e.g. wards/ICU workday `2:30 pm حتى 8:30 am`; اسعاف مركز/بارد/باب النهاري workday `2:30 pm حتى 10:00 pm`, holiday `9:00 am حتى 10:00 pm`; اسعاف مركز/بارد/باب الليلي workday `10:00 pm حتى 8:30 am`, holiday `10:00 pm حتى 9:00 am`; wards/ICU holiday `9:00 am حتى 9:00 am`). Purely display text — the numeric `workDuration`/`holidayDuration` values (18h/7.5h/10.5h/24h/13h/11h) are unchanged, so hour totals in statistics/My Info aren't affected. `ONCALL_SCHEDULE_OLD` (historical, pre-switch-date) was left as-is since no am/pm change was requested for it.
+  2. Manual refresh: the resident noted the Google Sheet and the app both change often and not everyone remembers to reload. The app already had silent background refresh (every 2 minutes while the tab is visible, plus on refocus) and an app-code update checker — this was mostly invisible, though. Turned the existing "آخر تحديث" header badge into a clickable button (`.refresh-badge-btn`, `manualRefresh()` in `app.js`): it spins the badge's icon, force-runs a fresh data reload, and shows a success/failure toast, giving people an explicit way to force a refresh instead of only trusting a silent timer. `updateTime()` now also prefixes the badge with a refresh icon so it visually reads as an action, not just a timestamp.
+- **Files:** helpers.js, app.js, styles.css, index.html, DATA-MODEL.md, ARCHITECTURE.md, CHANGELOG.md
+- **Docs synced:** yes — DATA-MODEL.md (am/pm note on the fixed schedule table), ARCHITECTURE.md (new "Keeping data fresh" section documenting the existing background-refresh timers alongside the new manual button, since none of that was previously written down).
+- **Notes / follow-ups:** The background 2-minute refresh interval was left unchanged — it was already reasonably aggressive; the gap being closed here is *visibility/control*, not refresh frequency. If staleness complaints continue after this, consider shortening the interval or adding a toast on the very first silent refresh after page load (skipped deliberately here to avoid a toast firing every 2 minutes on an open tab).
+
 ## 2026-07-30 — Add "إسعاف باب نهاري/ليلي" duty categories; revert mobile raw-table to a simple inline panel (fixed scroll)
 - **Who:** Claude Sonnet 5 (claude.ai)
 - **Type:** both
