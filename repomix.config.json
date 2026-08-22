@@ -13,11 +13,12 @@
       ".git",
       "*.jpg",
       "*.png",
+      "*.webp",
       "*.svg",
       "*.ico",
       "project.txt",
       "CHANGELOG.md",
-      "ARCHITECTURE.md",
+      "_legacy/**",
       "repomix-output.xml"
     ]
   }

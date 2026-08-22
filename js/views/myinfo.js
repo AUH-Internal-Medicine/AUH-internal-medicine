@@ -1,0 +1,397 @@
+/**
+ * معلوماتي — the personal card: identity, cumulative counters, on-call
+ * distribution, evaluation, rotation, the month calendar and the on-call list.
+ */
+(function (global) {
+  'use strict';
+
+  const AUH = global.AUH;
+  const { normAr, splitNames, escapeHtml, exactNameMatch, smartSearch } = AUH.text;
+  const { getDayName, getDayIndex, extractDate, daysSinceDate, nowStamp, formatDisplayDate } = AUH.dates;
+  const { isJoined, getStatusBadgeClass } = AUH.status;
+  const { mcn, showToast } = AUH.ui;
+  const AM = AUH.constants.MONTH_NAMES;
+
+  AUH.views.myInfo = {
+  searchMe(term) {
+    const t = term.toLowerCase().trim();
+    const rl = document.getElementById('searchResultsList');
+    const rd = document.getElementById('myInfoResult');
+
+    if (t.length < 1) {
+      rl.innerHTML = '';
+      rd.classList.remove('show');
+      return;
+    }
+
+    const mt = this.res.filter(r => smartSearch(r.name + ' ' + r.abbr, t));
+    if (!mt.length) {
+      rl.innerHTML = '<div class="no-results"><i class="fas fa-magnifying-glass"></i> لا يوجد نتائج مطابقة.</div>';
+      rd.classList.remove('show');
+      return;
+    }
+
+    if (mt.length === 1) {
+      rl.innerHTML = '';
+      this.showMe(mt[0]);
+    } else {
+      this._sm = mt;
+      rl.innerHTML = mt
+        .map((m, i) => `<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#0f6ecf;">${m.spec}</span></div>`)
+        .join('');
+      rd.classList.remove('show');
+    }
+  },
+
+  selectMe(i) {
+    if (this._sm && this._sm[i]) {
+      document.getElementById('searchResultsList').innerHTML = '';
+      this.showMe(this._sm[i]);
+    }
+  },
+
+  buildOncallCategoryBreakdown(list) {
+    const counts = {};
+    (list || []).forEach(o => {
+      counts[o.cat] = (counts[o.cat] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  },
+
+  renderMyInfoMonthBreakdown() {
+    if (!this.currentMyInfoOncallStats) return '';
+
+    const target = this.currentMyInfoOncallStats.monthTotal || [];
+    const title = 'توزيع مناوبات هذا الشهر';
+    if (!target.length) {
+      return `<div class="myinfo-breakdown-box"><h4><i class="fas fa-chart-pie"></i> ${title}</h4><p>لا توجد بيانات لعرض التوزيع.</p></div>`;
+    }
+
+    return `<div class="myinfo-breakdown-box"><h4><i class="fas fa-chart-pie"></i> ${title}</h4><div class="myinfo-breakdown-grid">${target
+      .map(([type, count]) => `<div class="myinfo-breakdown-item"><span>${type}</span><strong>${count}</strong></div>`)
+      .join('')}</div></div>`;
+  },
+
+  setMyInfoMonth(key) {
+    if (!this.currentMyInfo || !key) return;
+    this.myInfoMonthKey = key;
+    this.showMe(this.currentMyInfo);
+  },
+
+  renderMyInfoMonthCalendar(monthOncalls, monthKey) {
+    const parts = String(monthKey || this.today.slice(0, 7)).split('-');
+    const yr = parseInt(parts[0], 10);
+    const mo = parseInt(parts[1], 10) - 1;
+    const dim = new Date(yr, mo + 1, 0).getDate();
+    const fd = new Date(yr, mo, 1).getDay();
+    const afd = fd === 0 ? 6 : fd - 1;
+    const dns = ['اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
+
+    const byDate = {};
+    (monthOncalls || []).forEach(o => {
+      if (!byDate[o.date]) byDate[o.date] = [];
+      if (!byDate[o.date].includes(o.cat)) byDate[o.date].push(o.cat);
+    });
+
+    let h = `<div class="myinfo-month-calendar"><div class="calendar-header"><h3><i class="fas fa-calendar-days"></i> رزنامة مناوبات ${AM[mo]}</h3></div><div class="calendar-grid">`;
+    dns.forEach((d, i) => {
+      h += `<div class="calendar-day-header${i === 4 || i === 5 ? ' weekend' : ''}">${d}</div>`;
+    });
+
+    for (let i = 0; i < afd; i++) h += '<div class="calendar-day empty"></div>';
+
+    for (let day = 1; day <= dim; day++) {
+      const ds = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(yr, mo, day);
+      const di = d.getDay();
+      const isToday = ds === this.today;
+      const isPast = ds < this.today;
+      const cats = byDate[ds] || [];
+      const hasOncall = cats.length > 0;
+
+      let cls = 'calendar-day';
+      if (isToday) cls += ' today';
+      if (isPast && !isToday) cls += ' past-day';
+      if (di === 5 || di === 6) cls += ' weekend';
+      if (hasOncall) cls += ' has-oncall';
+
+      // Dot indicators instead of text labels
+      let dotsHtml = '';
+      if (hasOncall) {
+        const dotColors = ['#2f7d5c', '#1b3a5c', '#d4a24c', '#c06b4a', '#4f9d7a'];
+        const maxDots = Math.min(cats.length, 4);
+        dotsHtml = '<div class="calendar-day-dots">';
+        for (let ci = 0; ci < maxDots; ci++) {
+          dotsHtml += `<span class="calendar-day-dot" style="background:${dotColors[ci % dotColors.length]}"></span>`;
+        }
+        if (cats.length > 4) {
+          dotsHtml += `<span class="calendar-day-dot-more">+${cats.length - 4}</span>`;
+        }
+        dotsHtml += '</div>';
+      }
+
+      const click = hasOncall ? `onclick="app.focusMyInfoOncallDate('${ds}')"` : '';
+      const datatipAttr = hasOncall ? `data-tip="${this.escapeHtml(cats.join('، '))}"` : '';
+      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click} ${datatipAttr}>${day}${dotsHtml}</div>`;
+    }
+
+    h += '</div></div>';
+    return h;
+  },
+
+  focusMyInfoOncallDate(dateIso) {
+    this.myInfoFocusedOncallDate = dateIso;
+    document.querySelectorAll('#myInfoContent .calendar-day[data-date]').forEach(day => {
+      day.classList.toggle('selected-day', day.getAttribute('data-date') === dateIso);
+    });
+
+    const rows = Array.from(document.querySelectorAll('#myInfoOncallsList .oncall-info-row'));
+    if (!rows.length) return;
+
+    const matches = rows.filter(r => r.getAttribute('data-oncall-date') === dateIso);
+    if (!matches.length) {
+      showToast('لا توجد بطاقة مناوبة لهذا اليوم في القائمة الحالية.');
+      return;
+    }
+
+    rows.forEach(r => r.classList.remove('myinfo-row-focus'));
+    matches.forEach(r => r.classList.add('myinfo-row-focus'));
+    matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => matches.forEach(r => r.classList.remove('myinfo-row-focus')), 1900);
+  },
+
+  /**
+   * Year-2 colleagues on the same date, for a Year-1 category.
+   * Category names are compared Arabic-normalized against the mapping in
+   * domain/oncall-schedule.js, so a renamed/re-spaced Year-2 column still matches.
+   */
+  getYear2ColleaguesForDate(dateIso, year1Category) {
+    const targets = AUH.domain.oncallSchedule.year2CategoriesFor(year1Category).map(normAr);
+    if (!targets.length || !this.oncHeaders2.length) return [];
+
+    const row = this.oncall2Model.getRow(dateIso);
+    if (!row) return [];
+
+    const names = [];
+    for (let col = 2; col < this.oncHeaders2.length; col++) {
+      const category = normAr(this.oncHeaders2[col] || '');
+      if (!category || !targets.includes(category)) continue;
+      splitNames((row.row[col] || '').trim()).forEach(n => {
+        if (n && !names.includes(n)) names.push(n);
+      });
+    }
+    return names;
+  },
+
+  showMe(r) {
+    const rd = document.getElementById('myInfoResult');
+    if (!rd) return;
+
+    const ok = isJoined(r.st);
+    this.currentMyInfo = r;
+
+    const allOncalls = [];
+    for (const onc of this.oncRows) {
+      for (let col = 2; col < this.oncHeaders.length; col++) {
+        const cc = (onc.row[col] || '').trim();
+        if (!cc) continue;
+        const names = splitNames(cc);
+        if (!names.length) continue;
+
+        const found = names.some(n => exactNameMatch(n, r.abbr) || exactNameMatch(n, r.name));
+        if (!found) continue;
+
+        const cn = this.oncHeaders[col] || 'أخرى';
+        const colleagues = this.getColleaguesForDateCategory(onc.date, cn, r.abbr);
+
+        const schedule = this.getCategorySchedule(cn, onc.date);
+        const overrideKey = `${onc.date}|${r.abbr}|${normAr(cn)}`;
+        if (schedule && this.adjustmentOverrides.has(overrideKey)) {
+          schedule.duration = `${this.formatNumDisplay(this.adjustmentOverrides.get(overrideKey))} ساعة`;
+          schedule.isAdjusted = true;
+        }
+        const year2Colleagues = this.getYear2ColleaguesForDate(onc.date, cn);
+        allOncalls.push({
+          date: onc.date,
+          day: onc.day || getDayName(onc.date),
+          dayIdx: getDayIndex(onc.date),
+          cat: cn,
+          colleagues,
+          year2Colleagues,
+          schedule
+        });
+      }
+    }
+
+    this.adjustmentAdditions
+      .filter(a => a.abbr === r.abbr || a.name === r.name)
+      .forEach(a => {
+        const colleagues = this.getColleaguesForDateCategory(a.date, a.category, r.abbr);
+        allOncalls.push({
+          date: a.date,
+          day: getDayName(a.date),
+          dayIdx: getDayIndex(a.date),
+          cat: a.category,
+          colleagues,
+          year2Colleagues: this.getYear2ColleaguesForDate(a.date, a.category),
+          schedule: { isHoliday: this.isHolidayDate(a.date), time: '', duration: `${this.formatNumDisplay(a.hours)} ساعة`, isAdjusted: true, isVolunteer: true }
+        });
+      });
+
+    allOncalls.sort((a, b) => a.date.localeCompare(b.date));
+
+    const firstOncallDate = allOncalls.length ? allOncalls[0].date : '-';
+    const lastOncallDate = allOncalls.length ? allOncalls[allOncalls.length - 1].date : '-';
+
+    const oncallMonths = [...new Set(allOncalls.map(o => o.date.slice(0, 7)))].sort();
+    if (!oncallMonths.includes(this.myInfoMonthKey)) this.myInfoMonthKey = oncallMonths.includes(this.today.slice(0, 7)) ? this.today.slice(0, 7) : oncallMonths[0] || this.today.slice(0, 7);
+
+    const monthOncalls = allOncalls.filter(o => o.date.slice(0, 7) === this.myInfoMonthKey).sort((a, b) => a.date.localeCompare(b.date));
+    const monthDone = monthOncalls.filter(o => o.date < this.today);
+    const monthRemaining = monthOncalls.filter(o => o.date >= this.today);
+    const visibleCounts = {};
+    monthOncalls.forEach(o => {
+      visibleCounts[o.cat] = (visibleCounts[o.cat] || 0) + 1;
+    });
+    const totVisible = monthOncalls.length;
+
+    this.currentMyInfoOncallStats = {
+      monthTotal: this.buildOncallCategoryBreakdown(monthOncalls),
+      monthDone: this.buildOncallCategoryBreakdown(monthDone),
+      monthRemaining: this.buildOncallCategoryBreakdown(monthRemaining)
+    };
+
+    const ts = nowStamp();
+
+    const evalInfo = this.getEvalForResident(r.name, r.abbr);
+    const doctorStats = this.getDoctorStatsForResident(r.name, r.abbr);
+    const cumDetails = this.buildOncallCategoryBreakdown(allOncalls);
+    const catDates = doctorStats?.catDates || {};
+    const joinDateIso = extractDate(r.join) || extractDate(doctorStats?.join) || '';
+    const joinDays = daysSinceDate(joinDateIso);
+    const miUid = (r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_');
+
+    if (!monthOncalls.find(o => o.date === this.myInfoFocusedOncallDate)) {
+      this.myInfoFocusedOncallDate = monthOncalls[0]?.date || '';
+    }
+
+    const cumTotal = doctorStats?.total ?? allOncalls.length;
+    const cumHours = doctorStats?.hoursTotal ?? 0;
+    const doneTotal = doctorStats?.completed ?? allOncalls.filter(o => o.date < this.today).length;
+    const doneHours = doctorStats?.hoursCompleted ?? 0;
+
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
+      const dates = (catDates[k] || []).slice().sort();
+      const detId = `miCatDates-${miUid}-${idx}`;
+      return `<button type="button" class="myinfo-breakdown-item" onclick="toggleCollapsible(this)"><span>${this.escapeHtml(k)}</span><strong>${v}</strong></button><div class="collapsible-content myinfo-breakdown-detail" id="${detId}">${dates.length ? dates.map(d => `<span class="dsc-detail-chip">${d}</span>`).join('') : '<span class="dsc-detail-empty">لا توجد تواريخ</span>'}</div>`;
+    }).join('')}</div>` : '<p>لا توجد بيانات لعرض التوزيع.</p>'}</div>`;
+
+    h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-circle-info"></i> معلومات إضافية</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid"><div class="info-item"><div class="info-label">الاسم</div><div class="info-value">${r.name}</div></div><div class="info-item"><div class="info-label">الاختصار</div><div class="info-value">${r.abbr || '-'}</div></div><div class="info-item"><div class="info-label">الرقم التسلسلي</div><div class="info-value">#${r.seq || '-'}</div></div><div class="info-item"><div class="info-label">الاختصاص</div><div class="info-value">${r.spec}</div></div><div class="info-item"><div class="info-label">الهاتف</div><div class="info-value"><span dir="ltr">${r.phone}</span> <button class="copy-btn" onclick="copyPhone('${r.phone}',this)"><i class="fas fa-copy"></i></button></div></div><div class="info-item"><div class="info-label">تاريخ الالتحاق</div><div class="info-value">${formatDisplayDate(r.join) || '-'}</div></div><div class="info-item"><div class="info-label">الحالة</div><div class="info-value"><span class="status-badge ${ok ? 'status-joined' : getStatusBadgeClass(r.st)}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${r.st || 'غير محدد'}</span></div></div></div></div></div>`;
+
+    if (evalInfo) {
+      h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-chart-line"></i> التقييم السنوي</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid">`;
+      for (const skill of evalInfo.skills) h += `<div class="info-item"><div class="info-label">${skill.label}</div><div class="info-value">${skill.value}</div></div>`;
+      h += `</div>`;
+      if (evalInfo.praise && evalInfo.praise.trim()) h += `<div style="margin-top:10px;padding:10px 14px;background:rgba(39,174,96,0.08);border-radius:10px;border-right:4px solid #27ae60;"><strong style="color:#27ae60;"><i class="fas fa-star"></i> الثناءات:</strong><br><span style="font-weight:600;color:#27ae60;">${evalInfo.praise}</span></div>`;
+      if (evalInfo.penalty && evalInfo.penalty.trim()) h += `<div style="margin-top:6px;padding:10px 14px;background:rgba(231,76,60,0.08);border-radius:10px;border-right:4px solid #e74c3c;"><strong style="color:#e74c3c;"><i class="fas fa-triangle-exclamation"></i> العقوبات:</strong><br><span style="font-weight:600;color:#e74c3c;">${evalInfo.penalty}</span></div>`;
+      h += `<div class="stat-card" style="margin-top:10px;"><div class="stat-num">${evalInfo.total}</div><div class="stat-lbl">المحصلة الاجمالية</div></div></div></div>`;
+    }
+
+    if (doctorStats) {
+      h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-chart-column"></i> احصائيات المناوبات</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="myinfo-stat-card-wrap">${this.doctorStatCardHtml(doctorStats)}</div></div></div>`;
+    }
+
+    const allMonths = this.getAllShiftMonths();
+    const cm = this.getPreferredShiftMonth();
+    h += `<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span><i class="fas fa-clipboard-list"></i> الفرز</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;
+    if (allMonths.length > 0) {
+      h += `<div style="margin-bottom:12px;"><select class="month-selector" id="myInfoShiftMonth" onchange="app.updateMyInfoShift('${r.name.replace(/'/g, "\\'")}', '${r.abbr.replace(/'/g, "\\'")}')">${allMonths.map(m => `<option value="${m.month}"${m.month === cm ? ' selected' : ''}>${m.label || 'فرز شهر ' + m.month}</option>`).join('')}</select></div><div id="myInfoShiftContent"></div>`;
+    } else {
+      h += '<p style="color:#888;">لا توجد بيانات فروز.</p>';
+    }
+    h += '</div></div>';
+
+    h += `<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span><i class="fas fa-calendar-days"></i> المناوبات (${totVisible})</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;
+
+    if (allOncalls.length) {
+      h += `<div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div><div class="myinfo-calendar-controls"><label class="myinfo-month-label" for="myInfoMonthSelect">الشهر</label><select class="month-selector" id="myInfoMonthSelect" onchange="app.setMyInfoMonth(this.value)">${oncallMonths
+        .map(m => {
+          const p = m.split('-');
+          const y = p[0] || '';
+          const mi = Math.max(0, parseInt(p[1] || '1', 10) - 1);
+          const lbl = `${AM[mi] || m} ${y}`;
+          return `<option value="${m}"${m === this.myInfoMonthKey ? ' selected' : ''}>${lbl}</option>`;
+        })
+        .join('')}</select></div>`;
+
+      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div></div>`;
+
+      h += this.renderMyInfoMonthBreakdown();
+      h += this.renderMyInfoMonthCalendar(monthOncalls, this.myInfoMonthKey);
+
+      h += '<div id="myInfoOncallsList">';
+
+      monthOncalls.forEach((o, idx) => {
+        const we = this.isHolidayDate(o.date);
+        const sch = o.schedule;
+        const isPast = o.date < this.today;
+        const rowId = `myInfoOncall-${o.date}-${idx}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+        h += `<div class="oncall-info-row${we ? ' holiday' : ''}${isPast ? ' past done' : ''}" id="${rowId}" data-oncall-date="${o.date}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot holiday"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}${we ? '<span class="oncall-holiday-badge">عطلة</span>' : ''}</span><span class="oc-type">${o.cat}${isPast ? ' <span class="oncall-done-badge"><i class="fas fa-check"></i> تم</span>' : ''}${sch && sch.isVolunteer ? ' <span class="oncall-volunteer-badge"><i class="fas fa-hand-holding-heart"></i> تطوعية</span>' : sch && sch.isAdjusted ? ' <span class="oncall-adjusted-badge"><i class="fas fa-pen"></i> ساعات معدّلة</span>' : ''}</span></div>`;
+        if (sch && (sch.time || sch.duration)) h += `<div class="myinfo-oncall-meta${sch.isHoliday ? ' holiday' : ''}"><span><i class="fas fa-clock"></i> ${sch.time || '-'}</span><span><i class="fas fa-hourglass-half"></i> ${sch.duration || '-'}</span></div>`;
+        if (o.colleagues.length) h += `<div class="colleague-row"><span class="cl-label"><i class="fas fa-users"></i> الزملاء:</span><span class="cl-names">${o.colleagues.map((c, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${mcn(c.name, c.phone, c.abbr)}`).join('')}</span></div>`;
+        if (o.year2Colleagues && o.year2Colleagues.length) h += `<div class="colleague-row colleague-row-y2"><span class="cl-label"><i class="fas fa-user-graduate"></i> السنة الثانية:</span><span class="cl-names">${o.year2Colleagues.map((n, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${this.escapeHtml(n)}`).join('')}</span></div>`;
+        h += '</div>';
+      });
+      h += '</div>';
+    } else h += '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';
+
+    h += '</div></div>';
+    h += `<button class="download-btn" onclick="app.downloadMyInfoImage()"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل معلوماتي كصورة</button></div>`;
+
+    rd.innerHTML = h;
+    rd.classList.add('show');
+    document.getElementById('searchResultsList').innerHTML = '';
+
+    setTimeout(() => this.updateMyInfoShift(r.name, r.abbr), 100);
+  },
+
+  /**
+   * The "الفرز" section inside معلوماتي: the resident's rotation for the chosen
+   * month plus everyone else in the same rotation.
+   */
+  updateMyInfoShift(name, abbr) {
+    const container = document.getElementById('myInfoShiftContent');
+    const select = document.getElementById('myInfoShiftMonth');
+    if (!container || !select) return;
+
+    const month = parseInt(select.value, 10);
+    const model = this.residentsModel;
+    const hasColumn = model.getShiftMonths().some(m => m.month === month);
+
+    if (!hasColumn || model.isFutureMonthAutoCopy(month, this.m + 1)) {
+      container.innerHTML = '<p style="color:#888;">لا توجد بيانات لهذا الشهر.</p>';
+      return;
+    }
+
+    const me = model.findByNameOrAbbr(abbr) || model.findByNameOrAbbr(name);
+    const shiftName = model.getShift(me, month);
+
+    const members = shiftName
+      ? (model.groupByShift(month, { joinedOnly: true })[shiftName] || []).filter(
+          m => !exactNameMatch(m.abbr, abbr) && !exactNameMatch(m.name, name)
+        )
+      : [];
+
+    let html = shiftName
+      ? `<div class="shift-card-full" style="margin-bottom:10px;"><h3>${escapeHtml(shiftName)}</h3></div>`
+      : '<p style="color:#888;margin-bottom:10px;">لا يوجد فرز للشهر المحدد.</p>';
+
+    if (members.length) {
+      const list = members.map(m => `<li>${mcn(m.name, m.phone, m.abbr)}</li>`).join('');
+      html += `<div class="names-dropdown" style="margin-top:8px;"><button class="names-dropdown-btn"><span><i class="fas fa-users"></i> الزملاء في نفس الفرز (${members.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${list}</ul></div>`;
+    }
+
+    container.innerHTML = html;
+  }
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
