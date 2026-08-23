@@ -72,10 +72,21 @@
       .join('')}</div></div>`;
   },
 
+  /** Moves to the previous/next month that actually has on-calls. */
+  stepMyInfoMonth(delta) {
+    if (!this.currentMyInfo) return;
+    const select = document.getElementById('myInfoMonthSelect');
+    if (!select) return;
+    const months = Array.from(select.options).map(o => o.value);
+    const index = months.indexOf(this.myInfoMonthKey);
+    const next = months[Math.min(months.length - 1, Math.max(0, (index < 0 ? 0 : index) + delta))];
+    if (next && next !== this.myInfoMonthKey) this.setMyInfoMonth(next);
+  },
+
   setMyInfoMonth(key) {
     if (!this.currentMyInfo || !key) return;
     this.myInfoMonthKey = key;
-    this.showMe(this.currentMyInfo);
+    this.showMe(this.currentMyInfo, { keepScroll: true });
   },
 
   renderMyInfoMonthCalendar(monthOncalls, monthKey) {
@@ -183,7 +194,9 @@
     return names;
   },
 
-  showMe(r) {
+  showMe(r, options) {
+    const opts = options || {};
+    const keepScroll = opts.keepScroll ? window.scrollY : null;
     const rd = document.getElementById('myInfoResult');
     if (!rd) return;
 
@@ -247,6 +260,9 @@
     if (!oncallMonths.includes(this.myInfoMonthKey)) this.myInfoMonthKey = oncallMonths.includes(this.today.slice(0, 7)) ? this.today.slice(0, 7) : oncallMonths[0] || this.today.slice(0, 7);
 
     const monthOncalls = allOncalls.filter(o => o.date.slice(0, 7) === this.myInfoMonthKey).sort((a, b) => a.date.localeCompare(b.date));
+
+    // What the PNG exports render from (see views/capture-layouts.js).
+    this._myInfoExport = { resident: r, monthKey: this.myInfoMonthKey, monthOncalls, allOncalls };
     const monthDone = monthOncalls.filter(o => o.date < this.today);
     const monthRemaining = monthOncalls.filter(o => o.date >= this.today);
     const visibleCounts = {};
@@ -314,7 +330,11 @@
     h += `<div class="collapsible-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)"><span><i class="fas fa-calendar-days"></i> المناوبات (${totVisible})</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content show">`;
 
     if (allOncalls.length) {
-      h += `<div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div><div class="myinfo-calendar-controls"><label class="myinfo-month-label" for="myInfoMonthSelect">الشهر</label><select class="month-selector" id="myInfoMonthSelect" onchange="app.setMyInfoMonth(this.value)">${oncallMonths
+      const monthIndex = oncallMonths.indexOf(this.myInfoMonthKey);
+      const prevDisabled = monthIndex <= 0 ? ' disabled' : '';
+      const nextDisabled = monthIndex < 0 || monthIndex >= oncallMonths.length - 1 ? ' disabled' : '';
+
+      h += `<div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div><div class="myinfo-calendar-controls"><label class="myinfo-month-label" for="myInfoMonthSelect">الشهر</label><span class="month-stepper"><button type="button" class="cal-nav-btn" aria-label="الشهر السابق" title="الشهر السابق"${prevDisabled} onclick="app.stepMyInfoMonth(-1)"><i class="fas fa-chevron-right"></i></button><select class="month-selector" id="myInfoMonthSelect" onchange="app.setMyInfoMonth(this.value)">${oncallMonths
         .map(m => {
           const p = m.split('-');
           const y = p[0] || '';
@@ -322,7 +342,7 @@
           const lbl = `${AM[mi] || m} ${y}`;
           return `<option value="${m}"${m === this.myInfoMonthKey ? ' selected' : ''}>${lbl}</option>`;
         })
-        .join('')}</select></div>`;
+        .join('')}</select><button type="button" class="cal-nav-btn" aria-label="الشهر التالي" title="الشهر التالي"${nextDisabled} onclick="app.stepMyInfoMonth(1)"><i class="fas fa-chevron-left"></i></button></span><button type="button" class="download-btn download-btn-inline" onclick="app.downloadMyInfoCalendarImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة كصورة</button></div>`;
 
       h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div></div>`;
 
@@ -346,13 +366,14 @@
     } else h += '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';
 
     h += '</div></div>';
-    h += `<button class="download-btn" onclick="app.downloadMyInfoImage()"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل معلوماتي كصورة</button></div>`;
+    h += `<button class="download-btn" onclick="app.downloadMyInfoImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة والتفاصيل كصورة</button></div>`;
 
     rd.innerHTML = h;
     rd.classList.add('show');
     document.getElementById('searchResultsList').innerHTML = '';
 
-    setTimeout(() => this.updateMyInfoShift(r.name, r.abbr), 100);
+    this.updateMyInfoShift(r.name, r.abbr);
+    if (keepScroll !== null) window.scrollTo(0, keepScroll);
   },
 
   /**

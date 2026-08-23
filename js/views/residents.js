@@ -8,7 +8,7 @@
   'use strict';
 
   const AUH = global.AUH;
-  const { smartSearch } = AUH.text;
+  const { smartSearch, escapeHtml, escapeJsString } = AUH.text;
   const { formatDisplayDate } = AUH.dates;
   const { isJoined, isDetachedStatus, getStatusBadgeClass } = AUH.status;
   const { mcn, showToast } = AUH.ui;
@@ -88,33 +88,63 @@
     this.refreshSelectionUI();
   },
 
+  /**
+   * Renders the roster table and the mobile cards.
+   *
+   * Both are built as a single HTML string and assigned once: creating 400
+   * elements one by one (and letting the browser lay out after each) was a
+   * visible stall on a 200-row roster.
+   */
   displayResidents() {
-    const tb = document.getElementById('residentsBody');
-    const cd = document.getElementById('residentsCards');
-    if (!tb || !cd) return;
-
-    tb.innerHTML = '';
-    cd.innerHTML = '';
+    const tbody = document.getElementById('residentsBody');
+    const cards = document.getElementById('residentsCards');
+    if (!tbody || !cards) return;
 
     const list = this.getFilteredList();
-    const fg = document.createDocumentFragment();
+    const rows = [];
+    const cardHtml = [];
 
     list.forEach(res => {
       const ok = isJoined(res.st);
       const checked = this.selectedResidents.has(res.name) ? 'checked' : '';
       const statusClass = getStatusBadgeClass(res.st);
+      const nameAttr = escapeHtml(res.name);
+      const nameJs = escapeJsString(res.name);
+      const phone = res.phone || '';
+      const phoneJs = escapeJsString(phone);
+      const oncalls = this.formatNumDisplay(this.getComputedCumulativeOncalls(res));
+      const statusBadge = `<span class="status-badge ${ok ? 'status-joined' : statusClass}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${escapeHtml(res.st || 'غير محدد')}</span>`;
+      const copyBtn = phone ? `<button class="copy-btn" onclick="copyPhone('${phoneJs}',this)"><i class="fas fa-copy"></i></button>` : '';
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="seq-cell">${res.seq}</td><td><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g, '&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g, "\\'")}')"></td><td style="text-align:right;">${mcn(res.name, res.phone)}</td><td>${res.abbr}</td><td>${res.spec}</td><td><span dir="ltr">${res.phone}</span> <button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button></td><td>${res.monthlyShift || '-'}</td><td>${formatDisplayDate(res.join) || '-'}</td><td>${this.formatNumDisplay(this.getComputedCumulativeOncalls(res))}</td><td><span class="status-badge ${ok ? 'status-joined' : statusClass}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${res.st || 'غير محدد'}</span></td>`;
-      fg.appendChild(tr);
+      rows.push(
+        `<tr><td class="seq-cell">${res.seq}</td>` +
+          `<td><input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')"></td>` +
+          `<td style="text-align:right;">${mcn(res.name, phone)}</td>` +
+          `<td>${escapeHtml(res.abbr)}</td><td>${escapeHtml(res.spec)}</td>` +
+          `<td><span dir="ltr">${escapeHtml(phone)}</span> ${copyBtn}</td>` +
+          `<td>${escapeHtml(res.monthlyShift || '-')}</td><td>${escapeHtml(res.join || '-')}</td>` +
+          `<td>${oncalls}</td><td>${statusBadge}</td></tr>`
+      );
 
-      const c = document.createElement('div');
-      c.className = 'resident-card';
-      c.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;"><span class="seq-badge">${res.seq}</span><input type="checkbox" class="contact-checkbox" data-name="${res.name.replace(/"/g, '&quot;')}" ${checked} onchange="app.toggleResident('${res.name.replace(/'/g, "\\'")}')"><div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;"><span class="card-name" style="word-break:break-word;">${mcn(res.name, res.phone)}</span><span class="card-abbr">${res.abbr}</span></div></div><div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${res.spec || '-'}</span></div><div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${res.phone || '-'}</span> ${res.phone ? `<button class="copy-btn" onclick="copyPhone('${res.phone}',this)"><i class="fas fa-copy"></i></button>` : ''}</span></div><div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${res.monthlyShift || '-'}</span></div><div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${formatDisplayDate(res.join) || '-'}</span></div><div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${this.formatNumDisplay(this.getComputedCumulativeOncalls(res))}</span></div><div class="card-row"><span class="card-label">الحالة</span><span class="card-value"><span class="status-badge ${ok ? 'status-joined' : statusClass}">${res.st || 'غير محدد'}</span></span></div>`;
-      cd.appendChild(c);
+      cardHtml.push(
+        `<div class="resident-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">` +
+          `<span class="seq-badge">${res.seq}</span>` +
+          `<input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')">` +
+          `<div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;">` +
+          `<span class="card-name" style="word-break:break-word;">${mcn(res.name, phone)}</span>` +
+          `<span class="card-abbr">${escapeHtml(res.abbr)}</span></div></div>` +
+          `<div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${escapeHtml(res.spec || '-')}</span></div>` +
+          `<div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${escapeHtml(phone || '-')}</span> ${copyBtn}</span></div>` +
+          `<div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${escapeHtml(res.monthlyShift || '-')}</span></div>` +
+          `<div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${escapeHtml(res.join || '-')}</span></div>` +
+          `<div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${oncalls}</span></div>` +
+          `<div class="card-row"><span class="card-label">الحالة</span><span class="card-value">${statusBadge}</span></div></div>`
+      );
     });
 
-    tb.appendChild(fg);
+    tbody.innerHTML = rows.join('');
+    cards.innerHTML = cardHtml.join('');
+
     this.updateResCount();
     this.refreshSelectionUI();
   },

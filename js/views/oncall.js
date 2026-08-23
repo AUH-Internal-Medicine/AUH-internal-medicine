@@ -20,6 +20,15 @@
     return this.oncRows.find(r => r.date === ds) || null;
   },
 
+  /** Previous / next month from the arrows next to the month selector. */
+  stepOncallMonth(delta) {
+    const selector = document.getElementById('monthSelector');
+    if (!selector) return;
+    const next = (parseInt(selector.value, 10) + delta + 12) % 12;
+    selector.value = next;
+    this.changeMonth();
+  },
+
   changeMonth() {
     this.currentDisplayMonth = parseInt(document.getElementById('monthSelector').value, 10);
     const yr = parseInt(this.today.split('-')[0], 10);

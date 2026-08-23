@@ -87,6 +87,14 @@
       this.myInfoMonthKey = this.today.slice(0, 7);
       this.myInfoFocusedOncallDate = '';
 
+      /* --- render bookkeeping ---------------------------------------------- */
+      // Tabs whose DOM no longer matches the data. A tab is rendered when it is
+      // opened, not on every refresh — rendering all of them cost ~1.5 MB of
+      // HTML on a timer and made every click feel slow.
+      this._dirtyTabs = new Set();
+      this._dataSignature = '';
+      this._hasNewData = false;
+
       /* --- internals -------------------------------------------------------- */
       this._id = false; // an image download is in progress
       this._dataReady = false;
@@ -107,12 +115,7 @@
       const yearEl = document.getElementById('currentYear');
       if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-      document.getElementById('currentDateHeader').textContent = new Date().toLocaleDateString('ar-SA', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      this.updateDateBadge();
 
       document.getElementById('oncallDatePicker').value = this.selectedOncallDate;
       document.getElementById('monthSelector').value = this.m;
@@ -140,6 +143,9 @@
       setInterval(() => {
         if (!document.hidden) this.checkForAppUpdate();
       }, AUH.config.updateCheckIntervalMs);
+
+      // Keeps the date badge correct if the page stays open past midnight.
+      setInterval(() => this.updateDateBadge(), 60 * 1000);
 
       this.checkForAppUpdate();
     }
@@ -190,16 +196,62 @@
       if (stored) activateTab(stored, false);
     }
 
-    /** Renders whatever a tab needs when it becomes visible. */
-    renderTab(tabId) {
+    /**
+     * Renders a tab's content — but only when it is actually out of date.
+     *
+     * Every tab is marked dirty when new data arrives and re-rendered the next
+     * time it is opened. Re-rendering all of them on every background refresh is
+     * what used to make the site stutter: the statistics tab alone is ~780 KB of
+     * HTML, the roster ~420 KB.
+     */
+    renderTab(tabId, options) {
+      const opts = options || {};
       this.activeTab = tabId;
-      if (tabId === 'evaluation') this.renderEval();
-      else if (tabId === 'links') this.renderLinks();
-      else if (tabId === 'qa') this.renderQA();
-      else if (tabId === 'shifts') this.renderShiftsFromResidents();
-      else if (tabId === 'lectures') this.renderLectures();
-      else if (tabId === 'doctorstats') this.renderDoctorStats();
-      else if (tabId === 'oncall') this.showOncallDate(this.selectedOncallDate);
+
+      if (!opts.force && !this._dirtyTabs.has(tabId)) return;
+      this._dirtyTabs.delete(tabId);
+
+      const scrollY = opts.preserveScroll ? window.scrollY : null;
+
+      switch (tabId) {
+        case 'residents':
+          this.buildFilters();
+          this.displayResidents();
+          break;
+        case 'shifts':
+          this.renderShiftsFromResidents();
+          break;
+        case 'oncall':
+          document.getElementById('oncallMonthTitle').textContent = this.currentDisplayMonth + 1;
+          this.renderMonthlyCalendar();
+          this.showOncallDate(this.selectedOncallDate);
+          this.renderOncallRawTable();
+          break;
+        case 'lectures':
+          this.renderLectures();
+          break;
+        case 'doctorstats':
+          this.renderDoctorStats();
+          break;
+        case 'evaluation':
+          this.renderEval();
+          break;
+        case 'links':
+          this.renderLinks();
+          break;
+        case 'qa':
+          this.renderQA();
+          break;
+        case 'myinfo':
+          // Keeps the searched resident on screen across refreshes instead of
+          // making them search again.
+          if (this.currentMyInfo) this.showMe(this.currentMyInfo, { keepScroll: true });
+          break;
+        default:
+          break;
+      }
+
+      if (scrollY !== null) window.scrollTo(0, scrollY);
     }
 
     setupSearches() {
@@ -285,7 +337,8 @@
      * Fetch → parse → derive → render.
      * `silent` skips the progress bar (background refreshes).
      */
-    async loadFresh(silent) {
+    async loadFresh(silent, options) {
+      const opts = options || {};
       try {
         const result = await repository.fetchAll();
 
@@ -295,15 +348,35 @@
           this.rawTables[key] = result.tables[key];
         });
 
-        // Keep only the summary — the raw tables are huge and already stored.
-        this.lastFetch = { ok: result.ok, failed: result.failed, source: result.source, at: new Date().toISOString() };
+        this.lastFetch = result;
+        this.reportLoadResult(result);
+
+        const signature = repository.tablesSignature(this.rawTables);
+        const isFirstLoad = !this._dataSignature;
+        const changed = signature !== this._dataSignature;
+
+        // Nothing changed in any sheet: skip parsing, computing and rendering
+        // entirely. A background refresh that brings identical data must cost
+        // nothing and must not move anything on screen.
+        if (!changed && !opts.force) {
+          this.updateTime();
+          if (!silent) this.updateProgress(100, 'تم التحميل');
+          return result;
+        }
+
+        this._dataSignature = signature;
 
         if (!silent) this.updateProgress(60, 'جاري عرض البيانات...');
 
-        this.applyDataset(repository.parseAll(this.rawTables));
+        this.applyDataset(repository.parseAll(this.rawTables), {
+          // A background refresh must not scroll the reader away from what they
+          // were looking at.
+          preserveScroll: !!silent
+        });
         repository.writeCache(this.rawTables);
 
-        this.reportLoadResult(result);
+        if (changed && !isFirstLoad && silent && !opts.force) this.markNewData();
+        if (opts.force) this.clearNewData();
 
         if (!silent) this.updateProgress(100, result.failed.length && !this.res.length ? 'تعذر تحميل البيانات' : 'تم التحميل');
         this.updateTime();
@@ -409,7 +482,8 @@
      * Installs a parsed dataset: exposes the models, derives everything computed
      * from them (adjustments, statistics) and re-renders.
      */
-    applyDataset(dataset) {
+    applyDataset(dataset, options) {
+      const opts = options || {};
       this.dataset = dataset;
 
       this.residentsModel = dataset.residents;
@@ -450,30 +524,19 @@
         currentMonth: this.m + 1
       });
 
-      this.renderAll();
+      this.renderAll(options);
       this.updateTime();
     }
 
-    /** Re-renders every always-on tab, plus the active one if it is lazy. */
-    renderAll() {
-      this.displayResidents();
-      this.buildFilters();
-      this.renderShiftsFromResidents();
-
-      document.getElementById('oncallMonthTitle').textContent = this.currentDisplayMonth + 1;
-      this.renderMonthlyCalendar();
-      this.showOncallDate(this.selectedOncallDate);
-      this.renderOncallRawTable();
-
-      this.renderLectures();
-      this.renderDoctorStats();
-
-      // Evaluation / links / Q&A render on tab activation; refresh them only
-      // when the visitor is actually looking at them (so open cards are not
-      // collapsed under them during a background refresh).
-      if (this.activeTab === 'evaluation') this.renderEval();
-      else if (this.activeTab === 'links') this.renderLinks();
-      else if (this.activeTab === 'qa') this.renderQA();
+    /**
+     * Marks every tab as needing a re-render and refreshes the one on screen,
+     * keeping the visitor exactly where they were (same tab, same selected
+     * on-call day, same month, same scroll position).
+     */
+    renderAll(options) {
+      const opts = options || {};
+      this._dirtyTabs = new Set(['residents', 'shifts', 'oncall', 'lectures', 'doctorstats', 'evaluation', 'links', 'qa', 'myinfo']);
+      this.renderTab(this.activeTab, { force: true, preserveScroll: !!opts.preserveScroll });
     }
 
     /* ======================================================= app auto-update */
@@ -504,16 +567,22 @@
       }
     }
 
+    /**
+     * The "refresh now" badge: re-fetches everything and re-renders the current
+     * tab even when the data is byte-identical — including "معلوماتي", so a
+     * resident who searched for their name does not have to search again.
+     */
     async manualRefresh() {
       if (this._manualRefreshRunning) return;
       this._manualRefreshRunning = true;
 
       const btn = document.getElementById('lastUpdateTime');
       if (btn) btn.classList.add('refreshing');
+      this.clearNewData();
 
       try {
-        await this.loadFresh(true);
-        showToast('تم تحديث البيانات بنجاح ✅');
+        const result = await this.loadFresh(true, { force: true });
+        showToast(result && result.failed.length ? 'تم التحديث مع تعذر بعض الأقسام' : 'تم تحديث البيانات ✅');
       } catch (e) {
         showToast('تعذر التحديث، حاول مرة أخرى.');
       } finally {
@@ -522,9 +591,47 @@
       }
     }
 
+    /* ------------------------------------------------------- header badges */
+
+    /** e.g. "Saturday, 22 آب 2026" — English words and digits, Levantine month. */
+    updateDateBadge() {
+      const el = document.getElementById('currentDateHeader');
+      if (!el) return;
+      const now = new Date();
+      const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+      el.setAttribute('dir', 'ltr');
+      // <bdi> keeps the Arabic month from swallowing the year: without it the
+      // bidi algorithm renders "23 2026 آب" inside an LTR line.
+      el.innerHTML = `<i class="fas fa-calendar-day"></i> ${weekday}, ${now.getDate()} <bdi>${MONTH_NAMES[now.getMonth()]}</bdi> ${now.getFullYear()}`;
+    }
+
+    /** e.g. "Last update 7:44 PM". Leaves the red "new data" state alone. */
     updateTime() {
       const el = document.getElementById('lastUpdateTime');
-      if (el) el.innerHTML = `<i class="fas fa-rotate"></i> آخر تحديث: ${new Date().toLocaleTimeString('ar-SA')}`;
+      if (!el || this._hasNewData) return;
+      const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      el.setAttribute('dir', 'ltr');
+      el.title = 'Tap to refresh now';
+      el.innerHTML = `<i class="fas fa-rotate"></i> Last update ${time}`;
+    }
+
+    /** Red reminder that the sheet changed since the visitor last refreshed. */
+    markNewData() {
+      this._hasNewData = true;
+      const el = document.getElementById('lastUpdateTime');
+      if (!el) return;
+      el.classList.add('has-update');
+      el.setAttribute('dir', 'ltr');
+      el.title = 'البيانات تغيّرت — اضغط لتحديث الصفحة';
+      el.innerHTML = '<span class="update-dot"></span> New data — tap to refresh';
+    }
+
+    clearNewData() {
+      if (!this._hasNewData) return;
+      this._hasNewData = false;
+      const el = document.getElementById('lastUpdateTime');
+      if (el) el.classList.remove('has-update');
+      this.updateTime();
     }
 
     /* ================================================== loading screen shell */

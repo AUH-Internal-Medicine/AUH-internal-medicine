@@ -119,6 +119,22 @@
 
   /* ------------------------------------------------------------------ cache */
 
+  /**
+   * Cheap content signature of the fetched tables. Used to answer "did the
+   * Google Sheet actually change?" so a background refresh that brings back
+   * identical data costs nothing and disturbs nobody.
+   */
+  function tablesSignature(tables) {
+    let hash = 5381;
+    for (const key of Object.keys(tables || {}).sort()) {
+      const text = JSON.stringify(tables[key]);
+      if (!text) continue;
+      hash = ((hash * 33) ^ key.length) >>> 0;
+      for (let i = 0; i < text.length; i++) hash = ((hash * 33) ^ text.charCodeAt(i)) >>> 0;
+    }
+    return hash.toString(36);
+  }
+
   /** True when a payload actually holds the data the site is built around. */
   function hasUsefulData(tables) {
     return !!(tables && Array.isArray(tables.residents) && tables.residents.length > 1);
@@ -160,5 +176,5 @@
       .forEach(k => AUH.storage.remove(k));
   }
 
-  AUH.data.repository = { SOURCES, clientFor, fetchAll, parseAll, readCache, writeCache, clearOldCaches, hasUsefulData };
+  AUH.data.repository = { SOURCES, clientFor, fetchAll, parseAll, readCache, writeCache, clearOldCaches, hasUsefulData, tablesSignature };
 })(typeof window !== 'undefined' ? window : globalThis);

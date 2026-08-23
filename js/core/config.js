@@ -65,8 +65,9 @@
     /** Cached payloads older than this are ignored (ms). */
     cacheTtlMs: 10 * 60 * 1000,
 
-    /** Background data refresh while the tab is visible (ms). */
-    refreshIntervalMs: 120 * 1000,
+    /** Background data refresh while the tab is visible (ms). Nothing re-renders
+     * unless the sheet actually changed. */
+    refreshIntervalMs: 180 * 1000,
     /** How often to check whether a newer build was deployed (ms). */
     updateCheckIntervalMs: 90 * 1000,
 

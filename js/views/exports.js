@@ -1,6 +1,11 @@
 /**
- * Exports: PNG image capture (on-call card + "معلوماتي" card) and the Excel
- * export of the doctor-statistics table.
+ * Exports: PNG image capture and the Excel export of the doctor-statistics table.
+ *
+ * Two capture paths:
+ *   • `captureNode()`   — rasterizes an off-screen layout built by
+ *                         views/capture-layouts.js (the "معلوماتي" exports).
+ *   • `captureElement()` — clones a live card (the on-call day card), which is
+ *                         still the right thing there: what you see is what you send.
  */
 (function (global) {
   'use strict';
@@ -9,6 +14,25 @@
   const { safeNum } = AUH.text;
   const { showToast, showDownloadProgress, updateDownloadProgress, hideDownloadProgress } = AUH.ui;
 
+  /**
+   * Waits for the browser to lay the stage out — but never forever.
+   * requestAnimationFrame stops firing while a tab is in the background, and an
+   * export started just before switching tabs used to hang with the progress
+   * overlay stuck on screen.
+   */
+  function nextFrame(timeout = 350) {
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve();
+      };
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+      setTimeout(finish, timeout);
+    });
+  }
+
   AUH.views.exports = {
   setDownloadBtnState(btn, loading) {
     if (!btn) return;
@@ -16,103 +40,146 @@
     btn.disabled = !!loading;
   },
 
-  async _captureImage(el, fn, bg, btn) {
+  /** Shared rasterizer: DOM node → PNG download, at a size that survives WhatsApp. */
+  async _rasterize(node, filename, options) {
+    const opts = options || {};
+    const background = opts.background || '#ffffff';
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const scale = Math.min(3.2, Math.max(2.4, dpr * 1.3));
+
+    updateDownloadProgress(18, 'جاري الرسم...');
+    const canvas = await html2canvas(node, {
+      backgroundColor: background,
+      scale,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      windowWidth: node.offsetWidth,
+      windowHeight: node.offsetHeight
+    });
+
+    updateDownloadProgress(64, 'جاري تحسين الجودة...');
+
+    // Padding around the card so it does not touch the image edge.
+    const pad = Math.round(16 * scale);
+    const padded = document.createElement('canvas');
+    padded.width = canvas.width + pad * 2;
+    padded.height = canvas.height + pad * 2;
+    const ctx = padded.getContext('2d');
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, padded.width, padded.height);
+    ctx.drawImage(canvas, pad, pad);
+
+    // Cap the WIDTH (not the longest side): a tall report must stay readable,
+    // and messengers recompress oversized images much harder.
+    let out = padded;
+    const maxWidth = opts.maxWidth || 1700;
+    const maxArea = 12e6;
+    let ratio = 1;
+    if (padded.width > maxWidth) ratio = maxWidth / padded.width;
+    if (padded.width * padded.height * ratio * ratio > maxArea) {
+      ratio = Math.sqrt(maxArea / (padded.width * padded.height));
+    }
+    if (ratio < 1) {
+      out = document.createElement('canvas');
+      out.width = Math.round(padded.width * ratio);
+      out.height = Math.round(padded.height * ratio);
+      const octx = out.getContext('2d');
+      octx.imageSmoothingEnabled = true;
+      octx.imageSmoothingQuality = 'high';
+      octx.drawImage(padded, 0, 0, out.width, out.height);
+    }
+
+    updateDownloadProgress(88, 'جاري حفظ الصورة...');
+    const blob = await new Promise(res => out.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('PNG export failed');
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  },
+
+  /** Renders an HTML string off-screen at a fixed width, then rasterizes it. */
+  async captureNode(html, filename, options) {
+    const opts = options || {};
+    if (this._id) return;
+    this._id = true;
+    this.setDownloadBtnState(opts.btn, true);
+    showDownloadProgress(opts.title || 'جاري توليد الصورة...');
+    updateDownloadProgress(6, 'جاري تجهيز التنسيق...');
+
+    let stage = null;
+    try {
+      stage = document.createElement('div');
+      stage.style.cssText =
+        'position:fixed;left:-20000px;top:0;z-index:-1;pointer-events:none;' +
+        `width:${opts.width || 900}px;background:#ffffff;`;
+      stage.innerHTML = html;
+      document.body.appendChild(stage);
+
+      // One frame for layout, then let webfonts settle (both time-boxed).
+      await nextFrame();
+      if (document.fonts && document.fonts.ready) {
+        await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1200))]);
+      }
+
+      await this._rasterize(stage.firstElementChild || stage, filename, opts);
+
+      updateDownloadProgress(100, 'تم!');
+      setTimeout(() => {
+        hideDownloadProgress();
+        this._id = false;
+        this.setDownloadBtnState(opts.btn, false);
+        showToast('تم تحميل الصورة ✅');
+      }, 420);
+    } catch (e) {
+      console.error(e);
+      hideDownloadProgress();
+      this._id = false;
+      this.setDownloadBtnState(opts.btn, false);
+      showToast('تعذر توليد الصورة. حاول مرة أخرى.');
+    } finally {
+      if (stage && stage.parentNode) stage.parentNode.removeChild(stage);
+    }
+  },
+
+  /** Clones a live card and rasterizes it (used by the on-call day export). */
+  async captureElement(el, filename, background, btn) {
     if (this._id) return;
     this._id = true;
     this.setDownloadBtnState(btn, true);
     showDownloadProgress('جاري توليد الصورة...');
-    updateDownloadProgress(5);
+    updateDownloadProgress(6, 'جاري تجهيز البطاقة...');
 
     let stage = null;
     try {
-      await new Promise(requestAnimationFrame);
-      const isOncall = el.id === 'oncallCardContent';
-      const baseW = isOncall ? 840 : 920;
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      // Always render at the highest quality tier — a single render scale for a crisp,
-      // well anti-aliased source image (the on-screen "quality" the resident sees on their phone).
-      const sc = Math.min(3.6, Math.max(2.85, dpr * 1.35));
-
+      await nextFrame(120);
       stage = document.createElement('div');
-      stage.style.position = 'fixed';
-      stage.style.left = '-10000px';
-      stage.style.top = '0';
-      stage.style.zIndex = '-1';
-      stage.style.pointerEvents = 'none';
+      stage.style.cssText = 'position:fixed;left:-20000px;top:0;z-index:-1;pointer-events:none;';
 
-      const capNode = el.cloneNode(true);
-      capNode.classList.add('capture-mode');
-      capNode.style.width = baseW + 'px';
-      capNode.style.maxWidth = baseW + 'px';
-      capNode.style.margin = '0';
-
-      stage.appendChild(capNode);
+      const clone = el.cloneNode(true);
+      clone.classList.add('capture-mode');
+      clone.style.width = '840px';
+      clone.style.maxWidth = '840px';
+      clone.style.margin = '0';
+      stage.appendChild(clone);
       document.body.appendChild(stage);
 
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-      updateDownloadProgress(14);
+      await nextFrame();
+      await this._rasterize(clone, filename, { background });
 
-      const canvas = await html2canvas(capNode, {
-        backgroundColor: bg,
-        scale: sc,
-        useCORS: true,
-        allowTaint: true,
-        logging: false
-      });
-
-      updateDownloadProgress(62);
-
-      const pd = isOncall ? 20 : 22;
-      const nc = document.createElement('canvas');
-      nc.width = canvas.width + pd * 2;
-      nc.height = canvas.height + pd * 2;
-
-      const ctx = nc.getContext('2d');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, nc.width, nc.height);
-      ctx.drawImage(canvas, pd, pd);
-
-      // Cap the FINAL exported dimensions to a size that WhatsApp/Telegram won't crush further
-      // when the image is sent as a "photo": their own auto-compression is what causes the
-      // "looks fine on the phone, blurry after sending" effect, and it hits oversized images
-      // much harder. Keeping the output around ~2200px (instead of 3400+) means their pass has
-      // far less downscaling to do, so what arrives on the other end looks noticeably sharper.
-      const maxSide = 2200;
-      const side = Math.max(nc.width, nc.height);
-      let outCanvas = nc;
-
-      if (side > maxSide) {
-        const ratio = maxSide / side;
-        outCanvas = document.createElement('canvas');
-        outCanvas.width = Math.round(nc.width * ratio);
-        outCanvas.height = Math.round(nc.height * ratio);
-        const octx = outCanvas.getContext('2d');
-        octx.imageSmoothingEnabled = true;
-        octx.imageSmoothingQuality = 'high';
-        octx.drawImage(nc, 0, 0, outCanvas.width, outCanvas.height);
-      }
-
-      updateDownloadProgress(86);
-
-      const blob = await new Promise(res => outCanvas.toBlob(res, 'image/png'));
-      if (!blob) throw new Error('PNG export failed');
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = fn;
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
-
-      updateDownloadProgress(100);
+      updateDownloadProgress(100, 'تم!');
       setTimeout(() => {
         hideDownloadProgress();
         this._id = false;
         this.setDownloadBtnState(btn, false);
-        showToast('تم التحميل بجودة عالية! لأفضل نتيجة عند المشاركة عبر واتساب/تلغرام، اختر إرسالها "كملف/document" لا "كصورة" لتفادي إعادة الضغط.');
-      }, 450);
+        showToast('تم تحميل الصورة ✅');
+      }, 420);
     } catch (e) {
       console.error(e);
       hideDownloadProgress();
@@ -129,15 +196,79 @@
     if (!el) return;
     const btn = triggerBtn || el.querySelector('.download-btn');
     const bg = document.body.classList.contains('dark-mode') ? '#1e293b' : '#ffffff';
-    this._captureImage(el, `مناوبات_${document.getElementById('oncallDatePicker').value || this.today}.png`, bg, btn);
+    this.captureElement(el, `مناوبات_${document.getElementById('oncallDatePicker').value || this.today}.png`, bg, btn);
   },
 
-  downloadMyInfoImage() {
-    const el = document.getElementById('myInfoContent');
-    if (!el) return;
-    const btn = el.querySelector('.download-btn');
-    const bg = document.body.classList.contains('dark-mode') ? '#1e293b' : '#ffffff';
-    this._captureImage(el, `${this.currentMyInfo?.name || 'معلوماتي'}.png`, bg, btn);
+  /** The data the "معلوماتي" exports need, stashed by showMe(). */
+  _myInfoExportData() {
+    const data = this._myInfoExport;
+    if (!data || !data.resident) {
+      showToast('ابحث عن اسمك أولاً.');
+      return null;
+    }
+    return data;
+  },
+
+  /** Calendar only — days with duty are green and name the duty underneath. */
+  downloadMyInfoCalendarImage(triggerBtn = null) {
+    const data = this._myInfoExportData();
+    if (!data) return;
+
+    const cap = AUH.capture;
+    const title = data.resident.name + (data.resident.abbr ? ` (${data.resident.abbr})` : '');
+    const body =
+      cap.buildSummary(data.monthOncalls, this.today) +
+      cap.buildCalendar({
+        monthKey: data.monthKey,
+        oncalls: data.monthOncalls,
+        today: this.today,
+        isHoliday: date => this.isHolidayDate(date)
+      });
+
+    const html = cap.buildShell({
+      title,
+      subtitle: `رزنامة المناوبات — ${cap.monthTitle(data.monthKey)}`,
+      body,
+      width: 900
+    });
+
+    this.captureNode(html, `رزنامة_${data.resident.name}_${data.monthKey}.png`, {
+      btn: triggerBtn,
+      width: 900,
+      title: 'جاري توليد صورة الرزنامة...'
+    });
+  },
+
+  /** Calendar + the month's on-call details underneath. */
+  downloadMyInfoImage(triggerBtn = null) {
+    const data = this._myInfoExportData();
+    if (!data) return;
+
+    const cap = AUH.capture;
+    const title = data.resident.name + (data.resident.abbr ? ` (${data.resident.abbr})` : '');
+    const body =
+      cap.buildSummary(data.monthOncalls, this.today) +
+      cap.buildCalendar({
+        monthKey: data.monthKey,
+        oncalls: data.monthOncalls,
+        today: this.today,
+        isHoliday: date => this.isHolidayDate(date)
+      }) +
+      cap.sectionTitle(`تفاصيل المناوبات (${data.monthOncalls.length})`) +
+      cap.buildOncallList(data.monthOncalls, { today: this.today, withColleagues: true });
+
+    const html = cap.buildShell({
+      title,
+      subtitle: `مناوبات ${cap.monthTitle(data.monthKey)}`,
+      body,
+      width: 900
+    });
+
+    this.captureNode(html, `معلوماتي_${data.resident.name}_${data.monthKey}.png`, {
+      btn: triggerBtn,
+      width: 900,
+      title: 'جاري توليد صورة معلوماتي...'
+    });
   },
 
   downloadDoctorStatsExcel() {
