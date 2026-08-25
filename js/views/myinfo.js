@@ -89,6 +89,57 @@
     this.showMe(this.currentMyInfo, { keepScroll: true });
   },
 
+  /**
+   * العطل الرسمية — the holidays panel under the on-call section.
+   * Shows this month's holidays first, then what is coming next, and flags the
+   * ones the resident is actually on call for (those pay holiday hours).
+   */
+  renderMyInfoHolidays(monthOncalls) {
+    const monthHolidays = this.getHolidaysInMonth(this.myInfoMonthKey);
+    const upcoming = this.holidaysModel.upcoming(this.today, 4).filter(h => !monthHolidays.some(m => m.date === h.date));
+    if (!monthHolidays.length && !upcoming.length) return '';
+
+    const onCallDates = new Set((monthOncalls || []).map(o => o.date));
+
+    const card = (holiday, muted) => {
+      const isPast = holiday.date < this.today;
+      const isToday = holiday.date === this.today;
+      const onCall = onCallDates.has(holiday.date);
+      const badges =
+        (isToday ? '<span class="holiday-chip today">اليوم</span>' : '') +
+        (onCall ? '<span class="holiday-chip oncall"><i class="fas fa-user-doctor"></i> لديك مناوبة</span>' : '') +
+        (isPast && !isToday ? '<span class="holiday-chip past">مضت</span>' : '');
+
+      return (
+        `<div class="holiday-item${muted ? ' upcoming' : ''}${isPast && !isToday ? ' is-past' : ''}${onCall ? ' has-oncall' : ''}">` +
+          `<div class="holiday-icon"><i class="fas fa-star"></i></div>` +
+          `<div class="holiday-body">` +
+            `<div class="holiday-name">${escapeHtml(holiday.name)}</div>` +
+            `<div class="holiday-date"><span dir="ltr">${escapeHtml(holiday.date)}</span> · ${escapeHtml(holiday.day || getDayName(holiday.date))}</div>` +
+          `</div>` +
+          `<div class="holiday-chips">${badges}</div>` +
+        `</div>`
+      );
+    };
+
+    const monthPart = monthHolidays.length
+      ? `<div class="holiday-list">${monthHolidays.map(h => card(h, false)).join('')}</div>`
+      : '<p class="holiday-empty">لا توجد عطل رسمية في هذا الشهر.</p>';
+
+    const upcomingPart = upcoming.length
+      ? `<div class="holiday-subtitle"><i class="fas fa-forward"></i> العطل القادمة</div>` +
+        `<div class="holiday-list">${upcoming.map(h => card(h, true)).join('')}</div>`
+      : '';
+
+    return (
+      `<div class="collapsible-section holidays-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)">` +
+        `<span><i class="fas fa-star"></i> العطل الرسمية (${monthHolidays.length})</span><i class="fas fa-chevron-down"></i></button>` +
+        `<div class="collapsible-content show">${monthPart}${upcomingPart}` +
+        `<div class="holiday-note"><i class="fas fa-circle-info"></i> مناوبات هذه الأيام تُحسب بتوقيت ومدة العطلة تلقائياً.</div>` +
+        `</div></div>`
+    );
+  },
+
   renderMyInfoMonthCalendar(monthOncalls, monthKey) {
     const parts = String(monthKey || this.today.slice(0, 7)).split('-');
     const yr = parseInt(parts[0], 10);
@@ -120,10 +171,13 @@
       const cats = byDate[ds] || [];
       const hasOncall = cats.length > 0;
 
+      const holidayName = this.getHolidayName(ds);
+
       let cls = 'calendar-day';
       if (isToday) cls += ' today';
       if (isPast && !isToday) cls += ' past-day';
       if (di === 5 || di === 6) cls += ' weekend';
+      if (holidayName) cls += ' official-holiday';
       if (hasOncall) cls += ' has-oncall';
 
       // Dot indicators instead of text labels
@@ -142,8 +196,10 @@
       }
 
       const click = hasOncall ? `onclick="app.focusMyInfoOncallDate('${ds}')"` : '';
-      const datatipAttr = hasOncall ? `data-tip="${this.escapeHtml(cats.join('، '))}"` : '';
-      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click} ${datatipAttr}>${day}${dotsHtml}</div>`;
+      const tip = [holidayName, cats.join('، ')].filter(Boolean).join(' — ');
+      const datatipAttr = tip ? `data-tip="${this.escapeHtml(tip)}" title="${this.escapeHtml(tip)}"` : '';
+      const holidayMark = holidayName ? `<span class="calendar-holiday-star"><i class="fas fa-star"></i></span>` : '';
+      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click} ${datatipAttr}>${day}${holidayMark}${dotsHtml}</div>`;
     }
 
     h += '</div></div>';
@@ -366,6 +422,8 @@
     } else h += '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';
 
     h += '</div></div>';
+
+    h += this.renderMyInfoHolidays(monthOncalls);
     h += `<button class="download-btn" onclick="app.downloadMyInfoImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة والتفاصيل كصورة</button></div>`;
 
     rd.innerHTML = h;

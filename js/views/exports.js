@@ -222,7 +222,8 @@
         monthKey: data.monthKey,
         oncalls: data.monthOncalls,
         today: this.today,
-        isHoliday: date => this.isHolidayDate(date)
+        isHoliday: date => this.isHolidayDate(date),
+        holidayName: date => this.getHolidayName(date)
       });
 
     const html = cap.buildShell({
@@ -252,10 +253,15 @@
         monthKey: data.monthKey,
         oncalls: data.monthOncalls,
         today: this.today,
-        isHoliday: date => this.isHolidayDate(date)
+        isHoliday: date => this.isHolidayDate(date),
+        holidayName: date => this.getHolidayName(date)
       }) +
       cap.sectionTitle(`تفاصيل المناوبات (${data.monthOncalls.length})`) +
-      cap.buildOncallList(data.monthOncalls, { today: this.today, withColleagues: true });
+      cap.buildOncallList(data.monthOncalls, {
+        today: this.today,
+        withColleagues: true,
+        holidayName: date => this.getHolidayName(date)
+      });
 
     const html = cap.buildShell({
       title,

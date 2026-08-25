@@ -137,6 +137,8 @@
       const onCall = items.length > 0;
       const holiday = o.isHoliday ? !!o.isHoliday(iso) : isWeekend;
 
+      const holidayName = o.holidayName ? o.holidayName(iso) : '';
+
       let background = C.white;
       let border = `1px solid ${C.line}`;
       let numberColor = isWeekend ? C.red : C.ink;
@@ -145,9 +147,13 @@
         background = C.greenSoft;
         border = `2px solid ${C.green}`;
         numberColor = C.green;
+      } else if (holidayName) {
+        background = C.redSoft;
+        numberColor = C.red;
       } else if (isWeekend) {
         background = '#fdf7f7';
       }
+      if (holidayName) border = `2px solid ${C.red}`;
 
       const ring = isToday ? `box-shadow:0 0 0 3px rgba(27,58,92,.35);` : '';
       const labels = items
@@ -160,12 +166,15 @@
         })
         .join('');
 
-      const holidayDot = holiday && onCall ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.red};margin-inline-start:4px;vertical-align:middle;"></span>` : '';
+      const holidayDot = holiday && onCall && !holidayName ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.red};margin-inline-start:4px;vertical-align:middle;"></span>` : '';
+      const holidayLabel = holidayName
+        ? `<div style="background:${C.red};color:#fff;border-radius:6px;padding:2px 5px;margin-top:3px;font-size:10px;font-weight:800;line-height:1.25;word-break:break-word;">★ ${escapeHtml(holidayName)}</div>`
+        : '';
 
       html += cell(
         `<div style="display:flex;align-items:center;justify-content:space-between;">` +
           `<span style="font-size:17px;font-weight:800;color:${numberColor};">${day}</span>${holidayDot}` +
-        `</div>${labels}`,
+        `</div>${holidayLabel}${labels}`,
         `min-height:86px;padding:7px 7px 8px;border-radius:11px;background:${background};border:${border};${ring}`
       );
     }
@@ -175,7 +184,8 @@
     const legend =
       `<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:16px;font-size:12.5px;font-weight:700;color:${C.muted};">` +
         `<span><span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${C.greenSoft};border:2px solid ${C.green};vertical-align:-2px;"></span> يوم مناوبة</span>` +
-        `<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${C.red};vertical-align:-1px;"></span> عطلة</span>` +
+        `<span><span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${C.redSoft};border:2px solid ${C.red};vertical-align:-2px;"></span> ★ عطلة رسمية</span>` +
+        `<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${C.red};vertical-align:-1px;"></span> عطلة أسبوعية</span>` +
         `<span>✓ مناوبة تمّت</span>` +
         `<span><span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:#fff;border:1px solid ${C.line};box-shadow:0 0 0 3px rgba(27,58,92,.35);vertical-align:-2px;"></span> اليوم</span>` +
       `</div>`;
@@ -217,7 +227,8 @@
 
         const badges = [];
         if (isPast) badges.push(`<span style="background:${C.greenSoft};color:${C.green};border:1px solid ${C.greenLine};border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">تمّت ✓</span>`);
-        if (holiday) badges.push(`<span style="background:${C.redSoft};color:${C.red};border:1px solid #f0b7b1;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">عطلة</span>`);
+        const holidayName = o.holidayName ? o.holidayName(item.date) : '';
+        if (holiday) badges.push(`<span style="background:${C.redSoft};color:${C.red};border:1px solid #f0b7b1;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">${holidayName ? '★ ' + escapeHtml(holidayName) : 'عطلة'}</span>`);
         if (item.schedule && item.schedule.isVolunteer) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">تطوعية</span>`);
         else if (item.schedule && item.schedule.isAdjusted) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">ساعات معدّلة</span>`);
 

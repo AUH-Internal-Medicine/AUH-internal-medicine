@@ -223,6 +223,21 @@
       }
     },
 
+    /* ------------------------------------------------------ official holidays */
+    holidays: {
+      key: 'holidays',
+      label: 'العطل الرسمية',
+      spreadsheet: 'main',
+      gid: '1388329552',
+      format: 'csv',
+      headerRow: 0,
+      columns: {
+        date: { labels: ['التاريخ', 'تاريخ العطلة', 'اليوم'], required: true, fallbackIndex: 0, type: 'date', note: 'يوم - شهر - سنة (يقبل - / . \\ كفواصل)' },
+        name: { labels: ['اسم العطلة', 'المناسبة', 'العطلة', 'الاسم'], required: true, fallbackIndex: 1, type: 'text' }
+      },
+      note: 'كل تاريخ هنا يُعامل كعطلة في كل الموقع: توقيت ومدة المناوبة، حساب الساعات، عدّاد مناوبات العطل، وتلوين الرزنامات.'
+    },
+
     /* -------------------------------------------------- on-call rules sheet */
     oncallRules: {
       key: 'oncallRules',
@@ -250,6 +265,7 @@
     'links',
     'qa',
     'lectures',
+    'holidays',
     'oncallRules'
   ];
 

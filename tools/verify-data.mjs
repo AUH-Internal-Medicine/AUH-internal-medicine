@@ -37,6 +37,7 @@ const MODULES = [
   'data/parsers/oncall.js',
   'data/parsers/evaluation.js',
   'data/parsers/lectures.js',
+  'data/parsers/holidays.js',
   'data/parsers/content.js',
   'data/repository.js',
   'domain/oncall-schedule.js',
@@ -97,7 +98,12 @@ for (const { datasetKey, schemaKey } of AUH.data.repository.SOURCES) {
 const dataset = AUH.data.repository.parseAll(raw);
 
 section('2. مطابقة الأعمدة مع الشيت');
-const allIssues = dataset.issues || [];
+// A source that failed to download parses as an empty model, which would look
+// like "every required column is missing". Only judge the contract for sources
+// that actually arrived.
+const failedSources = AUH.data.repository.SOURCES.filter(s => !raw[s.datasetKey]).map(s => s.schemaKey);
+if (failedSources.length) warn(`تعذر تحميل: ${failedSources.join(', ')} — تم تخطي فحص أعمدتها (غالباً مشكلة شبكة مؤقتة)`);
+const allIssues = (dataset.issues || []).filter(i => !failedSources.includes(i.source));
 const errors = allIssues.filter(i => i.level === 'error');
 const warns = allIssues.filter(i => i.level === 'warn');
 check(errors.length === 0, 'كل الأعمدة الإلزامية موجودة', `أعمدة إلزامية مفقودة: ${errors.map(e => `${e.source}.${e.field}`).join(', ')}`);
@@ -109,6 +115,12 @@ if (DEBUG) {
     Object.entries(dataset.residents.columnDetail).map(([field, info]) => ({ field, index: info.index, header: info.header, via: info.via }))
   );
   console.log('  أعمدة غير معروفة:', dataset.residents.unknownHeaders.map(u => u.header).join(' | ') || '—');
+}
+
+if (failedSources.length === AUH.data.repository.SOURCES.length) {
+  fail('تعذر تحميل أي مصدر — تحقق من الاتصال بالإنترنت ثم أعد المحاولة.');
+  console.log(`\n[1mالنتيجة[0m\n  أخطاء: ${failures} — تنبيهات: ${warnings}`);
+  process.exit(1);
 }
 
 section('3. لائحة المقيمين');
@@ -234,12 +246,31 @@ check(negative.length === 0, 'لا توجد قيم سالبة');
 const noHours = stats.filter(s => s.total > 0 && s.hoursTotal === 0);
 check(noHours.length === 0, 'كل من له مناوبات له ساعات محسوبة', `مقيمون بمناوبات وبلا ساعات: ${noHours.map(s => s.name).join(', ')}`);
 
-section('8. المحاضرات والروابط والأسئلة');
+section('8. العطل الرسمية');
+const holidays = dataset.holidays;
+check(holidays.list.length > 0, `عدد العطل: ${holidays.list.length}`, 'لا توجد عطل مقروءة — تحقق من الشيت');
+holidays.list.forEach(h => ok(`${h.date} · ${h.day} — ${h.name}`));
+const badHoliday = holidays.list.filter(h => !/^\d{4}-\d{2}-\d{2}$/.test(h.date));
+check(badHoliday.length === 0, 'كل تواريخ العطل بصيغة صحيحة', `تواريخ غير صالحة: ${badHoliday.map(h => h.name).join(', ')}`);
+/* A holiday must actually change the duty schedule for that day. */
+const sampleHoliday = holidays.list[0];
+if (sampleHoliday) {
+  const merged = new Set([...(dataset.rules.annualHolidays || []), ...holidays.dates]);
+  const sched = AUH.domain.oncallSchedule.getCategorySchedule('تالت', sampleHoliday.date, merged);
+  const normal = AUH.domain.oncallSchedule.getCategorySchedule('تالت', sampleHoliday.date, new Set());
+  check(
+    !!sched && sched.isHoliday && sched.duration !== (normal && normal.duration),
+    `يوم ${sampleHoliday.date} يُحسب بتوقيت العطلة (${sched && sched.duration})`,
+    'العطلة لا تغيّر مدة المناوبة — تحقق من الربط'
+  );
+}
+
+section('9. المحاضرات والروابط والأسئلة');
 check(dataset.lectures.list.length > 0, `عدد المحاضرات/الأنشطة: ${dataset.lectures.list.length}`);
 check((dataset.lectures.skippedDates || []).length === 0, 'كل تواريخ المحاضرات مقروءة', `تواريخ غير مقروءة: ${(dataset.lectures.skippedDates || []).join(', ')}`);
 check(dataset.links.list.length > 0, `عدد الروابط: ${dataset.links.list.length}`);
 check(dataset.qa.list.length > 0, `عدد الأسئلة: ${dataset.qa.list.length} في ${dataset.qa.categories.length} تصنيف`);
-ok(`عدد العطل السنوية المقروءة: ${dataset.rules.annualHolidays.size}`);
+ok(`عدد العطل من تبويب القواعد القديم: ${dataset.rules.annualHolidays.size}`);
 
 section('النتيجة');
 console.log(`  أخطاء: ${failures} — تنبيهات: ${warnings}`);

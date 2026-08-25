@@ -10,7 +10,7 @@
   'use strict';
 
   const AUH = global.AUH;
-  const { normAr, splitNames } = AUH.text;
+  const { normAr, splitNames, escapeHtml } = AUH.text;
   const { getDayName, nowStamp } = AUH.dates;
   const { mcn } = AUH.ui;
   const AM = AUH.constants.MONTH_NAMES;
@@ -97,15 +97,22 @@
       const pa = ds < this.today;
 
       const hasVolunteer = this.adjustmentAdditions.some(a => a.date === ds);
+      const holidayName = this.getHolidayName(ds);
 
       let cls = 'calendar-day';
       if (it) cls += ' today';
       if (sel) cls += ' selected-day';
       if (pa && !sel) cls += ' past-day';
       if (di === 5 || di === 6) cls += ' weekend';
+      if (holidayName) cls += ' official-holiday';
       if (hasVolunteer) cls += ' has-volunteer';
 
-      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')">${day}${hasVolunteer ? '<span class="calendar-volunteer-dot" title="مناوبة تطوعية إضافية"></span>' : ''}</div>`;
+      const holidayMark = holidayName
+        ? `<span class="calendar-holiday-star" title="${escapeHtml(holidayName)}"><i class="fas fa-star"></i></span>` +
+          `<span class="calendar-holiday-name">${escapeHtml(holidayName)}</span>`
+        : '';
+
+      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')"${holidayName ? ` title="${escapeHtml(holidayName)}"` : ''}>${day}${holidayMark}${hasVolunteer ? '<span class="calendar-volunteer-dot" title="مناوبة تطوعية إضافية"></span>' : ''}</div>`;
     }
 
     h += '</div></div>';
@@ -361,10 +368,11 @@
 
     const dn = getDayName(dstr);
     const we = this.isHolidayDate(dstr);
+    const holidayName = this.getHolidayName(dstr);
     const catCount = entries1.length + entries2.length;
     const totalDoctors = entries1.reduce((a, [, n]) => a + n.length, 0) + entries2.reduce((a, [, n]) => a + n.length, 0);
 
-    let h = `<div class="oncall-day-card" id="oncallCardContent"><div class="oncall-card-head"><h3 class="${we ? 'weekend' : ''}"><i class="fas fa-calendar-day"></i> ${dstr} - ${dn}${we ? ' <span class="day-badge weekend">عطلة</span>' : ''}</h3><div class="oncall-card-stats"><span class="oncall-stat-pill"><i class="fas fa-layer-group"></i> ${catCount} فئة</span><span class="oncall-stat-pill"><i class="fas fa-user-doctor"></i> ${totalDoctors} طبيب</span></div></div><div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div>`;
+    let h = `<div class="oncall-day-card" id="oncallCardContent"><div class="oncall-card-head"><h3 class="${we ? 'weekend' : ''}"><i class="fas fa-calendar-day"></i> ${dstr} - ${dn}${we ? ` <span class="day-badge weekend${holidayName ? ' official' : ''}">${holidayName ? '<i class="fas fa-star"></i> ' + escapeHtml(holidayName) : 'عطلة'}</span>` : ''}</h3><div class="oncall-card-stats"><span class="oncall-stat-pill"><i class="fas fa-layer-group"></i> ${catCount} فئة</span><span class="oncall-stat-pill"><i class="fas fa-user-doctor"></i> ${totalDoctors} طبيب</span></div></div><div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div>`;
 
     if (showBoth) {
       h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الأولى</h4>${entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>'}</div>`;

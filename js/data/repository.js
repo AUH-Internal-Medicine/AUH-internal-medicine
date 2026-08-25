@@ -28,6 +28,7 @@
     { schemaKey: 'links', datasetKey: 'links' },
     { schemaKey: 'qa', datasetKey: 'qa' },
     { schemaKey: 'lectures', datasetKey: 'lectures' },
+    { schemaKey: 'holidays', datasetKey: 'holidays' },
     { schemaKey: 'oncallRules', datasetKey: 'rules' }
   ];
 
@@ -95,6 +96,7 @@
     const links = source.links ? AUH.parse.links(source.links) : prev.links || { list: [] };
     const qa = source.qa ? AUH.parse.qa(source.qa) : prev.qa || { list: [], categories: [] };
     const lectures = source.lectures ? AUH.parse.lectures(source.lectures) : prev.lectures || { list: [] };
+    const holidays = source.holidays ? AUH.parse.holidays(source.holidays) : prev.holidays || AUH.parse.emptyHolidays();
     const rules = source.rules ? AUH.parse.oncallRules(source.rules) : prev.rules || { annualHolidays: new Set() };
 
     const dataset = {
@@ -106,12 +108,13 @@
       links,
       qa,
       lectures,
+      holidays,
       rules,
       fetchedAt: Date.now()
     };
 
     dataset.issues = []
-      .concat(residents.issues || [], oncall.issues || [], evaluation.issues || [], links.issues || [], qa.issues || [], lectures.issues || [])
+      .concat(residents.issues || [], oncall.issues || [], evaluation.issues || [], links.issues || [], qa.issues || [], lectures.issues || [], holidays.issues || [])
       .filter(Boolean);
 
     return dataset;

@@ -46,6 +46,7 @@
       this.oncHeaders2 = [];
       this.oncRows2 = [];
       this.lectures = [];
+      this.holidaysModel = AUH.parse.emptyHolidays();
       this.annualHolidays = new Set();
       this.adjustmentOverrides = new Map();
       this.adjustmentAdditions = [];
@@ -502,7 +503,12 @@
       this.oncHeaders2 = dataset.oncallYear2.headers;
       this.oncRows2 = dataset.oncallYear2.rows;
       this.lectures = dataset.lectures.list;
-      this.annualHolidays = dataset.rules.annualHolidays;
+
+      // Official holidays come from their own sheet tab; the old rules tab is
+      // still merged in for backward compatibility. Everything downstream
+      // (duty times, hours, holiday counters, calendar colours) reads this set.
+      this.holidaysModel = dataset.holidays;
+      this.annualHolidays = new Set([...(dataset.rules.annualHolidays || []), ...dataset.holidays.dates]);
 
       // Derived data (order matters: adjustments need residents + on-call,
       // statistics need adjustments).
@@ -702,6 +708,21 @@
 
     isHolidayDate(dateIso) {
       return schedule.isHolidayDate(dateIso, this.annualHolidays);
+    }
+
+    /** Name of an official holiday ('' for weekends and ordinary days). */
+    getHolidayName(dateIso) {
+      return this.holidaysModel.nameFor(dateIso);
+    }
+
+    /** True only for a date listed in the holidays sheet (not for Fri/Sat). */
+    isOfficialHoliday(dateIso) {
+      return this.holidaysModel.isOfficialHoliday(dateIso);
+    }
+
+    /** Official holidays inside a `YYYY-MM` month. */
+    getHolidaysInMonth(key) {
+      return this.holidaysModel.inMonth(key);
     }
 
     getCategorySchedule(category, dateIso) {
