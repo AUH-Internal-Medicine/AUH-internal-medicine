@@ -41,6 +41,13 @@
         night: 0,
         hoursCompleted: 0,
         hoursTotal: 0,
+        // Shift hours on their own, so the card can show "منها بونص".
+        hoursShiftsCompleted: 0,
+        hoursShiftsTotal: 0,
+        bonusHours: 0,
+        bonusCompleted: 0,
+        bonusByMonth: {},
+        bonusEntries: [],
         firstOncall: '',
         lastOncall: '',
         groupDetails: { wards: {}, icu: {}, emergency: {}, misc: {}, other: {} },
@@ -76,7 +83,11 @@
     if (isNight) entry.night++;
 
     entry.hoursTotal += hours;
-    if (isCompleted) entry.hoursCompleted += hours;
+    entry.hoursShiftsTotal += hours;
+    if (isCompleted) {
+      entry.hoursCompleted += hours;
+      entry.hoursShiftsCompleted += hours;
+    }
 
     if (!entry.firstOncall || date < entry.firstOncall) entry.firstOncall = date;
     if (!entry.lastOncall || date > entry.lastOncall) entry.lastOncall = date;
@@ -192,7 +203,33 @@
       });
     });
 
-    // 4. Ranks by hours (worked, then planned).
+    // 4. Bonus hours: credited to the person without creating an assignment.
+    //    An undated bonus counts as already earned; a dated one follows its date.
+    (ctx.bonuses || []).forEach(bonus => {
+      const key = bonus.abbr || bonus.name;
+      let entry = statsMap.get(key);
+      if (!entry) {
+        entry = blankEntry({ name: bonus.name, abbr: bonus.abbr || '' });
+        statsMap.set(key, entry);
+      }
+
+      const hours = bonus.hours || 0;
+      const earned = !bonus.date || bonus.date <= today;
+
+      entry.bonusHours += hours;
+      entry.hoursTotal += hours;
+      if (earned) {
+        entry.bonusCompleted += hours;
+        entry.hoursCompleted += hours;
+      }
+      if (bonus.date) {
+        const month = bonus.date.slice(0, 7);
+        entry.bonusByMonth[month] = (entry.bonusByMonth[month] || 0) + hours;
+      }
+      entry.bonusEntries.push({ date: bonus.date || '', hours, label: bonus.label || 'Bonus' });
+    });
+
+    // 5. Ranks by hours (worked, then planned) — bonus included.
     const list = Array.from(statsMap.values());
     list
       .slice()

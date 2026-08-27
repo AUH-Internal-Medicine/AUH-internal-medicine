@@ -32,15 +32,27 @@
   }
 
   /**
-   * @param {Array} entries parsed adjustment rows
-   * @param {object} deps {residents, oncall} models
-   * @returns {{overrides: Map<string, number>, additions: Array}}
+   * @param {Array} entries parsed shift-adjustment rows
+   * @param {object} deps {residents, oncall} models, plus optional `bonuses`
+   * @returns {{overrides: Map<string, number>, additions: Array, bonuses: Array}}
    */
   function resolveAdjustments(entries, deps) {
     const overrides = new Map();
     const additions = [];
     const residents = deps.residents;
     const oncall = deps.oncall;
+
+    // Bonus rows carry hours only — they must never become an on-call assignment.
+    const bonuses = (deps.bonuses || []).map(bonus => {
+      const resident = (bonus.abbr && residents.findByNameOrAbbr(bonus.abbr)) || residents.findByNameOrAbbr(bonus.name);
+      return {
+        date: bonus.date || '',
+        hours: bonus.hours,
+        label: bonus.label || 'Bonus',
+        name: resident ? resident.name : bonus.name,
+        abbr: resident ? resident.abbr || resident.name : bonus.abbr || bonus.name
+      };
+    });
 
     (entries || []).forEach(adj => {
       const resident = (adj.abbr && residents.findByNameOrAbbr(adj.abbr)) || residents.findByNameOrAbbr(adj.name);
@@ -54,11 +66,14 @@
       }
     });
 
-    if (entries && entries.length) {
-      log.debug('adjustments', `${overrides.size} تعديل ساعات، ${additions.length} مناوبة إضافية/تطوعية`);
+    if ((entries && entries.length) || bonuses.length) {
+      log.debug(
+        'adjustments',
+        `${overrides.size} تعديل ساعات، ${additions.length} مناوبة إضافية/تطوعية، ${bonuses.length} بونص`
+      );
     }
 
-    return { overrides, additions };
+    return { overrides, additions, bonuses };
   }
 
   AUH.domain.adjustments = { resolveAdjustments, overrideKey, isListed };

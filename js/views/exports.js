@@ -296,33 +296,48 @@
       const bi = rosterOrder.has(b.abbr || b.name) ? rosterOrder.get(b.abbr || b.name) : Infinity;
       return ai - bi;
     });
-    const rows = list.map(r => ({
-      'الاسم': r.name || '',
-      'الاختصار': r.abbr || '',
-      'أيام منذ الالتحاق': r.joinDaysSince ?? '',
-      'مناوبات تراكمية': r.total || 0,
-      'مناوبات تمت': r.completed || 0,
-      'ساعات تمت': round1(r.hoursCompleted),
-      'ترتيب الساعات (تمت)': r.rankCompleted || '',
-      'ساعات تراكمية': round1(r.hoursTotal),
-      'ترتيب الساعات (تراكمية)': r.rankTotal || '',
-      'أجنحة': r.wards || 0,
-      'عنايات': r.icu || 0,
-      'اسعاف': r.emergency || 0,
-      'منوع': r.misc || 0,
-      'مناوبات عطل': r.holiday || 0,
-      'مناوبات ليلية': r.night || 0,
-      'أول مناوبة': r.firstOncall || '',
-      'آخر مناوبة': r.lastOncall || ''
-    }));
+    // One column per discovered "فرز شهر N" so the rotations a doctor already
+    // did are filterable in Excel, not buried in a single cell.
+    const shiftMonths = this.residentsModel.getShiftMonths();
+
+    const rows = list.map(r => {
+      const resident = this.residentsModel.findByNameOrAbbr(r.abbr) || this.residentsModel.findByNameOrAbbr(r.name);
+      const row = {
+        'الاسم': r.name || '',
+        'الاختصار': r.abbr || '',
+        'أيام منذ الالتحاق': r.joinDaysSince ?? '',
+        'مناوبات تراكمية': r.total || 0,
+        'مناوبات تمت': r.completed || 0,
+        'ساعات تمت': round1(r.hoursCompleted),
+        'ترتيب الساعات (تمت)': r.rankCompleted || '',
+        'ساعات تراكمية': round1(r.hoursTotal),
+        'ترتيب الساعات (تراكمية)': r.rankTotal || '',
+        'ساعات المناوبات فقط': round1(r.hoursShiftsTotal),
+        'ساعات بونص': round1(r.bonusHours),
+        'ساعات بونص محتسبة': round1(r.bonusCompleted),
+        'أجنحة': r.wards || 0,
+        'عنايات': r.icu || 0,
+        'اسعاف': r.emergency || 0,
+        'منوع': r.misc || 0,
+        'مناوبات عطل': r.holiday || 0,
+        'مناوبات ليلية': r.night || 0,
+        'ثناءات': r.praiseCount || 0,
+        'عدد الفروز حتى الآن': r.rotationsCount || 0,
+        'أول مناوبة': r.firstOncall || '',
+        'آخر مناوبة': r.lastOncall || ''
+      };
+
+      shiftMonths.forEach(month => {
+        row[month.label || `فرز شهر ${month.month}`] = resident ? this.residentsModel.getShift(resident, month.month) : '';
+      });
+
+      return row;
+    });
 
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [
-      { wch: 24 }, { wch: 10 }, { wch: 16 }, { wch: 15 }, { wch: 13 },
-      { wch: 11 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 9 },
-      { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 13 }, { wch: 13 },
-      { wch: 13 }, { wch: 13 }
-    ];
+    const baseWidths = [24, 10, 16, 15, 13, 11, 18, 14, 20, 18, 12, 16, 9, 9, 9, 9, 13, 13, 10, 16, 13, 13];
+    ws['!cols'] = baseWidths.concat(shiftMonths.map(() => ({ wch: 18 }))).map(w => (typeof w === 'number' ? { wch: w } : w));
+
     ws['!autofilter'] = { ref: ws['!ref'] };
 
     const wb = XLSX.utils.book_new();

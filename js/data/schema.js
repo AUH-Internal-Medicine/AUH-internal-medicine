@@ -107,10 +107,19 @@
       categoryColumns: true
     },
 
-    /** Manual corrections/additions that cannot be expressed in the on-call table. */
+    /**
+     * Hour corrections, volunteer shifts and bonus hours — everything that
+     * cannot be expressed inside the on-call table itself.
+     *
+     * A row is a BONUS when the date or the type cell says `Bonus` (or `بونص`):
+     *   • date + `Bonus` → bonus hours belonging to that month
+     *   • `Bonus` + `Bonus` → undated bonus hours (counted in the totals only)
+     * Anything else is a shift row: an hours override if the person is already
+     * on that shift, otherwise a volunteer addition.
+     */
     oncallAdjustments: {
       key: 'oncallAdjustments',
-      label: 'تعديلات المناوبات',
+      label: 'تعديل الساعات والبونص',
       spreadsheet: 'main',
       gid: '1181737768',
       format: 'csv',
@@ -118,10 +127,12 @@
       columns: {
         name: { labels: ['الاسم', 'الاسم الثلاثي'], required: true, fallbackIndex: 0, type: 'text' },
         abbr: { labels: ['الاختصار'], fallbackIndex: 1, type: 'text' },
-        date: { labels: ['تاريخ المناوبة', 'التاريخ'], required: true, fallbackIndex: 2, type: 'date' },
-        category: { labels: ['نوع المناوبة', 'المناوبة'], required: true, fallbackIndex: 3, type: 'text' },
+        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'تاريخ المناوبة، أو Bonus لبونص غير مؤرخ' },
+        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'اسم فئة المناوبة، أو Bonus لإضافة ساعات بونص' },
         hours: { labels: ['عدد الساعات', 'الساعات'], required: true, fallbackIndex: 4, type: 'number' }
-      }
+      },
+      /** Words that turn a row into bonus hours instead of a shift. */
+      bonusKeywords: ['bonus', 'بونص', 'بونس', 'مكافأة']
     },
 
     /* ----------------------------------------------------------- evaluation */

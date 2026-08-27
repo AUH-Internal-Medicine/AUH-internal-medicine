@@ -99,6 +99,22 @@ body.dark-mode .header-bg-photo{opacity:0.78;filter:saturate(1.02) contrast(1.06
 .update-dot{width:9px;height:9px;border-radius:50%;background:#fff;display:inline-block;flex-shrink:0;animation:updateDot 1.1s ease-in-out infinite}
 @keyframes updateDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
 
+/* bonus hours (from the تعديل الساعات والبونص sheet) */
+.dsc-hours-bonus{margin-top:4px;font-size:.72em;font-weight:800;color:#b8862b;background:rgba(212,162,76,.16);border-radius:20px;padding:2px 8px;display:inline-flex;align-items:center;gap:5px}
+.dsc-bonus-badge{background:linear-gradient(135deg,rgba(212,162,76,.2),rgba(217,140,61,.16));color:#8a5a1d;border:1px solid rgba(212,162,76,.5);border-radius:20px;padding:3px 10px;font-weight:800}
+.myinfo-bonus-box{background:linear-gradient(135deg,rgba(212,162,76,.16),rgba(217,140,61,.12));border:2px solid rgba(212,162,76,.45)}
+.myinfo-bonus-box .cum-num,.myinfo-bonus-box .stat-num{color:#8a5a1d}
+.cum-bonus{margin-top:6px;font-size:.78em;font-weight:800;color:#8a5a1d;background:rgba(212,162,76,.2);border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:6px}
+
+.bonus-section .collapsible-btn{border-inline-start:5px solid #d4a24c}
+.bonus-total{padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,rgba(212,162,76,.18),rgba(217,140,61,.12));border:1px solid rgba(212,162,76,.45);font-weight:700;color:var(--text);margin-bottom:10px}
+.bonus-total strong{font-size:1.25em;color:#8a5a1d}
+.bonus-pending{font-size:.85em;color:var(--text-secondary);font-weight:600}
+.bonus-list{display:flex;flex-direction:column;gap:7px}
+.bonus-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;border-radius:11px;background:var(--gray-100);border:1px solid var(--border)}
+.bonus-month{font-weight:700;color:var(--text)}
+.bonus-hours{font-weight:800;color:#8a5a1d;background:rgba(212,162,76,.18);border-radius:20px;padding:3px 11px;white-space:nowrap}
+
 /* official holidays (from the العطل الرسمية sheet) */
 .calendar-day.official-holiday{background:linear-gradient(150deg,rgba(192,57,43,.14),rgba(217,140,61,.16));border:2px solid rgba(192,57,43,.55);position:relative}
 .calendar-day.official-holiday.has-oncall{background:linear-gradient(150deg,rgba(47,125,92,.18),rgba(217,140,61,.2));border-color:rgba(47,125,92,.6);box-shadow:inset 0 0 0 2px rgba(192,57,43,.35)}

@@ -49,6 +49,45 @@
     return `${date} · ${time}`;
   }
 
+  /**
+   * Duty times mix Arabic and English ("2:30 pm حتى 8:30 am", "9 صباحاً حتى 10 ليلاً"),
+   * and the bidi algorithm scrambles that inside an RTL card. Both forms are
+   * normalized to one clean, purely-LTR range so the exported image always reads
+   * left-to-right: `2:30 PM → 8:30 AM`.
+   */
+  function formatDutyTime(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+
+    const toClock = part => {
+      const s = String(part).trim();
+      const m = s.match(/(\d{1,2})(?::(\d{2}))?/);
+      if (!m) return '';
+      let hour = parseInt(m[1], 10);
+      const minutes = m[2] || '00';
+
+      const isPm = /pm|مساء|ليل|ظهر/i.test(s);
+      const isAm = /am|صباح|فجر/i.test(s);
+      if (isPm && hour < 12) hour += 12;
+      if (isAm && hour === 12) hour = 0;
+      // No marker at all: on-call duty starting at 1–11 means the afternoon.
+      if (!isPm && !isAm && hour >= 1 && hour <= 11) hour += 12;
+
+      const suffix = hour >= 12 ? 'PM' : 'AM';
+      const display = hour % 12 === 0 ? 12 : hour % 12;
+      return `${display}:${minutes} ${suffix}`;
+    };
+
+    const parts = raw.split(/حتى|الى|إلى|until|to|-|–|—/i).filter(p => /\d/.test(p));
+    if (parts.length >= 2) {
+      const from = toClock(parts[0]);
+      const to = toClock(parts[1]);
+      if (from && to) return `${from} → ${to}`;
+    }
+    const single = toClock(raw);
+    return single || raw;
+  }
+
   function monthTitle(monthKey) {
     const [year, month] = String(monthKey || '').split('-');
     const index = Math.max(0, parseInt(month || '1', 10) - 1);
@@ -232,9 +271,18 @@
         if (item.schedule && item.schedule.isVolunteer) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">تطوعية</span>`);
         else if (item.schedule && item.schedule.isAdjusted) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">ساعات معدّلة</span>`);
 
-        const time = item.schedule && (item.schedule.time || item.schedule.duration)
-          ? `<div style="font-size:12.5px;font-weight:700;color:${C.muted};margin-top:3px;">` +
-            `<span dir="auto">${escapeHtml(item.schedule.time || '-')}</span> · ${escapeHtml(item.schedule.duration || '-')}</div>`
+        const clock = formatDutyTime(item.schedule && item.schedule.time);
+        const time = item.schedule && (clock || item.schedule.duration)
+          ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px;">` +
+            (clock
+              ? `<span dir="ltr" style="unicode-bidi:isolate;background:${C.soft};border:1px solid ${C.line};border-radius:7px;` +
+                `padding:2px 9px;font-size:12.5px;font-weight:800;color:${C.navy};white-space:nowrap;">🕐 ${escapeHtml(clock)}</span>`
+              : '') +
+            (item.schedule.duration
+              ? `<span style="background:${C.soft};border:1px solid ${C.line};border-radius:7px;padding:2px 9px;` +
+                `font-size:12.5px;font-weight:800;color:${C.muted};white-space:nowrap;">⏱ ${escapeHtml(item.schedule.duration)}</span>`
+              : '') +
+            `</div>`
           : '';
 
         const colleagues = o.withColleagues && item.colleagues && item.colleagues.length
@@ -277,5 +325,5 @@
     );
   }
 
-  AUH.capture = { buildShell, buildCalendar, buildOncallList, buildSummary, sectionTitle, monthTitle, stamp, COLORS: C, FONT };
+  AUH.capture = { buildShell, buildCalendar, buildOncallList, buildSummary, sectionTitle, monthTitle, stamp, formatDutyTime, COLORS: C, FONT };
 })(typeof window !== 'undefined' ? window : globalThis);

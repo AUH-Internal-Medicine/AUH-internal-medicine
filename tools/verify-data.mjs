@@ -200,7 +200,7 @@ const stats = AUH.domain.doctorStats.computeDoctorStats({
   residents,
   oncall,
   evaluation,
-  ...AUH.domain.adjustments.resolveAdjustments(dataset.adjustments.entries, { residents, oncall }),
+  ...AUH.domain.adjustments.resolveAdjustments(dataset.adjustments.entries, { residents, oncall, bonuses: dataset.adjustments.bonuses }),
   annualHolidays: dataset.rules.annualHolidays,
   today: AUH.dates.todayIso(),
   currentMonth: new Date().getMonth() + 1
@@ -246,7 +246,35 @@ check(negative.length === 0, 'لا توجد قيم سالبة');
 const noHours = stats.filter(s => s.total > 0 && s.hoursTotal === 0);
 check(noHours.length === 0, 'كل من له مناوبات له ساعات محسوبة', `مقيمون بمناوبات وبلا ساعات: ${noHours.map(s => s.name).join(', ')}`);
 
-section('8. العطل الرسمية');
+section('8. تعديل الساعات والبونص');
+const adj = dataset.adjustments;
+ok(`صفوف تعديل ساعات/مناوبات: ${adj.entries.length} — صفوف بونص: ${(adj.bonuses || []).length}`);
+const resolvedAdj = AUH.domain.adjustments.resolveAdjustments(adj.entries, { residents, oncall, bonuses: adj.bonuses });
+ok(`منها: ${resolvedAdj.overrides.size} تعديل ساعات، ${resolvedAdj.additions.length} مناوبة تطوعية، ${resolvedAdj.bonuses.length} بونص`);
+(resolvedAdj.bonuses || []).forEach(b => ok(`بونص: ${b.name} (${b.abbr}) ${b.hours} ساعة${b.date ? ' — ' + b.date : ' — غير مؤرخ'}`));
+
+/* Bonus hours must reach the statistics even when the sheet has none yet. */
+{
+  const sample = residents.residents[0];
+  const withBonus = AUH.domain.doctorStats.computeDoctorStats({
+    residents, oncall, evaluation,
+    overrides: resolvedAdj.overrides,
+    additions: resolvedAdj.additions,
+    bonuses: [{ name: sample.name, abbr: sample.abbr, hours: 5, date: '', label: 'Bonus' }],
+    annualHolidays: new Set([...(dataset.rules.annualHolidays || []), ...dataset.holidays.dates]),
+    today: AUH.dates.todayIso(),
+    currentMonth: new Date().getMonth() + 1
+  });
+  const before = AUH.domain.doctorStats.findStatsFor(stats, sample.name, sample.abbr);
+  const after = AUH.domain.doctorStats.findStatsFor(withBonus, sample.name, sample.abbr);
+  check(
+    after.bonusHours === 5 && Math.abs(after.hoursTotal - before.hoursTotal - 5) < 0.001 && after.total === before.total,
+    'ساعات البونص تُضاف للساعات دون أن تُحسب كمناوبة',
+    `خلل في احتساب البونص: bonus=${after.bonusHours}, فرق الساعات=${after.hoursTotal - before.hoursTotal}, فرق المناوبات=${after.total - before.total}`
+  );
+}
+
+section('9. العطل الرسمية');
 const holidays = dataset.holidays;
 check(holidays.list.length > 0, `عدد العطل: ${holidays.list.length}`, 'لا توجد عطل مقروءة — تحقق من الشيت');
 holidays.list.forEach(h => ok(`${h.date} · ${h.day} — ${h.name}`));
@@ -265,7 +293,7 @@ if (sampleHoliday) {
   );
 }
 
-section('9. المحاضرات والروابط والأسئلة');
+section('10. المحاضرات والروابط والأسئلة');
 check(dataset.lectures.list.length > 0, `عدد المحاضرات/الأنشطة: ${dataset.lectures.list.length}`);
 check((dataset.lectures.skippedDates || []).length === 0, 'كل تواريخ المحاضرات مقروءة', `تواريخ غير مقروءة: ${(dataset.lectures.skippedDates || []).join(', ')}`);
 check(dataset.links.list.length > 0, `عدد الروابط: ${dataset.links.list.length}`);

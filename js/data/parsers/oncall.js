@@ -246,20 +246,34 @@
   /* --------------------------------------------------------------- adjustments */
 
   /**
-   * Manual on-call adjustments: per-person hour corrections and volunteer shifts
-   * that cannot be expressed in the main table.
+   * Manual adjustments: per-person hour corrections, volunteer shifts, and
+   * bonus hours.
+   *
+   * Row kinds (see the schema for the exact wording):
+   *   'shift' — a real date + a duty category
+   *   'bonus' — the date or the category says "Bonus"; hours are credited to the
+   *             person without creating an on-call assignment. A bonus row that
+   *             still carries a real date belongs to that month; one written as
+   *             `Bonus | Bonus` is undated and only affects the totals.
    */
   function parseOncallAdjustments(table) {
     const source = AUH.data.schema.oncallAdjustments;
     const rows = Array.isArray(table) ? table : [];
-    if (!rows.length) return { entries: [], issues: [] };
+    if (!rows.length) return { entries: [], bonuses: [], issues: [] };
 
     const resolution = headersApi.resolveColumns(rows[0] || [], source);
     const get = headersApi.createAccessor(resolution.map);
+    const bonusWords = (source.bonusKeywords || ['bonus']).map(w => normAr(w).toLowerCase());
+
+    const isBonusWord = value => {
+      const v = normAr(value || '').toLowerCase();
+      return !!v && bonusWords.some(w => v === w || v.includes(w));
+    };
 
     // If the first row is not a header (no recognizable labels), treat it as data.
     const firstIsHeader = normAr((rows[0] || [])[resolution.map.name || 0] || '').includes(normAr('الاسم'));
     const entries = [];
+    const bonuses = [];
     const skipped = [];
 
     for (let i = firstIsHeader ? 1 : 0; i < rows.length; i++) {
@@ -270,23 +284,33 @@
       const abbr = get(row, 'abbr');
       if (!name && !abbr) continue;
 
-      const date = extractDate(get(row, 'date'));
+      const rawDate = get(row, 'date');
       const category = get(row, 'category');
       const hoursRaw = get(row, 'hours');
-      const hours = safeNum(hoursRaw);
-
-      if (!date || !category || !hoursRaw) {
+      if (!hoursRaw) {
         skipped.push(row);
         continue;
       }
-      entries.push({ name, abbr, date, category, hours });
+      const hours = safeNum(hoursRaw);
+      const date = extractDate(rawDate) || '';
+
+      if (isBonusWord(category) || isBonusWord(rawDate)) {
+        bonuses.push({ kind: 'bonus', name, abbr, date, hours, label: category });
+        continue;
+      }
+
+      if (!date || !category) {
+        skipped.push(row);
+        continue;
+      }
+      entries.push({ kind: 'shift', name, abbr, date, category, hours });
     }
 
     headersApi.logResolution(source, resolution);
-    log.debug('oncall', `تعديلات المناوبات: ${entries.length} صف`);
-    if (skipped.length) log.warn('oncall', 'تعديلات مناوبات غير مقروءة تم تجاهلها:', skipped);
+    log.debug('oncall', `تعديلات: ${entries.length} صف مناوبة، ${bonuses.length} صف بونص`);
+    if (skipped.length) log.warn('oncall', 'صفوف تعديل غير مقروءة تم تجاهلها:', skipped);
 
-    return { entries, issues: resolution.issues, skipped };
+    return { entries, bonuses, issues: resolution.issues, skipped };
   }
 
   AUH.parse.oncall = parseOncall;

@@ -50,6 +50,7 @@
       this.annualHolidays = new Set();
       this.adjustmentOverrides = new Map();
       this.adjustmentAdditions = [];
+      this.bonusHours = [];
       this.doctorStats = [];
 
       /* --- roster tab state ------------------------------------------------ */
@@ -514,10 +515,12 @@
       // statistics need adjustments).
       const resolved = AUH.domain.adjustments.resolveAdjustments(dataset.adjustments.entries, {
         residents: dataset.residents,
-        oncall: dataset.oncall
+        oncall: dataset.oncall,
+        bonuses: dataset.adjustments.bonuses
       });
       this.adjustmentOverrides = resolved.overrides;
       this.adjustmentAdditions = resolved.additions;
+      this.bonusHours = resolved.bonuses;
 
       this.doctorStats = AUH.domain.doctorStats.computeDoctorStats({
         residents: dataset.residents,
@@ -525,6 +528,7 @@
         evaluation: dataset.evaluation,
         overrides: this.adjustmentOverrides,
         additions: this.adjustmentAdditions,
+        bonuses: this.bonusHours,
         annualHolidays: this.annualHolidays,
         today: this.today,
         currentMonth: this.m + 1

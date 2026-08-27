@@ -94,6 +94,49 @@
    * Shows this month's holidays first, then what is coming next, and flags the
    * ones the resident is actually on call for (those pay holiday hours).
    */
+  /**
+   * ساعات البونص — hours credited from the "تعديل الساعات والبونص" sheet.
+   * Shown per month (dated bonuses) and as an undated total, with the running
+   * grand total, so the numbers in the statistics card can be traced back.
+   */
+  renderMyInfoBonus(doctorStats) {
+    const total = doctorStats?.bonusHours || 0;
+    if (!total) return '';
+
+    const entries = (doctorStats.bonusEntries || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const byMonth = Object.entries(doctorStats.bonusByMonth || {}).sort((a, b) => b[0].localeCompare(a[0]));
+    const undated = entries.filter(b => !b.date).reduce((sum, b) => sum + b.hours, 0);
+
+    const monthLabel = key => {
+      const [year, month] = key.split('-');
+      return `${AM[Math.max(0, parseInt(month, 10) - 1)] || key} ${year}`;
+    };
+
+    const monthRows = byMonth
+      .map(
+        ([key, hours]) =>
+          `<div class="bonus-row"><span class="bonus-month">${escapeHtml(monthLabel(key))}</span>` +
+          `<span class="bonus-hours">${this.formatNumDisplay(hours)} ساعة</span></div>`
+      )
+      .join('');
+
+    const undatedRow = undated
+      ? `<div class="bonus-row"><span class="bonus-month">بونص غير مؤرّخ</span><span class="bonus-hours">${this.formatNumDisplay(undated)} ساعة</span></div>`
+      : '';
+
+    return (
+      `<div class="collapsible-section bonus-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)">` +
+        `<span><i class="fas fa-gift"></i> ساعات البونص (${this.formatNumDisplay(total)} ساعة)</span><i class="fas fa-chevron-down"></i></button>` +
+        `<div class="collapsible-content show">` +
+          `<div class="bonus-total"><i class="fas fa-gift"></i> إجمالي البونص: <strong>${this.formatNumDisplay(total)}</strong> ساعة` +
+          (doctorStats.bonusCompleted !== total ? ` <span class="bonus-pending">(المحتسب حتى الآن: ${this.formatNumDisplay(doctorStats.bonusCompleted)})</span>` : '') +
+          `</div>` +
+          `<div class="bonus-list">${monthRows}${undatedRow}</div>` +
+          `<div class="holiday-note"><i class="fas fa-circle-info"></i> ساعات البونص مضافة إلى ساعاتك الإجمالية وإلى ترتيبك في الإحصائيات.</div>` +
+        `</div></div>`
+    );
+  },
+
   renderMyInfoHolidays(monthOncalls) {
     const monthHolidays = this.getHolidaysInMonth(this.myInfoMonthKey);
     const upcoming = this.holidaysModel.upcoming(this.today, 4).filter(h => !monthHolidays.some(m => m.date === h.date));
@@ -347,12 +390,18 @@
       this.myInfoFocusedOncallDate = monthOncalls[0]?.date || '';
     }
 
+    const bonusTotal = doctorStats?.bonusHours || 0;
+    const bonusDone = doctorStats?.bonusCompleted || 0;
+    const bonusByMonth = doctorStats?.bonusByMonth || {};
+    const bonusThisMonth = bonusByMonth[this.myInfoMonthKey] || 0;
+    const bonusUndated = (doctorStats?.bonusEntries || []).filter(b => !b.date).reduce((a, b) => a + b.hours, 0);
+
     const cumTotal = doctorStats?.total ?? allOncalls.length;
     const cumHours = doctorStats?.hoursTotal ?? 0;
     const doneTotal = doctorStats?.completed ?? allOncalls.filter(o => o.date < this.today).length;
     const doneHours = doctorStats?.hoursCompleted ?? 0;
 
-    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div>${bonusTotal ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusTotal)} ساعة بونص</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div>${bonusDone ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusDone)} ساعة بونص</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
       const dates = (catDates[k] || []).slice().sort();
       const detId = `miCatDates-${miUid}-${idx}`;
       return `<button type="button" class="myinfo-breakdown-item" onclick="toggleCollapsible(this)"><span>${this.escapeHtml(k)}</span><strong>${v}</strong></button><div class="collapsible-content myinfo-breakdown-detail" id="${detId}">${dates.length ? dates.map(d => `<span class="dsc-detail-chip">${d}</span>`).join('') : '<span class="dsc-detail-empty">لا توجد تواريخ</span>'}</div>`;
@@ -400,7 +449,10 @@
         })
         .join('')}</select><button type="button" class="cal-nav-btn" aria-label="الشهر التالي" title="الشهر التالي"${nextDisabled} onclick="app.stepMyInfoMonth(1)"><i class="fas fa-chevron-left"></i></button></span><button type="button" class="download-btn download-btn-inline" onclick="app.downloadMyInfoCalendarImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة كصورة</button></div>`;
 
-      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div></div>`;
+      const bonusCard = bonusTotal
+        ? `<div class="stat-card myinfo-static-stat myinfo-bonus-box"><div class="stat-num">${this.formatNumDisplay(bonusThisMonth)}</div><div class="stat-lbl"><i class="fas fa-gift"></i> ساعات بونص هذا الشهر</div></div>`
+        : '';
+      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div>${bonusCard}</div>`;
 
       h += this.renderMyInfoMonthBreakdown();
       h += this.renderMyInfoMonthCalendar(monthOncalls, this.myInfoMonthKey);
@@ -423,6 +475,7 @@
 
     h += '</div></div>';
 
+    h += this.renderMyInfoBonus(doctorStats);
     h += this.renderMyInfoHolidays(monthOncalls);
     h += `<button class="download-btn" onclick="app.downloadMyInfoImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة والتفاصيل كصورة</button></div>`;
 
