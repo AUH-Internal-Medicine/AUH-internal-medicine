@@ -24,14 +24,14 @@
 
       const list = (this.linksModel && this.linksModel.list) || [];
       if (!list.length) {
-        grid.innerHTML = '<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات</p>';
+        grid.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:30px;">لا توجد بيانات</p>';
         return;
       }
 
       const rows = list
         .map(item => {
           const seq = escapeHtml(item.seq);
-          return `<tr><td style="font-weight:700;color:#0f6ecf;">${seq}</td><td><strong>${escapeHtml(item.name)}</strong></td><td>${escapeHtml(item.type)}</td><td>${escapeHtml(item.purpose)}</td><td>${escapeHtml(item.members)}</td><td>${this.formatLink(item.url)}</td></tr>`;
+          return `<tr><td style="font-weight:700;color:var(--primary);">${seq}</td><td><strong>${escapeHtml(item.name)}</strong></td><td>${escapeHtml(item.type)}</td><td>${escapeHtml(item.purpose)}</td><td>${escapeHtml(item.members)}</td><td>${this.formatLink(item.url)}</td></tr>`;
         })
         .join('');
 
@@ -58,7 +58,7 @@
 
       const list = (this.qaModel && this.qaModel.list) || [];
       if (!list.length) {
-        container.innerHTML = '<p style="text-align:center;color:#888;padding:30px;">لا توجد أسئلة وأجوبة بعد.</p>';
+        container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:30px;">لا توجد أسئلة وأجوبة بعد.</p>';
         return;
       }
 

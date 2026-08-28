@@ -37,7 +37,7 @@
     } else {
       this._sm = mt;
       rl.innerHTML = mt
-        .map((m, i) => `<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:#0f6ecf;">${m.spec}</span></div>`)
+        .map((m, i) => `<div class="search-result-item" onclick="app.selectMe(${i})"><span><strong>${m.name}</strong> (${m.abbr})</span><span style="color:var(--primary);">${m.spec}</span></div>`)
         .join('');
       rd.classList.remove('show');
     }
@@ -413,8 +413,8 @@
       h += `<div class="collapsible-section"><button class="collapsible-btn" onclick="toggleCollapsible(this)"><span><i class="fas fa-chart-line"></i> التقييم السنوي</span><i class="fas fa-chevron-down"></i></button><div class="collapsible-content"><div class="info-grid">`;
       for (const skill of evalInfo.skills) h += `<div class="info-item"><div class="info-label">${skill.label}</div><div class="info-value">${skill.value}</div></div>`;
       h += `</div>`;
-      if (evalInfo.praise && evalInfo.praise.trim()) h += `<div style="margin-top:10px;padding:10px 14px;background:rgba(39,174,96,0.08);border-radius:10px;border-right:4px solid #27ae60;"><strong style="color:#27ae60;"><i class="fas fa-star"></i> الثناءات:</strong><br><span style="font-weight:600;color:#27ae60;">${evalInfo.praise}</span></div>`;
-      if (evalInfo.penalty && evalInfo.penalty.trim()) h += `<div style="margin-top:6px;padding:10px 14px;background:rgba(231,76,60,0.08);border-radius:10px;border-right:4px solid #e74c3c;"><strong style="color:#e74c3c;"><i class="fas fa-triangle-exclamation"></i> العقوبات:</strong><br><span style="font-weight:600;color:#e74c3c;">${evalInfo.penalty}</span></div>`;
+      if (evalInfo.praise && evalInfo.praise.trim()) h += `<div style="margin-top:10px;padding:10px 14px;background:var(--primary-soft);border-radius:10px;border-inline-start:4px solid var(--primary);"><strong style="color:var(--primary);"><i class="fas fa-star"></i> الثناءات:</strong><br><span style="font-weight:600;color:var(--primary);">${evalInfo.praise}</span></div>`;
+      if (evalInfo.penalty && evalInfo.penalty.trim()) h += `<div style="margin-top:6px;padding:10px 14px;background:var(--signal-soft);border-radius:10px;border-inline-start:4px solid var(--signal);"><strong style="color:var(--signal);"><i class="fas fa-triangle-exclamation"></i> العقوبات:</strong><br><span style="font-weight:600;color:var(--signal);">${evalInfo.penalty}</span></div>`;
       h += `<div class="stat-card" style="margin-top:10px;"><div class="stat-num">${evalInfo.total}</div><div class="stat-lbl">المحصلة الاجمالية</div></div></div></div>`;
     }
 
@@ -428,7 +428,7 @@
     if (allMonths.length > 0) {
       h += `<div style="margin-bottom:12px;"><select class="month-selector" id="myInfoShiftMonth" onchange="app.updateMyInfoShift('${r.name.replace(/'/g, "\\'")}', '${r.abbr.replace(/'/g, "\\'")}')">${allMonths.map(m => `<option value="${m.month}"${m.month === cm ? ' selected' : ''}>${m.label || 'فرز شهر ' + m.month}</option>`).join('')}</select></div><div id="myInfoShiftContent"></div>`;
     } else {
-      h += '<p style="color:#888;">لا توجد بيانات فروز.</p>';
+      h += '<p style="color:var(--text-secondary);">لا توجد بيانات فروز.</p>';
     }
     h += '</div></div>';
 
@@ -472,7 +472,7 @@
         h += '</div>';
       });
       h += '</div>';
-    } else h += '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';
+    } else h += '<p style="color:var(--text-secondary);">لا توجد مناوبات مسجلة.</p>';
 
     h += '</div></div>';
 
@@ -502,7 +502,7 @@
     const hasColumn = model.getShiftMonths().some(m => m.month === month);
 
     if (!hasColumn || model.isFutureMonthAutoCopy(month, this.m + 1)) {
-      container.innerHTML = '<p style="color:#888;">لا توجد بيانات لهذا الشهر.</p>';
+      container.innerHTML = '<p style="color:var(--text-secondary);">لا توجد بيانات لهذا الشهر.</p>';
       return;
     }
 
@@ -517,7 +517,7 @@
 
     let html = shiftName
       ? `<div class="shift-card-full" style="margin-bottom:10px;"><h3>${escapeHtml(shiftName)}</h3></div>`
-      : '<p style="color:#888;margin-bottom:10px;">لا يوجد فرز للشهر المحدد.</p>';
+      : '<p style="color:var(--text-secondary);margin-bottom:10px;">لا يوجد فرز للشهر المحدد.</p>';
 
     if (members.length) {
       const list = members.map(m => `<li>${mcn(m.name, m.phone, m.abbr)}</li>`).join('');

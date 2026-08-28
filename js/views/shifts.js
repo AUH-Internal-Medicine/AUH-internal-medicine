@@ -53,7 +53,7 @@
 
       const hasColumn = model.getShiftMonths().some(m => m.month === month);
       if (!hasColumn || model.isFutureMonthAutoCopy(month, this.m + 1)) {
-        grid.innerHTML = '<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات فروز لهذا الشهر</p>';
+        grid.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:30px;">لا توجد بيانات فروز لهذا الشهر</p>';
         return;
       }
 
@@ -61,7 +61,7 @@
       const sorted = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
 
       if (!sorted.length) {
-        grid.innerHTML = '<p style="text-align:center;color:#888;padding:30px;">لا توجد بيانات فروز للطلاب الملتحقين لهذا الشهر</p>';
+        grid.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:30px;">لا توجد بيانات فروز للطلاب الملتحقين لهذا الشهر</p>';
         return;
       }
 

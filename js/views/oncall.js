@@ -169,7 +169,7 @@
   },
 
   oncallRawTableHtml(d, startIdx) {
-    if (!d || d.length <= startIdx) return '<p style="padding:16px;color:#888;">لا توجد بيانات.</p>';
+    if (!d || d.length <= startIdx) return '<p style="padding:16px;color:var(--text-secondary);">لا توجد بيانات.</p>';
 
     const headers = d[0] || [];
     const lastUsedCol = this.getOncallRawLastUsedCol(d, startIdx);
@@ -202,7 +202,7 @@
     }
 
     html += '</tbody></table></div>';
-    return anyRow ? html : '<p style="padding:16px;color:#888;">لا توجد بيانات.</p>';
+    return anyRow ? html : '<p style="padding:16px;color:var(--text-secondary);">لا توجد بيانات.</p>';
   },
 
   /**
@@ -360,7 +360,7 @@
     const entries2 = Object.entries(cats2);
 
     if (!entries1.length && !entries2.length) {
-      dp.innerHTML = `<div class="oncall-day-card"><h3><i class="fas fa-calendar-day"></i> ${dstr} - ${getDayName(dstr)}</h3><p style="color:#888;">لا توجد مناوبات لهذا التاريخ.</p></div>`;
+      dp.innerHTML = `<div class="oncall-day-card"><h3><i class="fas fa-calendar-day"></i> ${dstr} - ${getDayName(dstr)}</h3><p style="color:var(--text-secondary);">لا توجد مناوبات لهذا التاريخ.</p></div>`;
       return;
     }
 
@@ -375,12 +375,12 @@
     let h = `<div class="oncall-day-card" id="oncallCardContent"><div class="oncall-card-head"><h3 class="${we ? 'weekend' : ''}"><i class="fas fa-calendar-day"></i> ${dstr} - ${dn}${we ? ` <span class="day-badge weekend${holidayName ? ' official' : ''}">${holidayName ? '<i class="fas fa-star"></i> ' + escapeHtml(holidayName) : 'عطلة'}</span>` : ''}</h3><div class="oncall-card-stats"><span class="oncall-stat-pill"><i class="fas fa-layer-group"></i> ${catCount} فئة</span><span class="oncall-stat-pill"><i class="fas fa-user-doctor"></i> ${totalDoctors} طبيب</span></div></div><div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div>`;
 
     if (showBoth) {
-      h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الأولى</h4>${entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>'}</div>`;
-      h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الثانية</h4>${entries2.length ? this.oncallCategoriesSectionHtml(entries2, dstr, false) : '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>'}</div>`;
+      h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الأولى</h4>${entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:var(--text-secondary);">لا توجد مناوبات مسجلة.</p>'}</div>`;
+      h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الثانية</h4>${entries2.length ? this.oncallCategoriesSectionHtml(entries2, dstr, false) : '<p style="color:var(--text-secondary);">لا توجد مناوبات مسجلة.</p>'}</div>`;
     } else if (showY1) {
-      h += entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:#888;">لا توجد مناوبات مسجلة لهذا التاريخ.</p>';
+      h += entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:var(--text-secondary);">لا توجد مناوبات مسجلة لهذا التاريخ.</p>';
     } else {
-      h += entries2.length ? this.oncallCategoriesSectionHtml(entries2, dstr, false) : '<p style="color:#888;">لا توجد مناوبات مسجلة لهذا التاريخ.</p>';
+      h += entries2.length ? this.oncallCategoriesSectionHtml(entries2, dstr, false) : '<p style="color:var(--text-secondary);">لا توجد مناوبات مسجلة لهذا التاريخ.</p>';
     }
 
     h += `<div class="oncall-export-actions"><button class="download-btn" onclick="app.downloadOncallImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل المناوبات كصورة</button></div></div>`;

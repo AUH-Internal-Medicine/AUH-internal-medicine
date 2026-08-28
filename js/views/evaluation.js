@@ -31,8 +31,8 @@
     });
 
     cols.push({ key: 'total', label: labelFor(model, 'total', 'المحصلة الإجمالية'), value: r => r.total, inCard: true });
-    cols.push({ key: 'praise', label: 'الثناءات', value: r => r.praise, inCard: true, badge: 'praise-badge', cellClass: 'eval-praise-cell', cardStyle: 'color:#27ae60;font-weight:600;' });
-    cols.push({ key: 'penalty', label: 'العقوبات', value: r => r.penalty, inCard: true, badge: 'penalty-badge', cellClass: 'eval-penalty-cell', cardStyle: 'color:#e74c3c;font-weight:600;' });
+    cols.push({ key: 'praise', label: 'الثناءات', value: r => r.praise, inCard: true, badge: 'praise-badge', cellClass: 'eval-praise-cell', cardStyle: 'color:var(--primary);font-weight:600;' });
+    cols.push({ key: 'penalty', label: 'العقوبات', value: r => r.penalty, inCard: true, badge: 'penalty-badge', cellClass: 'eval-penalty-cell', cardStyle: 'color:var(--signal);font-weight:600;' });
 
     return cols;
   }
