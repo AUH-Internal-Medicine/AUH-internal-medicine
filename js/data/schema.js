@@ -127,12 +127,12 @@
       columns: {
         name: { labels: ['الاسم', 'الاسم الثلاثي'], required: true, fallbackIndex: 0, type: 'text' },
         abbr: { labels: ['الاختصار'], fallbackIndex: 1, type: 'text' },
-        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'تاريخ المناوبة، أو Bonus لبونص غير مؤرخ' },
-        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'اسم فئة المناوبة، أو Bonus لإضافة ساعات بونص' },
+        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'تاريخ المناوبة، أو Bonus لساعات Bonus غير مؤرخة' },
+        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'اسم فئة المناوبة، أو Bonus لإضافة ساعات Bonus (تُقبل صيغ مختلفة وأخطاء إملائية بسيطة)' },
         hours: { labels: ['عدد الساعات', 'الساعات'], required: true, fallbackIndex: 4, type: 'number' }
       },
       /** Words that turn a row into bonus hours instead of a shift. */
-      bonusKeywords: ['bonus', 'بونص', 'بونس', 'مكافأة']
+      bonusKeywords: ['bonus', 'بونص', 'بونس', 'بونوس', 'مكافأة', 'اضافي']
     },
 
     /* ----------------------------------------------------------- evaluation */

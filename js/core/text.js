@@ -141,6 +141,68 @@
     return n;
   }
 
+
+  /**
+   * Damerau-Levenshtein distance (edit distance that also counts a swap of two
+   * neighbouring letters as ONE mistake). Used to accept human typos in keywords.
+   */
+  function editDistance(a, b) {
+    const s1 = String(a || '');
+    const s2 = String(b || '');
+    if (s1 === s2) return 0;
+    if (!s1.length) return s2.length;
+    if (!s2.length) return s1.length;
+
+    const d = [];
+    for (let i = 0; i <= s1.length; i++) d[i] = [i];
+    for (let j = 0; j <= s2.length; j++) d[0][j] = j;
+
+    for (let i = 1; i <= s1.length; i++) {
+      for (let j = 1; j <= s2.length; j++) {
+        const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && s1[i - 1] === s2[j - 2] && s1[i - 2] === s2[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost); // transposition
+        }
+      }
+    }
+    return d[s1.length][s2.length];
+  }
+
+  /**
+   * Forgiving keyword test for cells people type by hand.
+   *
+   * Matches the word anywhere in the cell, ignores case, spaces, punctuation and
+   * Arabic letter variants, and tolerates one typo (including a swapped pair, so
+   * "bouns" still reads as "bonus").
+   */
+  function matchesKeyword(value, keywords) {
+    const raw = String(value === null || value === undefined ? '' : value).trim();
+    if (!raw) return false;
+
+    const latin = raw.toLowerCase().replace(/[^a-z]/g, '');
+    const arabic = normAr(raw).replace(/[^\u0600-\u06FF]/g, '');
+
+    return (keywords || []).some(keyword => {
+      const k = String(keyword).toLowerCase();
+      const kLatin = k.replace(/[^a-z]/g, '');
+      const kArabic = normAr(k).replace(/[^\u0600-\u06FF]/g, '');
+
+      if (kLatin) {
+        if (!latin) return false;
+        if (latin.includes(kLatin)) return true;
+        // one typo anywhere, only for words long enough to stay unambiguous
+        return kLatin.length >= 4 && Math.abs(latin.length - kLatin.length) <= 1 && editDistance(latin, kLatin) <= 1;
+      }
+      if (kArabic) {
+        if (!arabic) return false;
+        if (arabic.includes(kArabic)) return true;
+        return kArabic.length >= 4 && Math.abs(arabic.length - kArabic.length) <= 1 && editDistance(arabic, kArabic) <= 1;
+      }
+      return false;
+    });
+  }
+
   AUH.text = {
     normAr,
     prepSearch,
@@ -154,6 +216,8 @@
     escapeHtml,
     escapeJsString,
     formatNumber,
-    parseDurationHours
+    parseDurationHours,
+    editDistance,
+    matchesKeyword
   };
 })(typeof window !== 'undefined' ? window : globalThis);

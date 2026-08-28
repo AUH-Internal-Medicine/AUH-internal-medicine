@@ -22,23 +22,26 @@
   const { getDayName } = AUH.dates;
   const AM = AUH.constants.MONTH_NAMES;
 
+  // Same identity as the site: paper, ink, one duty green, one stamp red, ochre
+  // for what was earned. Kept literal here because the export must not depend on
+  // the visitor's theme.
   const C = {
-    ink: '#12293f',
-    muted: '#5b7590',
-    line: '#dfe7ef',
-    soft: '#f4f8fb',
-    green: '#2f7d5c',
-    greenSoft: '#e8f5ee',
-    greenLine: '#8fcbad',
-    navy: '#1b3a5c',
-    gold: '#b8862b',
-    goldSoft: '#fdf4e3',
-    red: '#c0392b',
-    redSoft: '#fdeceb',
+    ink: '#15181b',
+    muted: '#59616b',
+    line: '#ddd8cd',
+    soft: '#f6f4ef',
+    green: '#14563f',
+    greenSoft: '#e4efe9',
+    greenLine: '#8fbfa9',
+    navy: '#14563f',
+    gold: '#9a6b15',
+    goldSoft: '#f6efdf',
+    red: '#a62b22',
+    redSoft: '#f7e9e7',
     white: '#ffffff'
   };
 
-  const FONT = "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif";
+  const FONT = "'IBM Plex Sans Arabic','Segoe UI',Tahoma,Arial,sans-serif";
   const CAL_HEADERS = ['اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
 
   /** `2026-08-22 07:44 PM` — shown at the top of every exported image. */
@@ -105,7 +108,7 @@
     return (
       `<div dir="rtl" style="width:${width}px;box-sizing:border-box;background:${C.white};font-family:${FONT};` +
       `color:${C.ink};padding:0;margin:0;border-radius:18px;overflow:hidden;border:1px solid ${C.line};">` +
-        `<div style="background:linear-gradient(135deg,${C.navy} 0%,#2b5c85 55%,${C.green} 100%);color:#fff;padding:22px 26px;">` +
+        `<div style="background:${C.green};color:#fff;padding:22px 26px;border-bottom:3px solid ${C.gold};">` +
           `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">` +
             `<div style="min-width:0;">` +
               `<div style="font-size:26px;font-weight:800;line-height:1.35;">${escapeHtml(o.title || '')}</div>` +

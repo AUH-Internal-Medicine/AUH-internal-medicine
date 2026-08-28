@@ -95,7 +95,7 @@
    * ones the resident is actually on call for (those pay holiday hours).
    */
   /**
-   * ساعات البونص — hours credited from the "تعديل الساعات والبونص" sheet.
+   * ساعات Bonus — hours credited from the "تعديل الساعات والبونص" sheet.
    * Shown per month (dated bonuses) and as an undated total, with the running
    * grand total, so the numbers in the statistics card can be traced back.
    */
@@ -121,26 +121,28 @@
       .join('');
 
     const undatedRow = undated
-      ? `<div class="bonus-row"><span class="bonus-month">بونص غير مؤرّخ</span><span class="bonus-hours">${this.formatNumDisplay(undated)} ساعة</span></div>`
+      ? `<div class="bonus-row"><span class="bonus-month">Bonus غير مؤرّخ</span><span class="bonus-hours">${this.formatNumDisplay(undated)} ساعة</span></div>`
       : '';
 
     return (
       `<div class="collapsible-section bonus-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)">` +
-        `<span><i class="fas fa-gift"></i> ساعات البونص (${this.formatNumDisplay(total)} ساعة)</span><i class="fas fa-chevron-down"></i></button>` +
+        `<span><i class="fas fa-gift"></i> ساعات Bonus (${this.formatNumDisplay(total)} ساعة)</span><i class="fas fa-chevron-down"></i></button>` +
         `<div class="collapsible-content show">` +
-          `<div class="bonus-total"><i class="fas fa-gift"></i> إجمالي البونص: <strong>${this.formatNumDisplay(total)}</strong> ساعة` +
+          `<div class="bonus-total"><i class="fas fa-gift"></i> إجمالي Bonus: <strong>${this.formatNumDisplay(total)}</strong> ساعة` +
           (doctorStats.bonusCompleted !== total ? ` <span class="bonus-pending">(المحتسب حتى الآن: ${this.formatNumDisplay(doctorStats.bonusCompleted)})</span>` : '') +
           `</div>` +
           `<div class="bonus-list">${monthRows}${undatedRow}</div>` +
-          `<div class="holiday-note"><i class="fas fa-circle-info"></i> ساعات البونص مضافة إلى ساعاتك الإجمالية وإلى ترتيبك في الإحصائيات.</div>` +
+          `<div class="holiday-note"><i class="fas fa-circle-info"></i> ساعات Bonus مضافة إلى ساعاتك الإجمالية وإلى ترتيبك في الإحصائيات.</div>` +
         `</div></div>`
     );
   },
 
   renderMyInfoHolidays(monthOncalls) {
+    // Shown only when the selected month actually contains an official holiday —
+    // an empty "no holidays this month" panel on every card is just noise.
     const monthHolidays = this.getHolidaysInMonth(this.myInfoMonthKey);
-    const upcoming = this.holidaysModel.upcoming(this.today, 4).filter(h => !monthHolidays.some(m => m.date === h.date));
-    if (!monthHolidays.length && !upcoming.length) return '';
+    if (!monthHolidays.length) return '';
+    const upcoming = this.holidaysModel.upcoming(this.today, 3).filter(h => !monthHolidays.some(m => m.date === h.date));
 
     const onCallDates = new Set((monthOncalls || []).map(o => o.date));
 
@@ -165,9 +167,7 @@
       );
     };
 
-    const monthPart = monthHolidays.length
-      ? `<div class="holiday-list">${monthHolidays.map(h => card(h, false)).join('')}</div>`
-      : '<p class="holiday-empty">لا توجد عطل رسمية في هذا الشهر.</p>';
+    const monthPart = `<div class="holiday-list">${monthHolidays.map(h => card(h, false)).join('')}</div>`;
 
     const upcomingPart = upcoming.length
       ? `<div class="holiday-subtitle"><i class="fas fa-forward"></i> العطل القادمة</div>` +
@@ -401,7 +401,7 @@
     const doneTotal = doctorStats?.completed ?? allOncalls.filter(o => o.date < this.today).length;
     const doneHours = doctorStats?.hoursCompleted ?? 0;
 
-    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div>${bonusTotal ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusTotal)} ساعة بونص</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div>${bonusDone ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusDone)} ساعة بونص</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div>${bonusTotal ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusTotal)} ساعة Bonus</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div>${bonusDone ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusDone)} ساعة Bonus</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
       const dates = (catDates[k] || []).slice().sort();
       const detId = `miCatDates-${miUid}-${idx}`;
       return `<button type="button" class="myinfo-breakdown-item" onclick="toggleCollapsible(this)"><span>${this.escapeHtml(k)}</span><strong>${v}</strong></button><div class="collapsible-content myinfo-breakdown-detail" id="${detId}">${dates.length ? dates.map(d => `<span class="dsc-detail-chip">${d}</span>`).join('') : '<span class="dsc-detail-empty">لا توجد تواريخ</span>'}</div>`;
@@ -449,8 +449,9 @@
         })
         .join('')}</select><button type="button" class="cal-nav-btn" aria-label="الشهر التالي" title="الشهر التالي"${nextDisabled} onclick="app.stepMyInfoMonth(1)"><i class="fas fa-chevron-left"></i></button></span><button type="button" class="download-btn download-btn-inline" onclick="app.downloadMyInfoCalendarImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة كصورة</button></div>`;
 
-      const bonusCard = bonusTotal
-        ? `<div class="stat-card myinfo-static-stat myinfo-bonus-box"><div class="stat-num">${this.formatNumDisplay(bonusThisMonth)}</div><div class="stat-lbl"><i class="fas fa-gift"></i> ساعات بونص هذا الشهر</div></div>`
+      // Only shown when this particular month actually has bonus hours.
+      const bonusCard = bonusThisMonth
+        ? `<div class="stat-card myinfo-static-stat myinfo-bonus-box"><div class="stat-num">${this.formatNumDisplay(bonusThisMonth)}</div><div class="stat-lbl"><i class="fas fa-gift"></i> ساعات Bonus هذا الشهر</div></div>`
         : '';
       h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div>${bonusCard}</div>`;
 

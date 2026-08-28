@@ -14,7 +14,7 @@
   'use strict';
 
   const AUH = global.AUH;
-  const { normAr, splitNames, safeNum } = AUH.text;
+  const { normAr, splitNames, safeNum, matchesKeyword } = AUH.text;
   const { extractDate, getDayName } = AUH.dates;
   const headersApi = AUH.data.headers;
   const log = AUH.log;
@@ -263,12 +263,10 @@
 
     const resolution = headersApi.resolveColumns(rows[0] || [], source);
     const get = headersApi.createAccessor(resolution.map);
-    const bonusWords = (source.bonusKeywords || ['bonus']).map(w => normAr(w).toLowerCase());
-
-    const isBonusWord = value => {
-      const v = normAr(value || '').toLowerCase();
-      return !!v && bonusWords.some(w => v === w || v.includes(w));
-    };
+    const bonusWords = source.bonusKeywords || ['bonus'];
+    // Forgiving on purpose: "Bonus", "bonus ", "BONUS", "bouns", "بونص", "بونس"
+    // and "مكافأة" all mean the same thing to whoever is filling the sheet.
+    const isBonusWord = value => matchesKeyword(value, bonusWords);
 
     // If the first row is not a header (no recognizable labels), treat it as data.
     const firstIsHeader = normAr((rows[0] || [])[resolution.map.name || 0] || '').includes(normAr('الاسم'));
