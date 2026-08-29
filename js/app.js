@@ -64,6 +64,9 @@
       /* --- statistics tab state -------------------------------------------- */
       this.doctorStatsSearchTerm = '';
       this.doctorStatsSort = { key: 'hoursCompleted', dir: 'desc' };
+      // '' | 'group:<key>' | 'cat:<category>' — see views/doctor-stats.js
+      this.doctorStatsShiftFilter = '';
+      this.doctorStatsOnlyWithShift = true;
 
       /* --- lectures tab state ---------------------------------------------- */
       this.lecturesSearchTerm = '';

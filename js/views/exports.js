@@ -12,6 +12,7 @@
 
   const AUH = global.AUH;
   const { safeNum } = AUH.text;
+  const { getDayName } = AUH.dates;
   const { showToast, showDownloadProgress, updateDownloadProgress, hideDownloadProgress } = AUH.ui;
 
   /**
@@ -277,6 +278,14 @@
     });
   },
 
+  /**
+   * The doctor-statistics workbook — three sheets:
+   *   1. احصائيات الأطباء   one row per doctor, one column per shift type
+   *   2. تفصيل حسب نوع المناوبة  one row per doctor × shift type, with dates
+   *   3. سجل المناوبات       one row per single duty
+   * Sheet 1 answers "how many", sheets 2 and 3 answer "which ones exactly" —
+   * every number on the site is traceable to its dates inside the file.
+   */
   downloadDoctorStatsExcel() {
     if (typeof XLSX === 'undefined') {
       showToast('تعذر تحميل مكتبة إكسل، حدّث الصفحة وحاول مرة أخرى.');
@@ -288,6 +297,9 @@
     }
 
     const round1 = v => Math.round((safeNum(v) || 0) * 10) / 10;
+    const schedule = AUH.domain.oncallSchedule;
+    const GROUPS = schedule.GROUPS;
+    const GROUP_ORDER = ['wards', 'icu', 'emergency', 'misc', 'other'];
 
     const rosterOrder = new Map();
     (this.res || []).forEach((r, i) => rosterOrder.set(r.abbr || r.name, i));
@@ -296,36 +308,66 @@
       const bi = rosterOrder.has(b.abbr || b.name) ? rosterOrder.get(b.abbr || b.name) : Infinity;
       return ai - bi;
     });
+
+    // Every shift type in the sheet, kept in group order so the columns read
+    // wards → ICU → emergency → misc rather than in header order.
+    const catalogue = this.shiftFilterCatalogue();
+    const categories = [];
+    catalogue.forEach(g => g.categories.forEach(c => categories.push({ name: c, group: g.key, groupLabel: g.label })));
+
+    /** "سابع 2 · رابع 1 · ثالث خاص 1" — the readable form of one group. */
+    const groupDetailText = (entry, groupKey) => Object.entries(entry.groupDetails[groupKey] || {})
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, n]) => `${cat} ${n}`)
+      .join(' · ');
+
+    const countOf = (entry, category) => (entry.catDates && entry.catDates[category] ? entry.catDates[category].length : 0);
+
     // One column per discovered "فرز شهر N" so the rotations a doctor already
     // did are filterable in Excel, not buried in a single cell.
     const shiftMonths = this.residentsModel.getShiftMonths();
 
+    // ---- sheet 1: one row per doctor ---------------------------------------
     const rows = list.map(r => {
       const resident = this.residentsModel.findByNameOrAbbr(r.abbr) || this.residentsModel.findByNameOrAbbr(r.name);
       const row = {
         'الاسم': r.name || '',
         'الاختصار': r.abbr || '',
+        'الاختصاص': r.spec || '',
+        'الحالة': r.status || '',
         'أيام منذ الالتحاق': r.joinDaysSince ?? '',
         'مناوبات تراكمية': r.total || 0,
         'مناوبات تمت': r.completed || 0,
+        'مناوبات متبقية': r.remaining || 0,
         'ساعات تمت': round1(r.hoursCompleted),
         'ترتيب الساعات (تمت)': r.rankCompleted || '',
         'ساعات تراكمية': round1(r.hoursTotal),
         'ترتيب الساعات (تراكمية)': r.rankTotal || '',
         'ساعات المناوبات فقط': round1(r.hoursShiftsTotal),
         'ساعات Bonus': round1(r.bonusHours),
-        'ساعات Bonus محتسبة': round1(r.bonusCompleted),
-        'أجنحة': r.wards || 0,
-        'عنايات': r.icu || 0,
-        'اسعاف': r.emergency || 0,
-        'منوع': r.misc || 0,
-        'مناوبات عطل': r.holiday || 0,
-        'مناوبات ليلية': r.night || 0,
-        'ثناءات': r.praiseCount || 0,
-        'عدد الفروز حتى الآن': r.rotationsCount || 0,
-        'أول مناوبة': r.firstOncall || '',
-        'آخر مناوبة': r.lastOncall || ''
+        'ساعات Bonus محتسبة': round1(r.bonusCompleted)
       };
+
+      // Group totals, each followed by the breakdown that makes it up.
+      GROUP_ORDER.forEach(key => {
+        const label = GROUPS[key] ? GROUPS[key].label : key;
+        const total = Object.values(r.groupDetails[key] || {}).reduce((a, n) => a + n, 0);
+        if (key === 'other' && !total) return;
+        row[`مناوبات ${label}`] = total;
+        row[`تفصيل ${label}`] = groupDetailText(r, key);
+      });
+
+      // One column per individual shift type — this is what makes the file
+      // sortable and filterable by "who has how many عناية قلبية".
+      categories.forEach(c => (row[c.name] = countOf(r, c.name)));
+
+      row['مناوبات عطل'] = r.holiday || 0;
+      row['مناوبات ليلية'] = r.night || 0;
+      row['ثناءات'] = r.praiseCount || 0;
+      row['عقوبات'] = r.penaltyCount || 0;
+      row['عدد الفروز حتى الآن'] = r.rotationsCount || 0;
+      row['أول مناوبة'] = r.firstOncall || '';
+      row['آخر مناوبة'] = r.lastOncall || '';
 
       shiftMonths.forEach(month => {
         row[month.label || `فرز شهر ${month.month}`] = resident ? this.residentsModel.getShift(resident, month.month) : '';
@@ -335,14 +377,77 @@
     });
 
     const ws = XLSX.utils.json_to_sheet(rows);
-    const baseWidths = [24, 10, 16, 15, 13, 11, 18, 14, 20, 18, 12, 16, 9, 9, 9, 9, 13, 13, 10, 16, 13, 13];
-    ws['!cols'] = baseWidths.concat(shiftMonths.map(() => ({ wch: 18 }))).map(w => (typeof w === 'number' ? { wch: w } : w));
-
+    const headerCount = rows.length ? Object.keys(rows[0]).length : 0;
+    ws['!cols'] = Array.from({ length: headerCount }, (_, i) => ({ wch: i === 0 ? 26 : i < 4 ? 14 : 13 }));
     ws['!autofilter'] = { ref: ws['!ref'] };
+    ws['!freeze'] = { xSplit: 2, ySplit: 1 };
+
+    // ---- sheet 2: doctor × shift type, with the dates behind each count ----
+    const detailRows = [];
+    list.forEach(r => {
+      const byCategory = {};
+      (r.assignments || []).forEach(a => (byCategory[a.category] = byCategory[a.category] || []).push(a));
+      Object.entries(byCategory)
+        .sort((a, b) => b[1].length - a[1].length)
+        .forEach(([category, items]) => {
+          const sorted = items.slice().sort((x, y) => x.date.localeCompare(y.date));
+          const group = schedule.classifyGroup(category);
+          detailRows.push({
+            'الاسم': r.name || '',
+            'الاختصار': r.abbr || '',
+            'المجموعة': GROUPS[group] ? GROUPS[group].label : group,
+            'نوع المناوبة': category,
+            'العدد': sorted.length,
+            'تمّت': sorted.filter(a => a.isCompleted).length,
+            'متبقية': sorted.filter(a => !a.isCompleted).length,
+            'ساعات': round1(sorted.reduce((sum, a) => sum + (a.hours || 0), 0)),
+            'منها عطل': sorted.filter(a => a.isHoliday).length,
+            'منها ليلية': sorted.filter(a => a.isNight).length,
+            'التواريخ': sorted.map(a => a.date).join(' · ')
+          });
+        });
+    });
+
+    const wsDetail = XLSX.utils.json_to_sheet(
+      detailRows.length ? detailRows : [{ 'الاسم': '', 'الاختصار': '', 'المجموعة': '', 'نوع المناوبة': '', 'العدد': '', 'تمّت': '', 'متبقية': '', 'ساعات': '', 'منها عطل': '', 'منها ليلية': '', 'التواريخ': '' }]
+    );
+    wsDetail['!cols'] = [{ wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 8 }, { wch: 8 }, { wch: 9 }, { wch: 9 }, { wch: 11 }, { wch: 11 }, { wch: 70 }];
+    wsDetail['!autofilter'] = { ref: wsDetail['!ref'] };
+
+    // ---- sheet 3: one row per single duty ----------------------------------
+    const logRows = [];
+    list.forEach(r => {
+      (r.assignments || [])
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .forEach(a => {
+          logRows.push({
+            'الاسم': r.name || '',
+            'الاختصار': r.abbr || '',
+            'التاريخ': a.date,
+            'اليوم': getDayName(a.date) || '',
+            'الشهر': a.date ? a.date.slice(0, 7) : '',
+            'نوع المناوبة': a.category,
+            'المجموعة': GROUPS[a.group] ? GROUPS[a.group].label : a.group,
+            'الساعات': round1(a.hours),
+            'عطلة': a.isHoliday ? 'نعم' : 'لا',
+            'ليلية': a.isNight ? 'نعم' : 'لا',
+            'الحالة': a.isCompleted ? 'تمّت' : 'قادمة'
+          });
+        });
+    });
+
+    const wsLog = XLSX.utils.json_to_sheet(
+      logRows.length ? logRows : [{ 'الاسم': '', 'الاختصار': '', 'التاريخ': '', 'اليوم': '', 'الشهر': '', 'نوع المناوبة': '', 'المجموعة': '', 'الساعات': '', 'عطلة': '', 'ليلية': '', 'الحالة': '' }]
+    );
+    wsLog['!cols'] = [{ wch: 26 }, { wch: 12 }, { wch: 13 }, { wch: 11 }, { wch: 10 }, { wch: 20 }, { wch: 12 }, { wch: 9 }, { wch: 8 }, { wch: 8 }, { wch: 10 }];
+    wsLog['!autofilter'] = { ref: wsLog['!ref'] };
 
     const wb = XLSX.utils.book_new();
     wb.Workbook = { Views: [{ RTL: true }] };
     XLSX.utils.book_append_sheet(wb, ws, 'احصائيات الأطباء');
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'تفصيل حسب نوع المناوبة');
+    XLSX.utils.book_append_sheet(wb, wsLog, 'سجل المناوبات');
     XLSX.writeFile(wb, `احصائيات_الاطباء_${this.today}.xlsx`);
   }
   };

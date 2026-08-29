@@ -52,6 +52,9 @@
         lastOncall: '',
         groupDetails: { wards: {}, icu: {}, emergency: {}, misc: {}, other: {} },
         catDates: {},
+        // Every single duty, kept in full so the Excel export and the
+        // per-category filter can show the detail behind each number.
+        assignments: [],
         praiseCount: 0,
         penaltyCount: 0,
         rotations: [],
@@ -88,6 +91,8 @@
       entry.hoursCompleted += hours;
       entry.hoursShiftsCompleted += hours;
     }
+
+    entry.assignments.push({ date, category, group, hours, isHoliday, isNight, isCompleted });
 
     if (!entry.firstOncall || date < entry.firstOncall) entry.firstOncall = date;
     if (!entry.lastOncall || date > entry.lastOncall) entry.lastOncall = date;

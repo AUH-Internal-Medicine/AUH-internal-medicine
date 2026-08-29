@@ -402,7 +402,7 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#333,#444);color:white;padding:12px 24px;border-radius:var(--radius-full);font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.4);animation:toastIn 0.3s ease,toastOut 0.3s ease 1.7s forwards}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(-50%) translateY(-20px)}}
-.main-footer{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:18px;text-align:center;color:white;margin-top:auto;font-size:13px;font-weight:500}
+.main-footer{background:var(--surface-sunk);border-top:1px solid var(--rule);padding:18px;text-align:center;color:var(--ink-2);margin-top:auto;font-size:13px;font-weight:500}
 .main-footer i{color:var(--danger);margin:0 4px}
 .qa-card{background:var(--card-bg);border-radius:var(--radius-lg);margin-bottom:8px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
 .qa-card:hover{box-shadow:var(--shadow-md)}
@@ -719,4 +719,95 @@ body.dark-mode .toast{background:var(--surface);color:var(--ink);border:1px soli
 @media (max-width:380px){
   .title-line1{font-size:1.45em}
   .stat-badge{font-size:11.5px;padding:6px 10px}
+}
+
+/* ---- filled controls: background and text stated together -----------------
+   A colour-only override splits from its background when an older, more
+   specific `body.dark-mode .x` rule wins the background — which is how the
+   nav pill and "today" lost their fill and kept dark text. Every filled
+   control therefore declares both, in one rule, at dark-mode specificity.
+   The accent is light in dark mode, so text on it is INK, not white.        */
+
+/* buttons do not inherit colour; without this they fall back to UA black */
+.myinfo-breakdown-item,.qa-category-header,.names-dropdown-btn,.collapsible-btn,
+.oncall-year-btn,.filter-btn,.select-all-btn,.month-selector,.cal-nav-btn,.dsc-group{color:var(--text)}
+
+body.dark-mode .nav-btn.active,
+body.dark-mode .download-btn,
+body.dark-mode .contacts-btn:not(:disabled),
+body.dark-mode .link-url,
+body.dark-mode .qa-category-tag,
+body.dark-mode .oncall-year-btn.active,
+body.dark-mode .filter-btn.active-filter,
+body.dark-mode #doctorStatsSortDirBtn,
+body.dark-mode .calendar-day.today,
+body.dark-mode .calendar-day.selected-day,
+body.dark-mode .status-badge.status-joined,
+body.dark-mode .holiday-chip.today,
+body.dark-mode .search-result-item:hover{background:var(--primary);color:var(--paper);border-color:var(--primary)}
+
+body.dark-mode .nav-btn.active i,body.dark-mode .nav-btn.active span,
+body.dark-mode .download-btn i,body.dark-mode .contacts-btn i,body.dark-mode .link-url i,
+body.dark-mode .oncall-year-btn.active i,body.dark-mode #doctorStatsSortDirBtn i,
+body.dark-mode .calendar-day.today span,body.dark-mode .status-badge.status-joined i{color:var(--paper)}
+
+/* controls that are NOT filled keep light text on their dark surface */
+body.dark-mode .excel-export-btn,
+body.dark-mode .filter-btn:not(.active-filter):not(#doctorStatsSortDirBtn),
+body.dark-mode .select-all-btn,
+body.dark-mode .cal-nav-btn,
+body.dark-mode .month-selector{background:var(--surface-sunk);color:var(--ink);border-color:var(--rule)}
+body.dark-mode .excel-export-btn i,body.dark-mode .select-all-btn i,body.dark-mode .cal-nav-btn i{color:var(--primary)}
+body.dark-mode .contacts-btn:disabled{background:var(--surface-sunk);color:var(--ink-2);border-color:var(--rule)}
+
+/* light theme keeps white on its deep-green accent */
+.nav-btn.active,.download-btn,.contacts-btn:not(:disabled),.link-url,.qa-category-tag,
+.oncall-year-btn.active,.filter-btn.active-filter,#doctorStatsSortDirBtn{color:#fff}
+
+/* surfaces and small print that the audit flagged */
+body.dark-mode .oncall-name-tag{background:var(--surface-sunk);color:var(--ink);border-color:var(--rule)}
+body.dark-mode .myinfo-breakdown-item{background:var(--surface-sunk);color:var(--ink)}
+body.dark-mode .dsc-detail-chip{background:var(--surface-sunk);color:var(--ink);border:1px solid var(--rule)}
+body.dark-mode .praise-badge{background:var(--ochre-soft);color:var(--ochre)}
+body.dark-mode .penalty-badge{background:var(--signal-soft);color:var(--signal)}
+body.dark-mode .myinfo-hint{background:var(--primary-soft);border-color:var(--rule);color:var(--primary-strong)}
+body.dark-mode .example-row{opacity:.55}
+body.dark-mode .work-in-progress-panel i{color:var(--primary)}
+body.dark-mode .qa-answer,body.dark-mode .card-label,body.dark-mode .link-label{color:var(--ink-2)}
+body.dark-mode .seq-badge,body.dark-mode .count-badge{background:var(--surface-sunk);color:var(--ink)}
+body.dark-mode .calendar-day.weekend:not(.today):not(.selected-day){background:rgba(255,129,119,.10);color:var(--signal)}
+
+/* ---- احصائيات الأطباء: shift-type filter ---------------------------------
+   The focus band leads each card while a shift type is selected: the count,
+   what it is made of, and every date behind it — the numbers a person needs
+   in front of them while drafting next month's table.                       */
+.doctor-stats-summary{margin:0 0 14px;padding:10px 14px;background:var(--primary-soft);border:1px solid var(--rule);border-inline-start:4px solid var(--primary);border-radius:var(--radius);font-size:13px;color:var(--ink);line-height:1.7}
+.doctor-stats-summary strong{color:var(--primary);font-weight:700}
+
+.dsc-focus{margin:10px 0 12px;padding:12px 14px;background:var(--primary-soft);border:1px solid var(--rule);border-inline-start:4px solid var(--primary);border-radius:var(--radius)}
+.dsc-focus-empty{background:var(--surface-sunk);border-inline-start-color:var(--ink-2);opacity:.85}
+.dsc-focus-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.dsc-focus-label{font-weight:700;font-size:13.5px;color:var(--ink);display:inline-flex;align-items:center;gap:7px}
+.dsc-focus-label i{color:var(--primary);font-size:12px}
+.dsc-focus-count{font-family:var(--display-font);font-size:26px;font-weight:800;color:var(--primary);line-height:1}
+.dsc-focus-empty .dsc-focus-count{color:var(--ink-2)}
+.dsc-focus-note{font-size:12.5px;color:var(--ink-2)}
+.dsc-focus-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2);margin-bottom:9px}
+.dsc-focus-meta i{color:var(--primary);margin-inline-end:3px;font-size:11px}
+.dsc-focus-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.dsc-focus-dates{display:flex;flex-wrap:wrap;gap:5px}
+.dsc-focus-date{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--rule);font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dsc-focus-date.is-done{border-color:var(--primary);color:var(--ink)}
+.dsc-focus-date.is-holiday{border-color:var(--signal)}
+.dsc-focus-date i{font-size:9.5px;opacity:.8}
+.dsc-focus-date.is-holiday i.fa-umbrella-beach{color:var(--signal)}
+.dsc-focus-date.is-night i.fa-moon{color:var(--ochre)}
+body.dark-mode .dsc-focus-date{background:var(--surface-sunk);color:var(--ink-2)}
+body.dark-mode .doctor-stats-summary,body.dark-mode .dsc-focus{background:var(--primary-soft);border-color:var(--rule);border-inline-start-color:var(--primary)}
+body.dark-mode .dsc-focus-empty{background:var(--surface-sunk)}
+
+@media (max-width:768px){
+  .dsc-focus{padding:10px 11px}
+  .dsc-focus-count{font-size:22px}
+  .dsc-focus-meta{gap:4px 10px;font-size:11.5px}
 }
