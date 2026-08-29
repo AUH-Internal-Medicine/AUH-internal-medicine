@@ -811,3 +811,49 @@ body.dark-mode .dsc-focus-empty{background:var(--surface-sunk)}
   .dsc-focus-count{font-size:22px}
   .dsc-focus-meta{gap:4px 10px;font-size:11.5px}
 }
+
+/* ---- احصائيات الأطباء: the filter toolbar --------------------------------
+   Label above control, one row height for every control, and a chevron drawn
+   by us — native selects in RTL put their arrow on the wrong side and refuse
+   to match the buttons beside them.                                         */
+.doctor-sort-panel{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px;background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:14px 16px}
+.dsp-field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 240px}
+.dsp-field label{font-size:11.5px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;gap:6px;white-space:nowrap;letter-spacing:.2px}
+.dsp-field label i{color:var(--primary);font-size:11px}
+
+.dsp-select{position:relative;display:block}
+.dsp-select select{appearance:none;-webkit-appearance:none;width:100%;height:40px;padding:0 13px 0 34px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper);color:var(--ink);font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease;text-overflow:ellipsis}
+.dsp-select select:hover{border-color:var(--primary)}
+.dsp-select select:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.dsp-select select.is-on{border-color:var(--primary);background:var(--primary-soft);color:var(--ink)}
+.dsp-select-chevron{position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:11px;color:var(--ink-2)}
+.dsp-select select.is-on+.dsp-select-chevron{color:var(--primary)}
+.dsp-select optgroup{font-weight:700;color:var(--ink-2);background:var(--paper)}
+.dsp-select option{font-weight:500;color:var(--ink);background:var(--paper);padding:6px}
+
+.dsp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dsp-btn{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 15px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper);color:var(--ink);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:border-color .18s ease,background .18s ease,color .18s ease}
+.dsp-btn i{font-size:12px;color:var(--primary)}
+.dsp-btn:hover{border-color:var(--primary);background:var(--primary-soft)}
+.dsp-btn:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.dsp-btn.is-on{background:var(--primary);border-color:var(--primary);color:#fff}
+.dsp-btn.is-on i{color:#fff}
+body.dark-mode .dsp-btn.is-on{color:var(--paper)}
+body.dark-mode .dsp-btn.is-on i{color:var(--paper)}
+
+.dsp-btn-reset{border-color:var(--signal);color:var(--signal)}
+.dsp-btn-reset i{color:var(--signal)}
+.dsp-btn-reset:hover{background:var(--signal-soft);border-color:var(--signal)}
+.dsp-btn-excel{margin-inline-start:auto;background:var(--primary);border-color:var(--primary);color:#fff}
+.dsp-btn-excel i{color:#fff}
+.dsp-btn-excel:hover{background:var(--primary-strong);border-color:var(--primary-strong);color:#fff}
+body.dark-mode .dsp-btn-excel{color:var(--paper)}
+body.dark-mode .dsp-btn-excel i,body.dark-mode .dsp-btn-excel:hover{color:var(--paper)}
+
+@media (max-width:768px){
+  .doctor-sort-panel{padding:12px;gap:10px;align-items:stretch}
+  .dsp-field{flex:1 1 100%}
+  .dsp-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .dsp-btn{justify-content:center;padding:0 10px;font-size:12.5px}
+  .dsp-btn-reset,.dsp-btn-excel{grid-column:1 / -1;margin-inline-start:0}
+}

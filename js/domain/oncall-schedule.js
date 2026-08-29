@@ -39,7 +39,9 @@
     'اسعاف بارد صباحي':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'اسعاف بارد ليلي':{workTime:'10:00 ليلاً حتى 8:30 صباحاً',workDuration:'10 ساعات ونصف',holidayTime:'10:00 ليلاً حتى 9:00 صباحاً',holidayDuration:'11 ساعة'},
     'إسعاف باب نهاري':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
-    'اسعاف باب ليلي':{workTime:'10:00 ليلاً حتى 8:30 صباحاً',workDuration:'10 ساعات ونصف',holidayTime:'10:00 ليلاً حتى 9:00 صباحاً',holidayDuration:'11 ساعة'}
+    'اسعاف باب ليلي':{workTime:'10:00 ليلاً حتى 8:30 صباحاً',workDuration:'10 ساعات ونصف',holidayTime:'10:00 ليلاً حتى 9:00 صباحاً',holidayDuration:'11 ساعة'},
+    'اسعاف داخلي نهاري':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+    'اسعاف داخلي ليلي':{workTime:'10:00 ليلاً حتى 8:30 صباحاً',workDuration:'10 ساعات ونصف',holidayTime:'10:00 ليلاً حتى 9:00 صباحاً',holidayDuration:'11 ساعة'}
   };
 
   const ONCALL_SCHEDULE_NEW = {
@@ -58,7 +60,10 @@
     'اسعاف بارد صباحي':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
     'اسعاف بارد ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'},
     'إسعاف باب نهاري':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
-    'اسعاف باب ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'}
+    'اسعاف باب ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'},
+    // Added 2026-08-29: two new emergency duties, same hours as the باب pair.
+    'اسعاف داخلي نهاري':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
+    'اسعاف داخلي ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'}
   };
 
   /**

@@ -140,6 +140,26 @@
     this.renderDoctorStats();
   },
 
+  /** True when anything at all differs from the default view. */
+  doctorStatsFiltersActive() {
+    return !!(this.doctorStatsShiftFilter ||
+      this.doctorStatsSearchTerm ||
+      !this.doctorStatsOnlyWithShift ||
+      this.doctorStatsSort.key !== 'hoursCompleted' ||
+      this.doctorStatsSort.dir !== 'desc');
+  },
+
+  /** Back to the default view: no filter, no search, sorted by hours worked. */
+  resetDoctorStatsFilters() {
+    this.doctorStatsShiftFilter = '';
+    this.doctorStatsOnlyWithShift = true;
+    this.doctorStatsSearchTerm = '';
+    this.doctorStatsSort = { key: 'hoursCompleted', dir: 'desc' };
+    const search = document.getElementById('doctorStatsSearch');
+    if (search) search.value = '';
+    this.renderDoctorStats();
+  },
+
   toggleDoctorStatsOnlyWithShift() {
     this.doctorStatsOnlyWithShift = !this.doctorStatsOnlyWithShift;
     this.renderDoctorStats();
@@ -236,7 +256,16 @@
         perCategory;
       select.dataset.signature = signature;
     }
-    if (select.value !== (this.doctorStatsShiftFilter || '')) select.value = this.doctorStatsShiftFilter || '';
+    // Resolve to the option's own spelling: the sheet writes "إسعاف" with a
+    // hamza, a filter set in code may not, and a <select> shows blank for a
+    // value it does not carry.
+    const wanted = this.doctorStatsShiftFilter || '';
+    if (select.value !== wanted) {
+      const exact = Array.from(select.options).find(o => o.value === wanted);
+      const loose = exact || Array.from(select.options).find(o => normAr(o.value) === normAr(wanted));
+      select.value = loose ? loose.value : '';
+      if (loose && loose.value !== wanted) this.doctorStatsShiftFilter = loose.value;
+    }
 
     // The sort dropdown gains a matching option only while a filter is active.
     const metric = document.getElementById('doctorStatsSortMetric');
@@ -258,11 +287,18 @@
     if (onlyBtn) {
       onlyBtn.style.display = this.doctorStatsShiftFilter ? '' : 'none';
       const only = !!this.doctorStatsOnlyWithShift;
-      onlyBtn.classList.toggle('active-filter', only);
+      onlyBtn.classList.toggle('is-on', only);
       onlyBtn.innerHTML = only
         ? '<i class="fas fa-user-check"></i> من ناوب هذا النوع فقط'
         : '<i class="fas fa-users"></i> كل الأطباء';
     }
+
+    // The reset button only exists while there is something to reset.
+    const resetBtn = document.getElementById('doctorStatsResetBtn');
+    if (resetBtn) resetBtn.style.display = this.doctorStatsFiltersActive() ? '' : 'none';
+
+    const filterSelect = document.getElementById('doctorStatsShiftFilter');
+    if (filterSelect) filterSelect.classList.toggle('is-on', !!this.doctorStatsShiftFilter);
   },
 
   renderDoctorStats() {
@@ -296,6 +332,7 @@
     if (dirBtn) {
       const asc = this.doctorStatsSort.dir === 'asc';
       dirBtn.innerHTML = asc ? '<i class="fas fa-arrow-up-wide-short"></i> تصاعدي' : '<i class="fas fa-arrow-down-wide-short"></i> تنازلي';
+      dirBtn.classList.toggle('is-on', asc);
     }
 
     if (!list.length) {
