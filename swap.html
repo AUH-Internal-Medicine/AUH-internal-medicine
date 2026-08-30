@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>طلب تبديل / شيل مناوبة — قسم الأمراض الداخلية</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔁</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="bg.webp" fetchpriority="high">
+<style>
+:root{
+  --paper:#f7f5f0; --surface:#fff; --surface-sunk:#f1efe9; --ink:#15181b; --ink-2:#5d6670;
+  --rule:#e2ded4; --primary:#1f6b4f; --primary-strong:#17553e; --primary-soft:#e8f1ec;
+  --signal:#c0392b; --signal-soft:#fbeceb; --ochre:#b8862b; --ochre-soft:#fbf3e2;
+  --radius:12px; --radius-lg:18px;
+  --shadow:0 1px 2px rgba(20,24,28,.05); --shadow-md:0 6px 20px rgba(20,24,28,.08);
+  --shadow-lg:0 18px 44px rgba(20,24,28,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:15px;line-height:1.7;
+  -webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
+
+/* ---------------------------------------------------------------- masthead */
+.hero{position:relative;isolation:isolate;overflow:hidden;color:#fff;
+  padding:clamp(30px,6vh,54px) 20px clamp(26px,5vh,42px);text-align:center;min-height:clamp(210px,26vh,290px);
+  display:flex;flex-direction:column;justify-content:center;align-items:center}
+.hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 48%;z-index:-2}
+.hero::before{content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(10,26,20,.62) 0%,rgba(8,22,17,.86) 100%)}
+.hero h1{margin:0;font-size:clamp(1.5em,4.6vw,2.15em);font-weight:700;letter-spacing:-.4px;
+  text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.hero .sub{margin-top:10px;font-size:clamp(.9em,2.3vw,1.02em);color:#e9d9ad;font-weight:600;letter-spacing:2px}
+.hero .dept{margin-top:12px;font-size:.9em;opacity:.9}
+.hero .pill{margin-top:16px;display:inline-flex;align-items:center;gap:8px;padding:8px 15px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);border-radius:999px;
+  font-size:12.5px;backdrop-filter:blur(6px)}
+
+/* ------------------------------------------------------------------ layout */
+.wrap{max-width:940px;margin:0 auto;padding:22px 16px 70px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);padding:20px 20px 22px;margin-bottom:16px}
+.card.step{position:relative}
+.step-head{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.step-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.step-head h2{margin:0;font-size:1.03em;font-weight:700}
+.step-hint{margin:2px 0 15px 0;padding-inline-start:41px;font-size:12.7px;color:var(--ink-2)}
+.card.locked{opacity:.5;pointer-events:none;filter:saturate(.6)}
+.card.done .step-n{background:var(--primary-strong)}
+.card.done .step-n::before{content:'\f00c';font-family:'Font Awesome 6 Free';font-weight:900;font-size:12px}
+.card.done .step-n span{display:none}
+
+label.fl{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:6px}
+input[type=text],input[type=tel],select,textarea{width:100%;height:44px;padding:0 13px;border:1px solid var(--rule);
+  border-radius:var(--radius);background:var(--paper);color:var(--ink);font-family:inherit;font-size:14.5px;
+  font-weight:600;transition:border-color .18s,box-shadow .18s}
+textarea{height:auto;padding:11px 13px;font-weight:500;min-height:76px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
+.grid2{display:grid;grid-template-columns:1fr 200px;gap:12px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+/* -------------------------------------------------------------- combo box */
+.combo{position:relative}
+.combo .fa-magnifying-glass{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  color:var(--ink-2);font-size:13px;pointer-events:none}
+.combo input{padding-left:36px}
+.combo-list{position:absolute;z-index:40;inset-inline:0;top:calc(100% + 5px);max-height:264px;overflow-y:auto;
+  background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);box-shadow:var(--shadow-lg);
+  display:none}
+.combo-list.open{display:block}
+.combo-opt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 13px;cursor:pointer;
+  border-bottom:1px solid var(--surface-sunk);font-size:14px}
+.combo-opt:last-child{border-bottom:0}
+.combo-opt:hover,.combo-opt.active{background:var(--primary-soft)}
+.combo-opt .nm{font-weight:600}
+.combo-opt .meta{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.combo-opt mark{background:transparent;color:var(--primary);font-weight:700}
+.combo-empty{padding:13px;font-size:13px;color:var(--ink-2);text-align:center}
+
+.chosen{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 13px;background:var(--primary-soft);
+  border:1px solid var(--primary);border-radius:var(--radius);font-size:13.5px}
+.chosen i{color:var(--primary)}
+.chosen b{font-weight:700}
+.chosen .x{margin-inline-start:auto;background:none;border:0;color:var(--ink-2);cursor:pointer;font-size:15px;padding:2px 6px}
+.chosen .x:hover{color:var(--signal)}
+
+/* -------------------------------------------------------------- calendars */
+.cal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;flex-wrap:wrap}
+.cal-title{font-weight:700;font-size:14px}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:34px;height:34px;border-radius:9px;border:1px solid var(--rule);background:var(--paper);
+  color:var(--ink);cursor:pointer;font-size:12px}
+.cal-nav button:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.cal-nav button:disabled{opacity:.4;cursor:default}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .dow{text-align:center;font-size:11px;font-weight:700;color:var(--ink-2);padding-bottom:3px}
+.day{position:relative;min-height:62px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);
+  padding:5px 5px 4px;display:flex;flex-direction:column;gap:3px;transition:all .15s}
+.day.pad{border:0;background:transparent}
+.day .dn{font-size:11.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.day.hol{background:var(--signal-soft);border-color:#f0cfcb}
+.day.hol .dn{color:var(--signal)}
+.day.past{opacity:.45}
+.day .tag{font-size:9.5px;line-height:1.3;font-weight:700;padding:2px 4px;border-radius:5px;
+  background:var(--primary-soft);color:var(--primary-strong);text-align:center;word-break:break-word}
+.day.pick{cursor:pointer}
+.day.pick:hover{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);transform:translateY(-1px)}
+.day.sel{border-color:var(--primary);background:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.day.sel .dn,.day.sel .tag{color:#fff;background:rgba(255,255,255,.16)}
+.day.blocked{background:repeating-linear-gradient(45deg,var(--signal-soft),var(--signal-soft) 6px,#fff 6px,#fff 12px);
+  border-color:#eebeb8}
+.day.blocked .dn{color:var(--signal)}
+.day .why{position:absolute;inset-inline:3px;bottom:3px;font-size:8.4px;color:var(--signal);font-weight:700;
+  text-align:center;line-height:1.25}
+.day.warnday{border-color:var(--ochre);background:var(--ochre-soft)}
+.day.gone{opacity:.4;cursor:not-allowed}
+.day.gone .tag{background:var(--surface-sunk);color:var(--ink-2)}
+.legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:11px;font-size:11.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-inline-end:5px;
+  border:1px solid var(--rule)}
+.empty-cal{padding:26px 14px;text-align:center;color:var(--ink-2);font-size:13.5px;background:var(--surface-sunk);
+  border-radius:var(--radius)}
+
+/* ------------------------------------------------------ eligible doctors */
+.elig-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.2px;color:var(--ink-2);
+  margin:2px 0 10px;padding:9px 12px;background:var(--primary-soft);border-radius:var(--radius)}
+.elig-head i{color:var(--primary)}
+.elig-head b{color:var(--primary-strong);font-weight:700}
+.elig-note{font-size:11.5px;color:var(--ink-2);margin-inline-start:auto}
+.cands{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:8px}
+.cand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start;padding:9px 12px;
+  border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);cursor:pointer;
+  font-family:inherit;transition:all .15s}
+.cand:hover{border-color:var(--primary);background:var(--primary-soft);transform:translateY(-1px);
+  box-shadow:var(--shadow-md)}
+.cand .cn{font-size:13.6px;font-weight:700;color:var(--ink)}
+.cand .cm{font-size:11.3px;color:var(--ink-2)}
+.cand.has-warn{border-style:dashed}
+.cand.has-warn .cm i{color:var(--ochre)}
+@media(max-width:640px){.cands{grid-template-columns:1fr 1fr}.elig-note{display:none}}
+
+/* -------------------------------------------------------------- verdict */
+.verdict{margin-top:14px;padding:14px 16px;border-radius:var(--radius);font-size:13.8px;line-height:1.75;
+  border:1px solid var(--rule);border-inline-start:5px solid var(--ink-2);background:var(--surface-sunk)}
+.verdict.ok{background:var(--primary-soft);border-color:#cfe3d8;border-inline-start-color:var(--primary)}
+.verdict.no{background:var(--signal-soft);border-color:#f0cfcb;border-inline-start-color:var(--signal)}
+.verdict.warn{background:var(--ochre-soft);border-color:#efdfba;border-inline-start-color:var(--ochre)}
+.verdict h3{margin:0 0 6px;font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.verdict.ok h3{color:var(--primary-strong)} .verdict.no h3{color:var(--signal)} .verdict.warn h3{color:#8a6519}
+.verdict ul{margin:6px 0 0;padding-inline-start:19px}
+.verdict li{margin:3px 0}
+
+.summary{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin:4px 0 6px}
+@media(max-width:640px){.summary{grid-template-columns:1fr}}
+.sum-box{background:var(--surface-sunk);border:1px solid var(--rule);border-radius:var(--radius);padding:12px 14px}
+.sum-box .who{font-weight:700;font-size:14px}
+.sum-box .what{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.sum-arrow{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--primary);
+  color:#fff;font-size:15px;justify-self:center}
+@media(max-width:640px){.sum-arrow{transform:rotate(90deg)}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 26px;border:0;
+  border-radius:999px;background:var(--primary);color:#fff;font-family:inherit;font-size:15.5px;font-weight:700;
+  cursor:pointer;transition:background .18s,transform .12s,box-shadow .18s;box-shadow:var(--shadow-md)}
+.btn:hover:not(:disabled){background:var(--primary-strong);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.btn:disabled{background:#c9ccd0;cursor:not-allowed;box-shadow:none}
+.btn.wide{width:100%}
+.btn-ghost{background:transparent;color:var(--ink-2);border:1px solid var(--rule);box-shadow:none;height:44px;
+  font-size:14px;font-weight:600}
+.btn-ghost:hover:not(:disabled){background:var(--surface-sunk);color:var(--ink);transform:none;box-shadow:none}
+
+.seg{display:inline-flex;background:var(--surface-sunk);border:1px solid var(--rule);border-radius:999px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;color:var(--ink-2);font-family:inherit;font-size:13.5px;font-weight:700;
+  padding:8px 17px;border-radius:999px;cursor:pointer;transition:all .18s}
+.seg button.on{background:var(--primary);color:#fff}
+
+.loading{display:grid;place-items:center;gap:12px;padding:60px 20px;text-align:center;color:var(--ink-2)}
+.spin{width:38px;height:38px;border:3px solid var(--rule);border-top-color:var(--primary);border-radius:50%;
+  animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;inset-inline:0;bottom:22px;margin:auto;width:max-content;max-width:92vw;z-index:99;
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;box-shadow:var(--shadow-lg);
+  opacity:0;transform:translateY(12px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.bad{background:var(--signal)}
+.foot{text-align:center;font-size:12px;color:var(--ink-2);padding:8px 16px 0}
+.sent{text-align:center;padding:34px 20px}
+.sent i{font-size:52px;color:var(--primary)}
+.sent h2{margin:14px 0 6px;font-size:1.3em}
+.sent p{margin:0 auto;max-width:460px;color:var(--ink-2);font-size:14px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <img class="hero-bg" src="bg.webp" alt="" onerror="this.src='bg.png'">
+  <h1>طلب تبديل أو شيل مناوبة</h1>
+  <div class="sub">السنة الأولى</div>
+  <div class="dept">قسم الأمراض الداخلية — مشفى حلب الجامعي</div>
+  <div class="pill"><i class="fas fa-circle-info"></i> اختر الاسم، ثم المناوبة من الرزنامة — والنظام يمنع أي تبديل يخالف القواعد</div>
+</header>
+
+<div class="wrap">
+  <div id="boot" class="card"><div class="loading"><div class="spin"></div><div>جاري تحميل بيانات المناوبات من الشيت...</div></div></div>
+
+  <div id="form" hidden>
+    <!-- 1 ----------------------------------------------------------------->
+    <section class="card step" id="s1">
+      <div class="step-head"><div class="step-n"><span>1</span></div><h2>نوع الطلب</h2></div>
+      <p class="step-hint">«شيل مناوبة» = طبيب يأخذ مناوبة عن آخر دون مقابل. «تبديل متبادل» = كل منهما يأخذ مناوبة الآخر.</p>
+      <div style="padding-inline-start:41px">
+        <div class="seg" id="kind">
+          <button type="button" data-kind="شيل" class="on"><i class="fas fa-hand-holding-medical"></i> شيل مناوبة</button>
+          <button type="button" data-kind="تبديل"><i class="fas fa-right-left"></i> تبديل متبادل</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 ----------------------------------------------------------------->
+    <section class="card step" id="s2">
+      <div class="step-head"><div class="step-n"><span>2</span></div><h2>صاحب المناوبة الأصلي</h2></div>
+      <p class="step-hint">اكتب أول حروف الاسم أو الاختصار — تظهر لك الخيارات، ويُملأ الاختصار تلقائياً.</p>
+      <div class="grid2">
+        <div>
+          <label class="fl" for="q1">الاسم الثلاثي</label>
+          <div class="combo">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="text" id="q1" autocomplete="off" placeholder="مثال: أحمد ..." aria-expanded="false">
+            <div class="combo-list" id="l1"></div>
+          </div>
+        </div>
+        <div>
+          <label class="fl" for="ab1">الاختصار</label>
+          <input type="text" id="ab1" readonly placeholder="—" style="background:var(--surface-sunk)">
+        </div>
+      </div>
+      <div id="ch1"></div>
+    </section>
+
+    <!-- 3 ----------------------------------------------------------------->
+    <section class="card step locked" id="s3">
+      <div class="step-head"><div class="step-n"><span>3</span></div><h2>اختر المناوبة المطلوب تبديلها</h2></div>
+      <p class="step-hint">هذه مناوباتك كما هي في الجدول الرسمي. اضغط على اليوم الذي تريد تبديله.</p>
+      <div class="cal-top">
+        <div class="cal-title" id="cal1t">—</div>
+        <div class="cal-nav"><button type="button" id="p1" title="الشهر السابق"><i class="fas fa-chevron-right"></i></button><button type="button" id="n1" title="الشهر التالي"><i class="fas fa-chevron-left"></i></button></div>
+      </div>
+      <div id="cal1"></div>
+      <div class="legend"><span><i style="background:var(--primary-soft);border-color:var(--primary)"></i>مناوبة لك</span>
+        <span><i style="background:var(--signal-soft);border-color:#f0cfcb"></i>يوم عطلة</span>
+        <span><i style="background:var(--primary)"></i>المناوبة المختارة</span></div>
+    </section>
+
+    <!-- 4 ----------------------------------------------------------------->
+    <section class="card step locked" id="s4">
+      <div class="step-head"><div class="step-n"><span>4</span></div><h2>الطبيب الذي سيأخذ المناوبة</h2></div>
+      <p class="step-hint">اختر من القائمة المقترحة أدناه — وهم الأطباء الذين لا تتعارض هذه المناوبة مع جدولهم — أو اكتب الاسم مباشرة.</p>
+      <div class="grid2">
+        <div>
+          <label class="fl" for="q2">الاسم الثلاثي</label>
+          <div class="combo">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="text" id="q2" autocomplete="off" placeholder="مثال: محمد ..." aria-expanded="false">
+            <div class="combo-list" id="l2"></div>
+          </div>
+        </div>
+        <div>
+          <label class="fl" for="ab2">الاختصار</label>
+          <input type="text" id="ab2" readonly placeholder="—" style="background:var(--surface-sunk)">
+        </div>
+      </div>
+      <div id="elig"></div>
+      <div id="ch2"></div>
+      <div id="verdict"></div>
+    </section>
+
+    <!-- 5 ----------------------------------------------------------------->
+    <section class="card step locked" id="s5">
+      <div class="step-head"><div class="step-n"><span>5</span></div><h2 id="s5t">رزنامة الطبيب الجديد</h2></div>
+      <p class="step-hint" id="s5h">الأيام المشطوبة ممنوعة: مناوبة في نفس اليوم، أو في اليوم الذي قبله أو بعده.</p>
+      <div class="cal-top">
+        <div class="cal-title" id="cal2t">—</div>
+        <div class="cal-nav"><button type="button" id="p2" title="الشهر السابق"><i class="fas fa-chevron-right"></i></button><button type="button" id="n2" title="الشهر التالي"><i class="fas fa-chevron-left"></i></button></div>
+      </div>
+      <div id="cal2"></div>
+      <div class="legend"><span><i style="background:var(--primary-soft);border-color:var(--primary)"></i>مناوبته</span>
+        <span><i style="background:repeating-linear-gradient(45deg,#fbeceb,#fbeceb 3px,#fff 3px,#fff 6px);border-color:#eebeb8"></i>ممنوع</span>
+        <span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>مسموح مع تنبيه</span></div>
+    </section>
+
+    <!-- 6 ----------------------------------------------------------------->
+    <section class="card step locked" id="s6">
+      <div class="step-head"><div class="step-n"><span>6</span></div><h2>تأكيد الطلب</h2></div>
+      <div class="summary" id="sumbox"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px" class="grid2b">
+        <div><label class="fl" for="phone">رقم هاتف مُقدّم الطلب</label>
+          <input type="tel" id="phone" placeholder="09xxxxxxxx" inputmode="tel"></div>
+        <div><label class="fl" for="reason">سبب التبديل</label>
+          <select id="reason">
+            <option value="">اختر السبب...</option>
+            <option>ظرف عائلي</option><option>ظرف صحي</option><option>سفر</option>
+            <option>امتحان أو محاضرة</option><option>تعارض مع مناوبة أخرى</option><option>سبب آخر</option>
+          </select></div>
+      </div>
+      <div style="margin-top:12px"><label class="fl" for="notes">ملاحظات (اختياري)</label>
+        <textarea id="notes" placeholder="أي تفصيل يساعد على مراجعة الطلب..."></textarea></div>
+      <div style="margin-top:8px;font-size:12.5px;color:var(--ink-2)">
+        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer">
+          <input type="checkbox" id="agree" style="width:auto;height:auto;margin-top:5px">
+          <span>أقرّ بأن الطرفين متفقان على هذا التبديل، وأن المسؤولية عن المناوبة تنتقل بعد الموافقة.</span>
+        </label>
+      </div>
+      <div style="margin-top:18px"><button type="button" class="btn wide" id="send" disabled>
+        <i class="fas fa-paper-plane"></i> إرسال الطلب</button></div>
+      <p class="foot">يصل الطلب مباشرة إلى جدول الطلبات، وتتم مراجعته يدوياً قبل اعتماده.</p>
+    </section>
+  </div>
+
+  <div id="done" hidden class="card sent">
+    <i class="fas fa-circle-check"></i>
+    <h2>تم إرسال الطلب</h2>
+    <p>سيظهر طلبك في جدول الطلبات ليُراجع. لا يُعتبر التبديل نافذاً قبل اعتماده.</p>
+    <div style="margin-top:20px"><button type="button" class="btn btn-ghost" onclick="location.reload()">
+      <i class="fas fa-rotate-right"></i> طلب جديد</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/core/namespace.js"></script>
+<script src="js/core/storage.js"></script>
+<script src="js/core/config.js"></script>
+<script src="js/core/logger.js"></script>
+<script src="js/core/text.js"></script>
+<script src="js/core/status.js"></script>
+<script src="js/core/dates.js"></script>
+<script src="js/data/schema.js"></script>
+<script src="js/data/header-map.js"></script>
+<script src="js/data/gviz-client.js"></script>
+<script src="js/data/api-client.js"></script>
+<script src="js/data/parsers/residents.js"></script>
+<script src="js/data/parsers/oncall.js"></script>
+<script src="js/data/parsers/evaluation.js"></script>
+<script src="js/data/parsers/lectures.js"></script>
+<script src="js/data/parsers/holidays.js"></script>
+<script src="js/data/parsers/content.js"></script>
+<script src="js/data/repository.js"></script>
+<script src="js/domain/oncall-schedule.js"></script>
+<script src="js/swap.js"></script>
+</body>
+</html>

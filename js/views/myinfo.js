@@ -478,7 +478,14 @@
 
     h += this.renderMyInfoBonus(doctorStats);
     h += this.renderMyInfoHolidays(monthOncalls);
-    h += `<button class="download-btn" onclick="app.downloadMyInfoImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة والتفاصيل كصورة</button></div>`;
+    h += `<button class="download-btn" onclick="app.downloadMyInfoImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة والتفاصيل كصورة</button>`;
+
+    // Swap request — opens the dedicated page with this doctor already filled in.
+    const who = encodeURIComponent(r.abbr || r.name);
+    h += `<div class="swap-cta"><span class="swap-cta-badge">تجريبي</span>` +
+      `<a class="swap-cta-btn" href="swap.html?from=${who}" target="_blank" rel="noopener">` +
+      `<i class="fas fa-right-left"></i> طلب تبديل أو شيل مناوبة</a>` +
+      `<span class="swap-cta-note">تختار المناوبة من رزنامتك، والنظام يمنع أي تبديل يخالف القواعد</span></div></div>`;
 
     rd.innerHTML = h;
     rd.classList.add('show');
