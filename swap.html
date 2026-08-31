@@ -190,6 +190,36 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .cand-phone .copy:hover{border-color:var(--primary);color:var(--primary)}
 @media(hover:none){.cand-phone{max-height:42px;opacity:1}}
 
+/* --------------------------------------------------------- save as image */
+.save-img{display:inline-flex;align-items:center;gap:7px;width:auto!important;height:34px;padding:0 13px;
+  border:1px solid var(--rule);border-radius:9px;background:var(--paper);color:var(--ink);
+  font-family:inherit;font-size:12.3px;font-weight:600;cursor:pointer;transition:all .15s}
+.save-img:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+.save-img i{font-size:11px}
+.save-img:disabled{opacity:.45;cursor:default}
+
+.img-modal{position:fixed;inset:0;z-index:200;background:rgba(16,26,21,.62);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:18px}
+.img-modal[hidden]{display:none}
+.img-box{width:min(760px,100%);max-height:92vh;display:flex;flex-direction:column;background:var(--paper);
+  border-radius:var(--radius-lg);box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}
+.img-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;
+  border-bottom:1px solid var(--rule)}
+.img-head h3{margin:0;font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.img-head h3 i{color:var(--primary);font-size:13px}
+.img-x{width:32px;height:32px;border-radius:8px;border:1px solid var(--rule);background:var(--surface);
+  color:var(--ink-2);cursor:pointer;font-size:13px}
+.img-x:hover{border-color:var(--signal);color:var(--signal)}
+.img-scroll{overflow:auto;padding:14px;background:var(--surface-sunk);flex:1}
+.img-scroll img{display:block;width:100%;height:auto;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.img-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;
+  border-top:1px solid var(--rule);flex-wrap:wrap}
+.img-note{font-size:12px;color:var(--ink-2)}
+.img-save{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:0;border-radius:10px;
+  background:var(--primary);color:#fff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.img-save:hover{background:var(--primary-strong)}
+@media(max-width:560px){.img-foot{justify-content:center}.img-note{display:none}.img-save{width:100%;justify-content:center}}
+
 /* -------------------------------------------------------------- verdict */
 .verdict{margin-top:14px;padding:14px 16px;border-radius:var(--radius);font-size:13.8px;line-height:1.75;
   border:1px solid var(--rule);border-inline-start:5px solid var(--ink-2);background:var(--surface-sunk)}
@@ -331,7 +361,10 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
       <p class="step-hint" id="s5h">على اليمين جدوله كما هو الآن، وعلى اليسار كما يصبح بعد تنفيذ الطلب.</p>
       <div class="cal-top">
         <div class="cal-title" id="cal2t">—</div>
-        <div class="cal-nav"><button type="button" id="p2" title="الشهر السابق"><i class="fas fa-chevron-right"></i></button><button type="button" id="n2" title="الشهر التالي"><i class="fas fa-chevron-left"></i></button></div>
+        <div class="cal-nav">
+          <button type="button" class="save-img" id="saveImg"><i class="fas fa-image"></i> حفظ الجدولين كصورة</button>
+          <button type="button" id="p2" title="الشهر السابق"><i class="fas fa-chevron-right"></i></button><button type="button" id="n2" title="الشهر التالي"><i class="fas fa-chevron-left"></i></button>
+        </div>
       </div>
       <div id="cal2"></div>
       <div class="legend">
@@ -401,6 +434,20 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 <script src="js/data/parsers/content.js"></script>
 <script src="js/data/repository.js"></script>
 <script src="js/domain/oncall-schedule.js"></script>
-<script src="js/swap.js?v=8"></script>
+<div class="img-modal" id="imgModal" hidden>
+  <div class="img-box" role="dialog" aria-modal="true" aria-label="معاينة صورة الجدول">
+    <div class="img-head">
+      <h3><i class="fas fa-image"></i> جدول المناوبات قبل التبديل وبعده</h3>
+      <button type="button" class="img-x" id="imgClose" title="إغلاق"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="img-scroll"><img id="imgPreview" alt=""></div>
+    <div class="img-foot">
+      <span class="img-note">احفظ الصورة وأرسلها للزميل أو للقسم.</span>
+      <button type="button" class="img-save" id="imgSave"><i class="fas fa-download"></i> حفظ الصورة</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/swap.js?v=11"></script>
 </body>
 </html>

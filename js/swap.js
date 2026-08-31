@@ -273,10 +273,11 @@
    * must not be offered at all — however free their own day looks.
    */
   function feasibleSwaps(from, shift, to) {
-    // A duty on the SAME day counts too: trading two duties on one date is the
-    // commonest swap of all, and each of us still ends up with exactly one.
+    // Never the same date. Trading two duties that fall on the one day changes
+    // nothing for either of us — we both still work that day — and reads as
+    // being handed back my own shift.
     return dutiesOf(to)
-      .filter(d => d.date >= today)
+      .filter(d => d.date >= today && d.date !== shift.date)
       .filter(d => evaluate(to, shift.date, d.date).ok)    // they take mine
       .filter(d => evaluate(from, d.date, shift.date).ok); // I take theirs
   }
@@ -541,6 +542,7 @@
 
     if (S.to && S.shift) renderBeforeAfter();
     else { $('cal2').innerHTML = ''; $('cal2t').textContent = '—'; }
+    $('saveImg').disabled = !(S.to && S.shift);
 
     renderEligible();
     verdictBox();
@@ -618,6 +620,193 @@
       grid(after, { picker: false, after: true }) +
       `<div class="ba-note">${takes ? 'المضافة بالأخضر' : 'المناوبة المضافة في شهر آخر'}${mutual && S.back ? ' · التي انتقلت إليك بالأحمر' : ''}</div>` +
       '</div></div>';
+  }
+
+  /* ---------------------------------------------------------- save as image */
+  /**
+   * Draws "قبل" and "بعد" onto a canvas and hands it to the resident as a PNG.
+   * Everything is drawn by hand rather than screenshotted: no dependency, it
+   * works offline and from file://, and the output stays legible on a phone.
+   */
+  function drawSchedule() {
+    if (!S.to || !S.shift) return null;
+    const month = S.months[S.m2];
+    if (!month) return null;
+
+    const [y, m] = month.split('-').map(Number);
+    const mutual = S.kind === 'تبديل';
+    const before = dutiesOf(S.to);
+    const after = dutiesAfter(S.to, S.shift, mutual ? S.back : null);
+
+    const PAD = 34, GAP = 7, COLS = 7, CELL_H = 74, DOW_H = 26;
+    const W = 900;
+    const cellW = (W - PAD * 2 - GAP * (COLS - 1)) / COLS;
+    const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const rows = Math.ceil((first + days) / COLS);
+    const gridH = DOW_H + rows * (CELL_H + GAP);
+    const HEAD = 118, SECT = 46, FOOT = 58;
+    const H = HEAD + (SECT + gridH + 26) * 2 + FOOT;
+
+    // Always 2×: the file is meant to be read on a phone, so it must stay
+    // crisp even when the browser reports a 1× screen.
+    const dpr = 2;
+    const cv = document.createElement('canvas');
+    cv.width = W * dpr; cv.height = H * dpr;
+    const c = cv.getContext('2d');
+    c.scale(dpr, dpr);
+    c.direction = 'rtl';
+    c.textBaseline = 'top';
+
+    const FONT = '"Cairo", "Segoe UI", system-ui, sans-serif';
+    const font = (size, weight) => `${weight || 400} ${size}px ${FONT}`;
+    const round = (x, yy, w, h, r) => {
+      c.beginPath();
+      c.moveTo(x + r, yy);
+      c.arcTo(x + w, yy, x + w, yy + h, r);
+      c.arcTo(x + w, yy + h, x, yy + h, r);
+      c.arcTo(x, yy + h, x, yy, r);
+      c.arcTo(x, yy, x + w, yy, r);
+      c.closePath();
+    };
+
+    // background
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, W, H);
+
+    // header
+    c.fillStyle = '#1b5e43';
+    c.fillRect(0, 0, W, 6);
+    c.textAlign = 'right';
+    c.fillStyle = '#14251d';
+    c.font = font(27, 700);
+    c.fillText(S.to.name, W - PAD, 30);
+    c.fillStyle = '#5c6b64';
+    c.font = font(15, 500);
+    c.fillText(`جدول المناوبات — ${AR_MONTHS[m - 1]} ${y}`, W - PAD, 68);
+    c.textAlign = 'left';
+    c.font = font(13, 600);
+    c.fillStyle = '#1b5e43';
+    c.fillText(mutual ? 'تبديل متبادل' : 'شيل مناوبة', PAD, 34);
+    c.fillStyle = '#5c6b64';
+    c.font = font(12, 400);
+    const gives = `${S.shift.cat} — ${fmt(S.shift.date)}`;
+    c.fillText(mutual && S.back ? `${gives}  ⇄  ${S.back.cat} — ${fmt(S.back.date)}` : gives, PAD, 56);
+
+    const grid = (list, top, isAfter) => {
+      const byDate = {};
+      list.filter(d => d.date.startsWith(month))
+        .forEach(d => { (byDate[d.date] = byDate[d.date] || []).push(d); });
+
+      c.textAlign = 'center';
+      c.font = font(12, 700);
+      c.fillStyle = '#5c6b64';
+      for (let i = 0; i < COLS; i++) {
+        const x = W - PAD - (i + 1) * cellW - i * GAP;
+        c.fillText(DOW[i], x + cellW / 2, top + 5);
+      }
+
+      for (let d = 1; d <= days; d++) {
+        const idx = first + d - 1;
+        const col = idx % COLS, row = Math.floor(idx / COLS);
+        const x = W - PAD - (col + 1) * cellW - col * GAP;
+        const yy = top + DOW_H + row * (CELL_H + GAP);
+        const iso = isoOf(y, m, d);
+        const duties = byDate[iso] || [];
+        const isAdded = isAfter && iso === S.shift.date;
+        const isBack = isAfter && mutual && S.back && iso === S.back.date;
+        const holiday = schedule.isHolidayDate(iso, new Set());
+
+        let fill = '#ffffff', stroke = '#e3e8e5', dn = '#5c6b64';
+        if (isAdded) { fill = '#e8f3ed'; stroke = '#1b5e43'; dn = '#14432f'; }
+        else if (isBack) { fill = '#fdeeec'; stroke = '#c0392b'; dn = '#c0392b'; }
+        else if (holiday) { fill = '#fdf6f5'; stroke = '#f3ddda'; dn = '#c0392b'; }
+
+        round(x, yy, cellW, CELL_H, 9);
+        c.fillStyle = fill; c.fill();
+        c.strokeStyle = stroke; c.lineWidth = isAdded || isBack ? 2 : 1; c.stroke();
+
+        c.textAlign = 'right';
+        c.font = font(13, 700);
+        c.fillStyle = dn;
+        c.fillText(String(d), x + cellW - 8, yy + 6);
+
+        c.textAlign = 'center';
+        duties.slice(0, 2).forEach((duty, k) => {
+          const ty = yy + 26 + k * 22;
+          round(x + 5, ty, cellW - 10, 19, 5);
+          c.fillStyle = isAdded ? '#1b5e43' : '#eef4f1'; c.fill();
+          c.fillStyle = isAdded ? '#ffffff' : '#1b5e43';
+          c.font = font(10.5, 700);
+          let label = duty.cat || '';
+          while (c.measureText(label).width > cellW - 16 && label.length > 3) label = label.slice(0, -1);
+          if (label !== duty.cat) label = label.slice(0, -1) + '…';
+          c.fillText(label, x + cellW / 2, ty + 3);
+        });
+        if (isAdded) {
+          c.fillStyle = '#1b5e43'; c.font = font(9, 700);
+          c.fillText('مضافة', x + cellW / 2, yy + CELL_H - 15);
+        }
+      }
+    };
+
+    const section = (label, count, top, accent) => {
+      c.textAlign = 'right';
+      c.font = font(17, 700);
+      c.fillStyle = accent;
+      c.fillText(label, W - PAD, top);
+      c.font = font(13, 500);
+      c.fillStyle = '#5c6b64';
+      c.fillText(`${count} مناوبة في الشهر`, W - PAD - c.measureText(label).width - 90, top + 3);
+      c.strokeStyle = accent; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(PAD, top + 30); c.lineTo(W - PAD, top + 30); c.stroke();
+    };
+
+    const inMonth = l => l.filter(d => d.date.startsWith(month)).length;
+    let top = HEAD;
+    section('قبل التبديل', inMonth(before), top, '#5c6b64');
+    grid(before, top + SECT, false);
+    top += SECT + gridH + 26;
+    section('بعد التبديل', inMonth(after), top, '#1b5e43');
+    grid(after, top + SECT, true);
+
+    c.textAlign = 'center';
+    c.font = font(11.5, 400);
+    c.fillStyle = '#8b978f';
+    c.fillText('قسم الأمراض الداخلية — مشفى حلب الجامعي · هذه صورة توضيحية، والجدول الرسمي هو المعتمد',
+      W / 2, H - FOOT + 20);
+    return cv;
+  }
+
+  /** Shows the drawn schedule so it can be checked, then saved. */
+  function showImage() {
+    const cv = drawSchedule();
+    if (!cv) { toast('اختر المناوبة والطبيب أولاً', true); return; }
+
+    const name = `مناوبات-${(S.to.name || '').replace(/\s+/g, '-')}-${S.months[S.m2]}.png`;
+    const box = $('imgModal');
+    const img = $('imgPreview');
+    img.src = cv.toDataURL('image/png');
+    img.alt = `جدول مناوبات ${S.to.name}`;
+    box.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    $('imgSave').onclick = () => {
+      cv.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast('حُفظت الصورة');
+      }, 'image/png');
+    };
+  }
+
+  function closeImage() {
+    $('imgModal').hidden = true;
+    document.body.style.overflow = '';
+    $('imgPreview').src = '';
   }
 
   function validateSend() {
@@ -808,6 +997,11 @@
       refresh();
       $('s4').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+
+    $('saveImg').addEventListener('click', showImage);
+    $('imgClose').addEventListener('click', closeImage);
+    $('imgModal').addEventListener('click', e => { if (e.target.id === 'imgModal') closeImage(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('imgModal').hidden) closeImage(); });
 
     $('cal2').addEventListener('click', e => {
       const cell = e.target.closest('.day[data-date]');

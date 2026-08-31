@@ -12,34 +12,47 @@
   const { mcn, showToast } = AUH.ui;
   const AM = AUH.constants.MONTH_NAMES;
 
-  /** One request row: state, the two doctors, and the reviewer's note. */
+  /** One request: its state, the counterpart, the dates and any note. */
   function requestCard(req, me) {
     const ST = AUH.data.swapRequests.STATUS;
     const meta = {
-      [ST.approved]: { cls: 'ok', icon: 'fa-circle-check', label: 'تم التبديل' },
+      [ST.approved]: { cls: 'ok', icon: 'fa-circle-check', label: 'تم' },
       [ST.rejected]: { cls: 'no', icon: 'fa-circle-xmark', label: 'مرفوض' },
       [ST.pending]: { cls: 'wait', icon: 'fa-hourglass-half', label: 'قيد المراجعة' }
     }[req.status];
 
     const mine = exactNameMatch(req.name, me.name) || exactNameMatch(req.abbr, me.abbr);
-    const other = mine ? (req.toName || '—') : (req.name || '—');
-    const role = mine ? 'إلى' : 'من';
-    const back = req.kind && req.kind.indexOf('تبديل') >= 0 && req.backDate && req.backDate !== req.date
-      ? `<div class="sr-line"><i class="fas fa-rotate-left"></i> بالمقابل: ${escapeHtml(req.backType || '')} — <span class="sr-date">${escapeHtml(req.backDate)}</span></div>`
-      : '';
-    const note = req.status === ST.rejected && req.notes
-      ? `<div class="sr-reason"><b>سبب الرفض:</b> ${escapeHtml(req.notes)}</div>`
-      : (req.notes ? `<div class="sr-note">${escapeHtml(req.notes)}</div>` : '');
+    const other = (mine ? req.toName : req.name) || '—';
+    const mutual = (req.kind || '').indexOf('تبديل') >= 0;
 
-    return `<div class="sr ${meta.cls}">` +
-      `<div class="sr-top"><span class="sr-badge"><i class="fas ${meta.icon}"></i> ${meta.label}</span>` +
-      `<span class="sr-kind">${escapeHtml(req.kind || '')}</span></div>` +
-      `<div class="sr-line"><i class="fas fa-calendar-day"></i> ${escapeHtml(req.type || '')} — ` +
-      `<span class="sr-date">${escapeHtml(req.date || '')}</span></div>` +
-      `<div class="sr-line"><i class="fas fa-user-doctor"></i> ${role}: <b>${escapeHtml(other)}</b></div>` +
-      back + note +
-      (req.stamp ? `<div class="sr-stamp">${escapeHtml(req.stamp)}</div>` : '') +
-      '</div>';
+    // What leaves, and what comes back — always from this resident's side.
+    const gave = { type: req.type, date: req.date };
+    const got = mutual && req.backDate ? { type: req.backType, date: req.backDate } : null;
+    const out = mine ? gave : got;
+    const back = mine ? got : gave;
+
+    const leg = (d, label, dir) => d && (d.type || d.date)
+      ? `<div class="sr-leg ${dir}"><span class="sr-leg-l">${label}</span>` +
+        `<span class="sr-leg-v">${escapeHtml(d.type || '—')}</span>` +
+        `<span class="sr-leg-d">${escapeHtml(d.date || '')}</span></div>`
+      : '';
+
+    const note = req.notes
+      ? `<div class="sr-note ${req.status === ST.rejected ? 'why' : ''}">` +
+        (req.status === ST.rejected ? '<b>سبب الرفض:</b> ' : '') + escapeHtml(req.notes) + '</div>'
+      : '';
+
+    return `<article class="sr ${meta.cls}">` +
+      `<header class="sr-top">` +
+        `<span class="sr-badge"><i class="fas ${meta.icon}"></i>${meta.label}</span>` +
+        `<span class="sr-with"><i class="fas fa-user-doctor"></i>${escapeHtml(other)}</span>` +
+        `<span class="sr-kind">${mutual ? 'تبديل' : 'شيل'}</span>` +
+      `</header>` +
+      `<div class="sr-legs">${leg(out, 'أعطيت', 'out')}${leg(back, 'أخذت', 'in')}</div>` +
+      (req.reason ? `<div class="sr-reason"><i class="fas fa-quote-right"></i>${escapeHtml(req.reason)}</div>` : '') +
+      note +
+      (req.stamp ? `<footer class="sr-stamp">أُرسل ${escapeHtml(req.stamp)}</footer>` : '') +
+      '</article>';
   }
 
   AUH.views.myInfo = {
@@ -47,39 +60,68 @@
      * Loads the swap-request sheet and shows this resident's own requests.
      * Failures are reported in place — never thrown at the page.
      */
+    /**
+     * Loads this resident's swap requests. Only the newest is shown; the rest
+     * stay behind «عرض المزيد». Failures report in place, never thrown.
+     */
     async loadSwapRequests(force) {
       const body = document.getElementById('swapTrackBody');
       const me = this.currentMyInfo;
       if (!body || !me) return;
 
-      if (force) body.innerHTML = '<div class="swap-track-loading"><i class="fas fa-spinner fa-spin"></i> جاري التحديث...</div>';
+      if (force) body.innerHTML = '<div class="swap-track-loading"><i class="fas fa-spinner fa-spin"></i> جاري التحديث…</div>';
 
       try {
         if (force || !this._swapCache) this._swapCache = await AUH.data.swapRequests.fetchAll();
         const cache = this._swapCache;
         const mine = AUH.data.swapRequests.forResident(cache.list, me.name, me.abbr);
+        this._swapMine = mine;
+        this._swapOpen = false;
 
         if (!mine.length) {
-          body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-inbox"></i> لا توجد لك طلبات تبديل بعد.</div>';
+          body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-inbox"></i>' +
+            '<span>لا توجد لك طلبات تبديل بعد.</span></div>';
           return;
         }
 
         const ST = AUH.data.swapRequests.STATUS;
-        const counts = mine.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {});
-        const summary = '<div class="swap-track-sum">' +
-          `<span class="ok"><i class="fas fa-circle-check"></i> ${counts[ST.approved] || 0} تم</span>` +
-          `<span class="wait"><i class="fas fa-hourglass-half"></i> ${counts[ST.pending] || 0} قيد المراجعة</span>` +
-          `<span class="no"><i class="fas fa-circle-xmark"></i> ${counts[ST.rejected] || 0} مرفوض</span></div>`;
+        const n = st => mine.filter(r => r.status === st).length;
+        const pill = (cls, icon, count, label) => count
+          ? `<span class="sw-pill ${cls}"><i class="fas ${icon}"></i>${count} ${label}</span>` : '';
 
-        const hint = cache.coloursAvailable ? '' :
-          '<div class="swap-track-hint"><i class="fas fa-circle-info"></i> تُقرأ الحالة من عمود «الحالة» في جدول الطلبات. ' +
-          'ولقراءة ألوان الصفوف مباشرة: ملف ← مشاركة ← النشر على الويب.</div>';
-
-        body.innerHTML = summary + `<div class="sr-list">${mine.map(r => requestCard(r, me)).join('')}</div>` + hint;
+        body.innerHTML =
+          `<div class="swap-track-sum">${pill('ok', 'fa-circle-check', n(ST.approved), 'تم')}` +
+          `${pill('wait', 'fa-hourglass-half', n(ST.pending), 'قيد المراجعة')}` +
+          `${pill('no', 'fa-circle-xmark', n(ST.rejected), 'مرفوض')}</div>` +
+          `<div class="sr-list" id="srList">${requestCard(mine[0], me)}</div>` +
+          (mine.length > 1
+            ? `<button type="button" class="sw-more" id="srMore" onclick="app.toggleSwapHistory()">` +
+              `<i class="fas fa-chevron-down"></i> عرض الطلبات السابقة (${mine.length - 1})</button>`
+            : '') +
+          // Only worth explaining when nothing resolved: if the sheet's status
+          // column (or its colours) answered, the box speaks for itself.
+          (mine.some(r => r.statusSource !== 'none') ? '' :
+            '<div class="swap-track-hint"><i class="fas fa-circle-info"></i> لم تُسجَّل حالة هذه الطلبات بعد. ' +
+            'تُقرأ الحالة من عمود «الحالة» في جدول الطلبات، أو من ألوان الصفوف إن نُشر الجدول على الويب.</div>');
       } catch (err) {
-        body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-triangle-exclamation"></i> ' +
-          'تعذّر تحميل الطلبات. تحقق من الاتصال ثم اضغط تحديث.</div>';
+        body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-triangle-exclamation"></i>' +
+          '<span>تعذّر تحميل الطلبات. تحقق من الاتصال ثم اضغط تحديث.</span></div>';
       }
+    },
+
+    /** Expands or collapses everything older than the newest request. */
+    toggleSwapHistory() {
+      const list = document.getElementById('srList');
+      const btn = document.getElementById('srMore');
+      const mine = this._swapMine || [];
+      const me = this.currentMyInfo;
+      if (!list || !btn || !me || mine.length < 2) return;
+
+      this._swapOpen = !this._swapOpen;
+      list.innerHTML = (this._swapOpen ? mine : mine.slice(0, 1)).map(r => requestCard(r, me)).join('');
+      btn.innerHTML = this._swapOpen
+        ? '<i class="fas fa-chevron-up"></i> إخفاء الطلبات السابقة'
+        : `<i class="fas fa-chevron-down"></i> عرض الطلبات السابقة (${mine.length - 1})`;
     },
 
   searchMe(term) {
