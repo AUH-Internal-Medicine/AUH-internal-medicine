@@ -98,33 +98,66 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .cal-nav button{width:34px;height:34px;border-radius:9px;border:1px solid var(--rule);background:var(--paper);
   color:var(--ink);cursor:pointer;font-size:12px}
 .cal-nav button:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
-.cal-nav button:disabled{opacity:.4;cursor:default}
+
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
-.cal .dow{text-align:center;font-size:11px;font-weight:700;color:var(--ink-2);padding-bottom:3px}
-.day{position:relative;min-height:62px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);
-  padding:5px 5px 4px;display:flex;flex-direction:column;gap:3px;transition:all .15s}
-.day.pad{border:0;background:transparent}
+.cal .dow{text-align:center;font-size:10.5px;font-weight:700;color:var(--ink-2);padding-bottom:3px}
+.day{position:relative;min-height:62px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);
+  padding:5px 5px 4px;display:flex;flex-direction:column;gap:3px;transition:all .15s;overflow:hidden}
+.day.pad{border:0;background:transparent;min-height:0}
 .day .dn{font-size:11.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.day.hol{background:var(--signal-soft);border-color:#f0cfcb}
-.day.hol .dn{color:var(--signal)}
-.day.past{opacity:.45}
 .day .tag{font-size:9.5px;line-height:1.3;font-weight:700;padding:2px 4px;border-radius:5px;
   background:var(--primary-soft);color:var(--primary-strong);text-align:center;word-break:break-word}
+.day .why{margin-top:auto;font-size:8.6px;font-weight:700;text-align:center;line-height:1.25;
+  padding:2px 3px;border-radius:4px}
+
+.day.hol{background:#fdf6f5;border-color:#f3ddda}
+.day.hol .dn{color:var(--signal)}
+
 .day.pick{cursor:pointer}
 .day.pick:hover{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);transform:translateY(-1px)}
+.day.swappable{border-color:#9ccbb7;background:#f2faf6}
 .day.sel{border-color:var(--primary);background:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
-.day.sel .dn,.day.sel .tag{color:#fff;background:rgba(255,255,255,.16)}
-.day.blocked{background:repeating-linear-gradient(45deg,var(--signal-soft),var(--signal-soft) 6px,#fff 6px,#fff 12px);
-  border-color:#eebeb8}
+.day.sel .dn{color:#fff}
+.day.sel .tag{color:#fff;background:rgba(255,255,255,.2)}
+
+/* ممنوع: حقل أحمر هادئ وسبب مكتوب — بلا خطوط مائلة تُخفي الاسم والرقم */
+.day.blocked{background:#fdf2f1;border-color:#f0c9c4}
 .day.blocked .dn{color:var(--signal)}
-.day .why{position:absolute;inset-inline:3px;bottom:3px;font-size:8.4px;color:var(--signal);font-weight:700;
-  text-align:center;line-height:1.25}
-.day.warnday{border-color:var(--ochre);background:var(--ochre-soft)}
-.day.gone{opacity:.4;cursor:not-allowed}
+.day.blocked .tag{background:#f8e0dd;color:#a03a2c}
+.day.blocked .why{background:var(--signal);color:#fff}
+.day.blocked::after{content:'';position:absolute;inset-inline-end:6px;top:6px;width:6px;height:6px;
+  border-radius:50%;background:var(--signal)}
+
+.day.added{border-color:var(--primary);background:var(--primary-soft);box-shadow:inset 0 0 0 1px var(--primary)}
+.day.added .dn{color:var(--primary-strong)}
+.day.added .why{background:var(--primary);color:#fff}
+.day.removed{border-color:var(--signal);background:var(--signal-soft)}
+.day.removed .dn{color:var(--signal)}
+.day.removed .why{background:var(--signal);color:#fff}
+.day.gone{opacity:.45;cursor:not-allowed}
 .day.gone .tag{background:var(--surface-sunk);color:var(--ink-2)}
-.legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:11px;font-size:11.5px;color:var(--ink-2)}
-.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-inline-end:5px;
-  border:1px solid var(--rule)}
+.day.past:not(.blocked):not(.added){opacity:.55}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.ba{grid-template-columns:1fr;gap:22px}}
+.ba-side{min-width:0}
+.ba-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;
+  padding-bottom:7px;border-bottom:2px solid var(--rule)}
+.ba-t{font-weight:700;font-size:13.5px;color:var(--ink-2)}
+.ba-t.after{color:var(--primary)}
+.ba-side:last-child .ba-h{border-bottom-color:var(--primary)}
+.ba-n{font-size:11.5px;color:var(--ink-2)}
+.ba-note{margin-top:9px;font-size:11.5px;color:var(--ink-2);text-align:center}
+
+.legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:13px;font-size:11.5px;color:var(--ink-2);
+  padding-top:11px;border-top:1px solid var(--rule)}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;
+  margin-inline-end:5px;border:1px solid var(--rule)}
+.legend .lg-duty{background:var(--primary-soft);border-color:var(--primary)}
+.legend .lg-add{background:var(--primary);border-color:var(--primary)}
+.legend .lg-rem{background:var(--signal-soft);border-color:var(--signal)}
+.legend .lg-block{background:#fdf2f1;border-color:#f0c9c4}
+.legend .lg-hol{background:#fdf6f5;border-color:#f3ddda}
 .empty-cal{padding:26px 14px;text-align:center;color:var(--ink-2);font-size:13.5px;background:var(--surface-sunk);
   border-radius:var(--radius)}
 
@@ -134,17 +167,28 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .elig-head i{color:var(--primary)}
 .elig-head b{color:var(--primary-strong);font-weight:700}
 .elig-note{font-size:11.5px;color:var(--ink-2);margin-inline-start:auto}
-.cands{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:8px}
-.cand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start;padding:9px 12px;
-  border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);cursor:pointer;
-  font-family:inherit;transition:all .15s}
-.cand:hover{border-color:var(--primary);background:var(--primary-soft);transform:translateY(-1px);
-  box-shadow:var(--shadow-md)}
-.cand .cn{font-size:13.6px;font-weight:700;color:var(--ink)}
+.cands{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:9px}
+.cand{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start;
+  padding:10px 12px 11px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);
+  cursor:pointer;font-family:inherit;transition:all .15s}
+.cand:hover,.cand:focus-visible{border-color:var(--primary);background:var(--primary-soft);
+  transform:translateY(-1px);box-shadow:var(--shadow-md);outline:none}
+.cand .cn{font-size:13.8px;font-weight:700;color:var(--ink)}
 .cand .cm{font-size:11.3px;color:var(--ink-2)}
-.cand.has-warn{border-style:dashed}
-.cand.has-warn .cm i{color:var(--ochre)}
-@media(max-width:640px){.cands{grid-template-columns:1fr 1fr}.elig-note{display:none}}
+.cand .cm-alt{font-size:11.3px;color:var(--primary);font-weight:600}
+.cand .cm-alt i{font-size:9.5px}
+.cand-phone{display:flex;align-items:center;gap:7px;margin-top:6px;padding-top:6px;width:100%;
+  border-top:1px dashed var(--rule);font-size:12px;max-height:0;opacity:0;overflow:hidden;
+  transition:max-height .18s ease,opacity .18s ease}
+.cand:hover .cand-phone,.cand:focus-within .cand-phone,.cand:focus-visible .cand-phone{max-height:42px;opacity:1}
+.cand-phone a{color:var(--primary-strong);font-weight:700;text-decoration:none;letter-spacing:.3px}
+.cand-phone a:hover{text-decoration:underline}
+.cand-phone.none{color:var(--ink-2);font-size:11px}
+.cand-phone .copy{margin-inline-start:auto;border:1px solid var(--rule);background:var(--surface);
+  color:var(--ink-2);border-radius:7px;width:26px;height:24px;cursor:pointer;font-size:11px;
+  display:grid;place-items:center}
+.cand-phone .copy:hover{border-color:var(--primary);color:var(--primary)}
+@media(hover:none){.cand-phone{max-height:42px;opacity:1}}
 
 /* -------------------------------------------------------------- verdict */
 .verdict{margin-top:14px;padding:14px 16px;border-radius:var(--radius);font-size:13.8px;line-height:1.75;
@@ -283,16 +327,20 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 
     <!-- 5 ----------------------------------------------------------------->
     <section class="card step locked" id="s5">
-      <div class="step-head"><div class="step-n"><span>5</span></div><h2 id="s5t">رزنامة الطبيب الجديد</h2></div>
-      <p class="step-hint" id="s5h">الأيام المشطوبة ممنوعة: مناوبة في نفس اليوم، أو في اليوم الذي قبله أو بعده.</p>
+      <div class="step-head"><div class="step-n"><span>5</span></div><h2 id="s5t">رزنامته قبل التبديل وبعده</h2></div>
+      <p class="step-hint" id="s5h">على اليمين جدوله كما هو الآن، وعلى اليسار كما يصبح بعد تنفيذ الطلب.</p>
       <div class="cal-top">
         <div class="cal-title" id="cal2t">—</div>
         <div class="cal-nav"><button type="button" id="p2" title="الشهر السابق"><i class="fas fa-chevron-right"></i></button><button type="button" id="n2" title="الشهر التالي"><i class="fas fa-chevron-left"></i></button></div>
       </div>
       <div id="cal2"></div>
-      <div class="legend"><span><i style="background:var(--primary-soft);border-color:var(--primary)"></i>مناوبته</span>
-        <span><i style="background:repeating-linear-gradient(45deg,#fbeceb,#fbeceb 3px,#fff 3px,#fff 6px);border-color:#eebeb8"></i>ممنوع</span>
-        <span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>مسموح مع تنبيه</span></div>
+      <div class="legend">
+        <span><i class="lg-duty"></i>مناوبة</span>
+        <span><i class="lg-add"></i>مضافة بالتبديل</span>
+        <span><i class="lg-rem"></i>انتقلت إليك</span>
+        <span><i class="lg-block"></i>لا تصلح — تعارض مع جدولك</span>
+        <span><i class="lg-hol"></i>يوم عطلة</span>
+      </div>
     </section>
 
     <!-- 6 ----------------------------------------------------------------->
@@ -353,6 +401,6 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 <script src="js/data/parsers/content.js"></script>
 <script src="js/data/repository.js"></script>
 <script src="js/domain/oncall-schedule.js"></script>
-<script src="js/swap.js"></script>
+<script src="js/swap.js?v=8"></script>
 </body>
 </html>

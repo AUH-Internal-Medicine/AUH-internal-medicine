@@ -54,7 +54,10 @@
       /** Main spreadsheet: residents, on-call, evaluation, links, Q&A, lectures, rules, adjustments. */
       main: '1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4',
       /** Second-year on-call schedule — a separate sheet maintained by another team. */
-      year2: '1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8'
+      year2: '1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8',
+      /** Swap-request responses (the Google Form's own sheet). Read-only, and
+       *  only for the "متابعة طلبات التبديل" box in معلوماتي. */
+      swaps: '1ILIE9UFtRwo0aHufEo9edOZ-XEpMM5EFvio9aylahFU'
     },
 
     /** localStorage cache. Bump `cacheVersion` to invalidate every visitor's cache. */

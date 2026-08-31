@@ -12,7 +12,76 @@
   const { mcn, showToast } = AUH.ui;
   const AM = AUH.constants.MONTH_NAMES;
 
+  /** One request row: state, the two doctors, and the reviewer's note. */
+  function requestCard(req, me) {
+    const ST = AUH.data.swapRequests.STATUS;
+    const meta = {
+      [ST.approved]: { cls: 'ok', icon: 'fa-circle-check', label: 'تم التبديل' },
+      [ST.rejected]: { cls: 'no', icon: 'fa-circle-xmark', label: 'مرفوض' },
+      [ST.pending]: { cls: 'wait', icon: 'fa-hourglass-half', label: 'قيد المراجعة' }
+    }[req.status];
+
+    const mine = exactNameMatch(req.name, me.name) || exactNameMatch(req.abbr, me.abbr);
+    const other = mine ? (req.toName || '—') : (req.name || '—');
+    const role = mine ? 'إلى' : 'من';
+    const back = req.kind && req.kind.indexOf('تبديل') >= 0 && req.backDate && req.backDate !== req.date
+      ? `<div class="sr-line"><i class="fas fa-rotate-left"></i> بالمقابل: ${escapeHtml(req.backType || '')} — <span class="sr-date">${escapeHtml(req.backDate)}</span></div>`
+      : '';
+    const note = req.status === ST.rejected && req.notes
+      ? `<div class="sr-reason"><b>سبب الرفض:</b> ${escapeHtml(req.notes)}</div>`
+      : (req.notes ? `<div class="sr-note">${escapeHtml(req.notes)}</div>` : '');
+
+    return `<div class="sr ${meta.cls}">` +
+      `<div class="sr-top"><span class="sr-badge"><i class="fas ${meta.icon}"></i> ${meta.label}</span>` +
+      `<span class="sr-kind">${escapeHtml(req.kind || '')}</span></div>` +
+      `<div class="sr-line"><i class="fas fa-calendar-day"></i> ${escapeHtml(req.type || '')} — ` +
+      `<span class="sr-date">${escapeHtml(req.date || '')}</span></div>` +
+      `<div class="sr-line"><i class="fas fa-user-doctor"></i> ${role}: <b>${escapeHtml(other)}</b></div>` +
+      back + note +
+      (req.stamp ? `<div class="sr-stamp">${escapeHtml(req.stamp)}</div>` : '') +
+      '</div>';
+  }
+
   AUH.views.myInfo = {
+    /**
+     * Loads the swap-request sheet and shows this resident's own requests.
+     * Failures are reported in place — never thrown at the page.
+     */
+    async loadSwapRequests(force) {
+      const body = document.getElementById('swapTrackBody');
+      const me = this.currentMyInfo;
+      if (!body || !me) return;
+
+      if (force) body.innerHTML = '<div class="swap-track-loading"><i class="fas fa-spinner fa-spin"></i> جاري التحديث...</div>';
+
+      try {
+        if (force || !this._swapCache) this._swapCache = await AUH.data.swapRequests.fetchAll();
+        const cache = this._swapCache;
+        const mine = AUH.data.swapRequests.forResident(cache.list, me.name, me.abbr);
+
+        if (!mine.length) {
+          body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-inbox"></i> لا توجد لك طلبات تبديل بعد.</div>';
+          return;
+        }
+
+        const ST = AUH.data.swapRequests.STATUS;
+        const counts = mine.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {});
+        const summary = '<div class="swap-track-sum">' +
+          `<span class="ok"><i class="fas fa-circle-check"></i> ${counts[ST.approved] || 0} تم</span>` +
+          `<span class="wait"><i class="fas fa-hourglass-half"></i> ${counts[ST.pending] || 0} قيد المراجعة</span>` +
+          `<span class="no"><i class="fas fa-circle-xmark"></i> ${counts[ST.rejected] || 0} مرفوض</span></div>`;
+
+        const hint = cache.coloursAvailable ? '' :
+          '<div class="swap-track-hint"><i class="fas fa-circle-info"></i> تُقرأ الحالة من عمود «الحالة» في جدول الطلبات. ' +
+          'ولقراءة ألوان الصفوف مباشرة: ملف ← مشاركة ← النشر على الويب.</div>';
+
+        body.innerHTML = summary + `<div class="sr-list">${mine.map(r => requestCard(r, me)).join('')}</div>` + hint;
+      } catch (err) {
+        body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-triangle-exclamation"></i> ' +
+          'تعذّر تحميل الطلبات. تحقق من الاتصال ثم اضغط تحديث.</div>';
+      }
+    },
+
   searchMe(term) {
     const t = term.toLowerCase().trim();
     const rl = document.getElementById('searchResultsList');
@@ -485,7 +554,16 @@
     h += `<div class="swap-cta"><span class="swap-cta-badge">تجريبي</span>` +
       `<a class="swap-cta-btn" href="swap.html?from=${who}" target="_blank" rel="noopener">` +
       `<i class="fas fa-right-left"></i> طلب تبديل أو شيل مناوبة</a>` +
-      `<span class="swap-cta-note">تختار المناوبة من رزنامتك، والنظام يمنع أي تبديل يخالف القواعد</span></div></div>`;
+      `<span class="swap-cta-note">تختار المناوبة من رزنامتك، والنظام يمنع أي تبديل يخالف القواعد</span></div>`;
+
+    // Request tracking — filled in asynchronously by loadSwapRequests().
+    h += `<div class="swap-track" id="swapTrack"><div class="swap-track-head">` +
+      `<h4><i class="fas fa-list-check"></i> متابعة طلبات التبديل</h4>` +
+      `<button type="button" class="swap-refresh" onclick="app.loadSwapRequests(true)" title="تحديث">` +
+      `<i class="fas fa-rotate"></i></button></div>` +
+      `<div id="swapTrackBody"><div class="swap-track-loading"><i class="fas fa-spinner fa-spin"></i> جاري تحميل طلباتك...</div></div></div></div>`;
+    // the sheet read happens once this HTML is in the DOM
+    setTimeout(() => this.loadSwapRequests(false), 0);
 
     rd.innerHTML = h;
     rd.classList.add('show');

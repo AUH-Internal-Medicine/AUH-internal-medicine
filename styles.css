@@ -872,3 +872,50 @@ body.dark-mode .dsp-btn-excel i,body.dark-mode .dsp-btn-excel:hover{color:var(--
 body.dark-mode .swap-cta-btn{color:var(--paper)}
 body.dark-mode .swap-cta-btn i{color:var(--paper)}
 body.dark-mode .swap-cta-badge{color:var(--paper)}
+
+/* ---- متابعة طلبات التبديل ------------------------------------------------ */
+.swap-track{margin-top:14px;padding:15px 16px 16px;background:var(--surface);border:1px solid var(--rule);
+  border-radius:var(--radius-lg)}
+.swap-track-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.swap-track-head h4{margin:0;font-size:14.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+.swap-track-head h4 i{color:var(--primary);font-size:13px}
+.swap-refresh{width:32px;height:32px;border-radius:9px;border:1px solid var(--rule);background:var(--paper);
+  color:var(--text-secondary);cursor:pointer;font-size:12px}
+.swap-refresh:hover{border-color:var(--primary);color:var(--primary)}
+.swap-track-loading,.swap-track-empty{padding:20px 12px;text-align:center;font-size:13px;
+  color:var(--text-secondary);background:var(--surface-sunk);border-radius:var(--radius)}
+.swap-track-sum{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:12px;font-size:12.5px;font-weight:600}
+.swap-track-sum .ok{color:var(--primary)}
+.swap-track-sum .no{color:var(--signal)}
+.swap-track-sum .wait{color:var(--ochre)}
+.swap-track-hint{margin-top:11px;padding:9px 12px;background:var(--surface-sunk);border-radius:var(--radius);
+  font-size:11.8px;color:var(--text-secondary);line-height:1.65}
+
+.sr-list{display:grid;gap:9px}
+.sr{padding:11px 13px;border:1px solid var(--rule);border-inline-start:4px solid var(--rule);
+  border-radius:var(--radius);background:var(--paper);font-size:13px}
+.sr.ok{border-inline-start-color:var(--primary);background:var(--primary-soft)}
+.sr.no{border-inline-start-color:var(--signal);background:var(--signal-soft)}
+.sr.wait{border-inline-start-color:var(--ochre);background:var(--ochre-soft)}
+.sr-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.sr-badge{font-weight:700;font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+.sr.ok .sr-badge{color:var(--primary)}
+.sr.no .sr-badge{color:var(--signal)}
+.sr.wait .sr-badge{color:#8a6519}
+.sr-kind{font-size:11.5px;color:var(--text-secondary);background:var(--surface);padding:2px 9px;
+  border-radius:999px;border:1px solid var(--rule)}
+.sr-line{display:flex;align-items:center;gap:7px;margin:3px 0;font-size:12.5px;color:var(--text)}
+.sr-line i{color:var(--text-secondary);font-size:11px;width:13px;text-align:center}
+.sr-date{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;font-weight:600}
+.sr-reason{margin-top:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--rule);
+  border-radius:9px;font-size:12.3px;line-height:1.7;white-space:pre-line}
+.sr-reason b{color:var(--signal)}
+.sr-note{margin-top:7px;font-size:11.8px;color:var(--text-secondary);line-height:1.65;white-space:pre-line}
+.sr-stamp{margin-top:7px;font-size:10.8px;color:var(--text-secondary);font-variant-numeric:tabular-nums;
+  direction:ltr;unicode-bidi:isolate;text-align:start}
+body.dark-mode .swap-track,body.dark-mode .sr{background:var(--surface)}
+body.dark-mode .sr-reason{background:var(--surface-sunk)}
+/* the pending badge used a light-theme brown that fails on the dark card */
+body.dark-mode .sr.wait .sr-badge{color:var(--ochre)}
+body.dark-mode .sr.wait{background:var(--ochre-soft)}
+body.dark-mode .swap-track-sum .wait{color:var(--ochre)}

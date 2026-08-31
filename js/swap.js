@@ -110,6 +110,7 @@
       .filter(r => r && r.name)
       .map(r => ({
         name: r.name, abbr: r.abbr || '', spec: r.spec || '', status: r.st || '',
+        phone: r.phone || '',
         // a detached / not-yet-joined resident must never be offered a duty
         joined: r.st ? AUH.status.isJoined(r.st) : true
       }));
@@ -239,80 +240,88 @@
 
   /* ------------------------------------------------------------ swap rules */
   /**
-   * Can `taker` take a duty on `date`?
-   * Hard rules block the pick; soft rules only warn.
-   * `ignore` is the date the taker gives away in a mutual swap — they will not
+   * The one rule that matters: nobody may end up with two duties on the same
+   * day, or on two consecutive days. Nothing else blocks, and nothing warns —
+   * a request either passes or it does not.
+   *
+   * `ignore` is the date the person hands over in a mutual swap; they will not
    * have it any more, so it must not count against them.
    */
-  function evaluate(taker, date, cat, ignore) {
+  function evaluate(taker, date, ignore) {
     const list = dutiesOf(taker).filter(d => d.date !== ignore);
-    const blocks = [], warns = [];
-    const at = iso => list.filter(d => d.date === iso);
+    const blocks = [];
     const n = dayNum(date);
-    const near = list.filter(d => Math.abs(dayNum(d.date) - n) <= 3 && d.date !== date);
 
-    const same = at(date);
-    if (same.length) blocks.push(`لديه مناوبة في نفس اليوم (${escapeHtml(same[0].cat)})`);
+    const same = list.find(d => d.date === date);
+    if (same) blocks.push(`مناوبة في نفس اليوم (${same.cat})`);
 
     const prev = list.find(d => dayNum(d.date) === n - 1);
+    if (prev) blocks.push(`مناوبة في اليوم السابق ${fmt(prev.date)}`);
+
     const next = list.find(d => dayNum(d.date) === n + 1);
-    if (prev) blocks.push(`لديه مناوبة في اليوم السابق ${fmt(prev.date)} — تصبح مناوبتان متتاليتان`);
-    if (next) blocks.push(`لديه مناوبة في اليوم التالي ${fmt(next.date)} — تصبح مناوبتان متتاليتان`);
-
-    const p2 = list.find(d => dayNum(d.date) === n - 2);
-    const n2 = list.find(d => dayNum(d.date) === n + 2);
-    if (p2 || n2) warns.push('يوم راحة واحد فقط قبلها أو بعدها');
-
-    if (cat) {
-      const rep = near.find(d => normAr(d.cat) === normAr(cat));
-      if (rep) warns.push(`نفس نوع المناوبة (${escapeHtml(cat)}) لديه في ${fmt(rep.date)}`);
-      if (HARD.includes(normAr(cat))) {
-        const hardNear = near.find(d => d.hard && Math.abs(dayNum(d.date) - n) <= 2);
-        if (hardNear) warns.push(`مناوبة صعبة أخرى قريبة (${escapeHtml(hardNear.cat)} في ${fmt(hardNear.date)})`);
-      }
-      if (schedule.isNightCategory(cat)) {
-        const nightNear = near.find(d => d.night && Math.abs(dayNum(d.date) - n) <= 3);
-        if (nightNear) warns.push(`ليلية أخرى خلال ٣ أيام (${fmt(nightNear.date)})`);
-      }
-    }
+    if (next) blocks.push(`مناوبة في اليوم التالي ${fmt(next.date)}`);
 
     const month = date.slice(0, 7);
-    const inMonth = list.filter(d => d.date.startsWith(month));
-    if (schedule.isHolidayDate(date, new Set())) {
-      const hol = inMonth.filter(d => d.holiday).length;
-      if (hol >= 3) warns.push(`لديه ${hol} مناوبات عطلة هذا الشهر قبل الإضافة`);
-    }
-    if (date < today) warns.push('هذا التاريخ مضى');
-
-    return { ok: !blocks.length, blocks, warns, after: inMonth.length + 1 };
+    return { ok: !blocks.length, blocks, after: list.filter(d => d.date.startsWith(month)).length + 1 };
   }
 
   /**
-   * Everyone who can take the selected duty, best candidate first.
-   * With ~26 duties a month per resident, most colleagues are blocked on any
-   * given date — so listing the ones who are free is the difference between a
-   * form you can use and a guessing game.
+   * A mutual swap is only real when it works in BOTH directions:
+   *   • the colleague can take my duty, after giving up the one they hand me
+   *   • I can take one of theirs, after giving up mine
+   * Returns every duty of `to` that satisfies both. Empty means this colleague
+   * must not be offered at all — however free their own day looks.
    */
-  function eligibleFor(shift, exclude) {
+  function feasibleSwaps(from, shift, to) {
+    // A duty on the SAME day counts too: trading two duties on one date is the
+    // commonest swap of all, and each of us still ends up with exactly one.
+    return dutiesOf(to)
+      .filter(d => d.date >= today)
+      .filter(d => evaluate(to, shift.date, d.date).ok)    // they take mine
+      .filter(d => evaluate(from, d.date, shift.date).ok); // I take theirs
+  }
+
+  /** The duty list someone ends up with — what "بعد التبديل" draws. */
+  function dutiesAfter(doc, add, remove) {
+    const list = dutiesOf(doc).filter(d => !remove || d.date !== remove.date);
+    return (add ? list.concat([add]) : list).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  /* ------------------------------------------------------- who can take it */
+  /**
+   * Everyone who may be offered for this duty.
+   *   شيل  → the colleague simply has to be free around my duty.
+   *   تبديل → additionally, at least one of THEIR duties must be one that I can
+   *           take in return. A colleague who can take mine but has nothing I
+   *           can take is not a swap — so they are not listed at all.
+   */
+  function eligibleFor(shift, from) {
     const month = shift.date.slice(0, 7);
+    const mutual = S.kind === 'تبديل';
     const out = [];
+
     S.roster.forEach(doc => {
-      if (exclude && keyOf(doc) === keyOf(exclude)) return;
-      if (!doc.joined) return;                       // منفك / غير ملتحق
-      const v = evaluate(doc, shift.date, shift.cat, null);
-      if (!v.ok) return;
-      const inMonth = dutiesOf(doc).filter(d => d.date.startsWith(month));
+      if (from && keyOf(doc) === keyOf(from)) return;
+      if (!doc.joined) return;                            // منفك / غير ملتحق
+
+      let options = null;
+      if (mutual) {
+        options = feasibleSwaps(from, shift, doc);
+        if (!options.length) return;
+      } else if (!evaluate(doc, shift.date, null).ok) {
+        return;
+      }
+
       out.push({
         doc,
-        warns: v.warns,
-        monthCount: inMonth.length,
-        hard: inMonth.filter(d => d.hard).length,
-        gap: Math.min(...dutiesOf(doc).map(d => Math.abs(dayNum(d.date) - dayNum(shift.date))).concat([99]))
+        monthCount: dutiesOf(doc).filter(d => d.date.startsWith(month)).length,
+        options
       });
     });
-    // fewest warnings, then the lightest month, then the widest gap: the
-    // fairest person to ask is the one carrying the least right now.
-    out.sort((a, b) => a.warns.length - b.warns.length || a.monthCount - b.monthCount || b.gap - a.gap);
+
+    // lightest month first — the fairest colleague to ask is the least loaded
+    out.sort((a, b) => a.monthCount - b.monthCount ||
+      (a.doc.name || '').localeCompare(b.doc.name || '', 'ar'));
     return out;
   }
 
@@ -322,42 +331,69 @@
     if (!S.shift) { host.innerHTML = ''; return; }
 
     if (S.shift.date < today) {
-      host.innerHTML = '<div class="verdict warn" style="margin-top:0"><h3><i class="fas fa-clock-rotate-left"></i> مناوبة مضت</h3>' +
+      host.innerHTML = '<div class="verdict no" style="margin-top:0"><h3><i class="fas fa-clock-rotate-left"></i> مناوبة مضت</h3>' +
         '<div>لا يمكن تبديل مناوبة تاريخها في الماضي. اختر مناوبة قادمة من الرزنامة.</div></div>';
       return;
     }
+
+    const mutual = S.kind === 'تبديل';
     const list = eligibleFor(S.shift, S.from);
-    const clean = list.filter(x => !x.warns.length);
+
     if (!list.length) {
       host.innerHTML = '<div class="verdict no" style="margin-top:0"><h3><i class="fas fa-user-slash"></i> لا يوجد طبيب متاح</h3>' +
-        '<div>كل الأطباء لديهم مناوبة في هذا اليوم أو في اليوم الذي قبله أو بعده. جرّب مناوبة أخرى.</div></div>';
+        `<div>${mutual
+          ? 'لا يوجد زميل يستطيع أخذ هذه المناوبة ولديه في المقابل مناوبة تستطيع أنت أخذها. جرّب «شيل مناوبة» بدلاً من التبديل المتبادل.'
+          : 'كل الأطباء لديهم مناوبة في هذا اليوم أو في اليوم الذي قبله أو بعده. جرّب مناوبة أخرى.'}</div></div>`;
       return;
     }
-    const chip = x => {
-      const w = x.warns.length;
-      return `<button type="button" class="cand${w ? ' has-warn' : ''}" data-key="${escapeHtml(keyOf(x.doc))}">` +
-        `<span class="cn">${escapeHtml(x.doc.name)}</span>` +
-        `<span class="cm"><span class="num">${x.monthCount}</span> مناوبة هذا الشهر` +
-        (w ? ` · <i class="fas fa-triangle-exclamation"></i> ${w} تنبيه` : '') + `</span></button>`;
-    };
-    host.innerHTML =
-      `<div class="elig-head"><i class="fas fa-user-check"></i> <b>${list.length}</b> طبيباً يمكنهم أخذ هذه المناوبة` +
-      (clean.length ? ` — منهم <b>${clean.length}</b> بلا أي تنبيه` : '') +
-      `<span class="elig-note">مرتّبون من الأخفّ عبئاً هذا الشهر</span></div>` +
-      `<div class="cands">${list.slice(0, 24).map(chip).join('')}</div>` +
-      (list.length > 24 ? `<div class="elig-note" style="margin-top:8px">…و${list.length - 24} آخرون — اكتب الاسم في المربع أعلاه.</div>` : '');
 
-    host.querySelectorAll('.cand').forEach(btn => btn.addEventListener('click', () => {
-      const doc = S.roster.find(r => keyOf(r) === btn.dataset.key);
+    const chip = x => {
+      const phone = (x.doc.phone || '').trim();
+      const opts = mutual
+        ? `<span class="cm-alt"><i class="fas fa-right-left"></i> <span class="num">${x.options.length}</span> مناوبة قابلة للتبادل</span>`
+        : '';
+      return `<div class="cand" data-key="${escapeHtml(keyOf(x.doc))}" tabindex="0">` +
+        `<span class="cn">${escapeHtml(x.doc.name)}</span>` +
+        `<span class="cm"><span class="num">${x.monthCount}</span> مناوبة هذا الشهر</span>${opts}` +
+        (phone
+          ? `<span class="cand-phone"><a href="tel:${escapeHtml(phone)}" class="num" onclick="event.stopPropagation()">${escapeHtml(phone)}</a>` +
+            `<button type="button" class="copy" data-phone="${escapeHtml(phone)}" title="نسخ الرقم"><i class="fas fa-copy"></i></button></span>`
+          : '<span class="cand-phone none"><i class="fas fa-phone-slash"></i> لا يوجد رقم في اللائحة</span>') +
+        '</div>';
+    };
+
+    host.innerHTML =
+      `<div class="elig-head"><i class="fas fa-user-check"></i> <b>${list.length}</b> ${mutual ? 'زميلاً يمكن التبادل معهم' : 'طبيباً يمكنهم أخذ هذه المناوبة'}` +
+      `<span class="elig-note">${mutual
+        ? 'يستطيعون أخذ مناوبتك، ولديهم مناوبة تستطيع أنت أخذها'
+        : 'لا مناوبة لديهم في نفس اليوم ولا في اليوم السابق أو التالي'} — مرتّبون من الأخفّ عبئاً</span></div>` +
+      `<div class="cands">${list.slice(0, 30).map(chip).join('')}</div>` +
+      (list.length > 30 ? `<div class="elig-note" style="margin-top:8px">…و${list.length - 30} آخرون — اكتب الاسم في المربع أعلاه.</div>` : '');
+
+    host.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', e => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(btn.dataset.phone)
+        .then(() => toast(`نُسخ الرقم ${btn.dataset.phone}`))
+        .catch(() => toast('تعذّر النسخ', true));
+    }));
+
+    const choose = el => {
+      const doc = S.roster.find(r => keyOf(r) === el.dataset.key);
       if (!doc) return;
       S.to = doc; S.back = null;
       $('q2').value = doc.name;
       chosenBox($('ch2'), doc, () => { $('q2').value = ''; S.to = null; refresh(); });
-      const i = S.months.indexOf(S.shift.date.slice(0, 7));
-      if (i >= 0) S.m2 = i;
+      const idx = S.months.indexOf(S.shift.date.slice(0, 7));
+      if (idx >= 0) S.m2 = idx;
       refresh();
-      $('verdict').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }));
+      $('s5').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    host.querySelectorAll('.cand').forEach(el => {
+      el.addEventListener('click', () => choose(el));
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(el); }
+      });
+    });
   }
 
   /* -------------------------------------------------------------- calendars */
@@ -403,9 +439,8 @@
         else if (mine.length) { cls.push('gone'); why = 'مضت'; }
         if (iso === opts.selected) cls.push('sel');
       } else {
-        const v = evaluate(opts.doctor, iso, opts.target ? opts.target.cat : '', opts.ignore);
+        const v = evaluate(opts.doctor, iso, opts.ignore);
         if (!v.ok) { cls.push('blocked'); why = v.blocks[0].replace(/\s*\(.*\)/, ''); }
-        else if (v.warns.length) cls.push('warnday');
         if (opts.clickable && v.ok) { cls.push('pick'); click = ` data-date="${iso}"`; }
         if (iso === opts.selected) cls.push('sel');
       }
@@ -434,24 +469,37 @@
     const host = $('verdict');
     if (!S.to || !S.shift) { host.innerHTML = ''; return; }
 
-    const v = evaluate(S.to, S.shift.date, S.shift.cat, S.kind === 'تبديل' && S.back ? S.back.date : null);
-    const head = `${escapeHtml(S.to.name)} — مناوبة ${escapeHtml(S.shift.cat)} يوم ` +
+    const mutual = S.kind === 'تبديل';
+    const give = mutual && S.back ? S.back.date : null;
+    const v = evaluate(S.to, S.shift.date, give);
+    const back = mutual && S.back ? evaluate(S.from, S.back.date, S.shift.date) : null;
+
+    const head = `${escapeHtml(S.to.name)} — ${escapeHtml(S.shift.cat)} يوم ` +
       `${getDayName(S.shift.date)} <span class="num">${fmt(S.shift.date)}</span>`;
 
-    if (!v.ok) {
-      host.innerHTML = `<div class="verdict no"><h3><i class="fas fa-ban"></i> لا يمكن هذا التبديل</h3>` +
-        `<div>${head}</div><ul>${v.blocks.map(b => `<li>${b}</li>`).join('')}</ul>` +
-        `<div style="margin-top:7px;font-size:12.5px">اختر طبيباً آخر، أو مناوبة أخرى.</div></div>`;
-    } else if (v.warns.length) {
-      host.innerHTML = `<div class="verdict warn"><h3><i class="fas fa-triangle-exclamation"></i> ممكن — مع تنبيه</h3>` +
-        `<div>${head}</div><ul>${v.warns.map(w => `<li>${w}</li>`).join('')}</ul>` +
-        `<div style="margin-top:7px;font-size:12.5px">يصبح مجموع مناوباته هذا الشهر <span class="num">${v.after}</span>.</div></div>`;
-    } else {
-      host.innerHTML = `<div class="verdict ok"><h3><i class="fas fa-circle-check"></i> التبديل ممكن</h3>` +
-        `<div>${head}</div><div style="margin-top:6px;font-size:12.5px">لا تعارض: لا مناوبة في نفس اليوم، ولا في اليوم السابق أو التالي. ` +
-        `يصبح مجموع مناوباته هذا الشهر <span class="num">${v.after}</span>.</div></div>`;
+    // In a mutual swap the colleague is only judged once the counterpart duty is
+    // known — until then the duty they are about to hand over still counts
+    // against them, which would report a clash that the swap itself removes.
+    if (mutual && !S.back) {
+      host.innerHTML = `<div class="verdict warn"><h3><i class="fas fa-hand-pointer"></i> اختر المناوبة المقابلة</h3>` +
+        `<div>${escapeHtml(S.to.name)} يستطيع أخذ مناوبتك. اختر الآن من رزنامته أدناه المناوبة التي تأخذها أنت — الأخضر فقط متاح.</div></div>`;
+      return;
     }
-    return v;
+
+    if (!v.ok || (back && !back.ok)) {
+      const why = !v.ok ? v.blocks : back.blocks;
+      const who = !v.ok ? escapeHtml(S.to.name) : 'أنت';
+      host.innerHTML = `<div class="verdict no"><h3><i class="fas fa-ban"></i> لا يمكن هذا التبديل</h3>` +
+        `<div>${head}</div><ul>${why.map(b => `<li>${who}: ${b}</li>`).join('')}</ul></div>`;
+      return;
+    }
+
+    const backLine = mutual && S.back
+      ? `<div style="margin-top:5px">وتأخذ أنت: <b>${escapeHtml(S.back.cat)}</b> يوم ${getDayName(S.back.date)} <span class="num">${fmt(S.back.date)}</span></div>`
+      : '';
+    host.innerHTML = `<div class="verdict ok"><h3><i class="fas fa-circle-check"></i> ${mutual ? 'التبديل ممكن' : 'الشيل ممكن'}</h3>` +
+      `<div>${head}</div>${backLine}` +
+      `<div style="margin-top:6px;font-size:12.5px">لا مناوبة في نفس اليوم، ولا في اليوم السابق أو التالي، للطرفين.</div></div>`;
   }
 
   function summary() {
@@ -486,26 +534,13 @@
     else { $('cal1').innerHTML = ''; $('cal1t').textContent = '—'; }
 
     const mutual = S.kind === 'تبديل';
-    $('s5t').textContent = mutual ? 'اختر المناوبة المقابلة من رزنامته' : 'رزنامة الطبيب الجديد';
+    $('s5t').textContent = mutual ? 'رزنامته: اختر المناوبة المقابلة' : 'رزنامته قبل الشيل وبعده';
     $('s5h').textContent = mutual
-      ? `يجب أن تكون من النوع نفسه (${S.shift ? S.shift.cat : '—'}) — هذا شرط القسم. الأيام المشطوبة مخالفة.`
-      : 'الأيام المشطوبة ممنوعة: مناوبة في نفس اليوم، أو في اليوم الذي قبله أو بعده.';
+      ? 'على اليمين جدوله الحالي — اضغط على مناوبة خضراء لتأخذها أنت. على اليسار النتيجة بعد التبديل.'
+      : 'على اليمين جدوله كما هو الآن، وعلى اليسار كما يصبح بعد أخذه المناوبة.';
 
-    if (S.to) {
-      if (mutual) {
-        // pick one of B's duties — blocked when handing it to A would break A's rules
-        const month = S.months[S.m2];
-        const duties = dutiesOf(S.to).filter(d => d.date.startsWith(month));
-        const byDate = {};
-        duties.forEach(d => (byDate[d.date] = d));
-        calendarMutual($('cal2'), $('cal2t'), byDate);
-      } else {
-        calendar($('cal2'), $('cal2t'), {
-          doctor: S.to, monthIdx: S.m2, mode: 'check',
-          target: S.shift, selected: S.shift && S.shift.date
-        });
-      }
-    } else { $('cal2').innerHTML = ''; $('cal2t').textContent = '—'; }
+    if (S.to && S.shift) renderBeforeAfter();
+    else { $('cal2').innerHTML = ''; $('cal2t').textContent = '—'; }
 
     renderEligible();
     verdictBox();
@@ -513,50 +548,87 @@
     validateSend();
   }
 
-  /** In a mutual swap the second calendar offers B's duties, judged for A. */
-  function calendarMutual(host, titleEl, byDate) {
+  /**
+   * The taker's month drawn twice: as it stands, and as it would be after the
+   * request goes through. In a mutual swap the "قبل" grid is also the picker —
+   * only the duties I could actually take in return are selectable.
+   */
+  function renderBeforeAfter() {
+    const host = $('cal2');
     const month = S.months[S.m2];
-    if (!month) { host.innerHTML = '<div class="empty-cal">لا توجد بيانات</div>'; return; }
+    if (!S.to || !S.shift || !month) { host.innerHTML = ''; $('cal2t').textContent = '—'; return; }
+
     const [y, m] = month.split('-').map(Number);
-    titleEl.textContent = `${AR_MONTHS[m - 1]} ${y}`;
+    $('cal2t').textContent = `${AR_MONTHS[m - 1]} ${y}`;
 
-    const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
-    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
-    const cells = [];
-    for (let i = 0; i < 7; i++) cells.push(`<div class="dow">${DOW[i]}</div>`);
-    for (let i = 0; i < first; i++) cells.push('<div class="day pad"></div>');
+    const mutual = S.kind === 'تبديل';
+    const options = mutual ? feasibleSwaps(S.from, S.shift, S.to) : [];
+    const optionDates = new Set(options.map(d => d.date));
 
-    for (let d = 1; d <= days; d++) {
-      const iso = isoOf(y, m, d);
-      const duty = byDate[iso];
-      const cls = ['day'];
-      let why = '', click = '';
-      if (schedule.isHolidayDate(iso, new Set())) cls.push('hol');
-      if (iso < today) cls.push('past');
+    const before = dutiesOf(S.to);
+    const takes = S.shift.date.startsWith(month);
+    const after = dutiesAfter(S.to, S.shift, mutual ? S.back : null);
 
-      if (duty) {
-        const sameType = S.shift && normAr(duty.cat) === normAr(S.shift.cat);
-        const v = evaluate(S.from, iso, duty.cat, S.shift ? S.shift.date : null);
-        if (!sameType) { cls.push('blocked'); why = 'نوع مختلف'; }
-        else if (!v.ok) { cls.push('blocked'); why = v.blocks[0].replace(/\s*\(.*\)/, ''); }
-        else { cls.push('pick'); click = ` data-date="${iso}"`; if (v.warns.length) cls.push('warnday'); }
-        if (S.back && S.back.date === iso) cls.push('sel');
+    const grid = (duties, opts) => {
+      const byDate = {};
+      duties.filter(d => d.date.startsWith(month)).forEach(d => (byDate[d.date] = byDate[d.date] || []).push(d));
+      const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+      const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+      const cells = [];
+      for (let i2 = 0; i2 < 7; i2++) cells.push(`<div class="dow">${DOW[i2]}</div>`);
+      for (let i2 = 0; i2 < first; i2++) cells.push('<div class="day pad"></div>');
+
+      for (let d = 1; d <= days; d++) {
+        const iso = isoOf(y, m, d);
+        const mine = byDate[iso] || [];
+        const cls = ['day'];
+        let click = '', badge = '';
+
+        if (schedule.isHolidayDate(iso, new Set())) cls.push('hol');
+        if (iso < today) cls.push('past');
+
+        if (opts.picker) {
+          // choosing what I take in return
+          if (mine.length && optionDates.has(iso)) { cls.push('pick', 'swappable'); click = ` data-date="${iso}"`; }
+          else if (mine.length && iso >= today) { cls.push('blocked'); badge = 'لا يناسب جدولك'; }
+          else if (mine.length) cls.push('gone');
+          if (S.back && S.back.date === iso) cls.push('sel');
+        } else if (opts.after) {
+          if (iso === S.shift.date) { cls.push('added'); badge = 'مناوبة مضافة'; }
+          else if (mutual && S.back && iso === S.back.date) { cls.push('removed'); badge = 'انتقلت إليك'; }
+        }
+
+        const tags = mine.map(x => `<span class="tag">${escapeHtml(x.cat)}</span>`).join('');
+        cells.push(`<div class="${cls.join(' ')}"${click}><span class="dn">${d}</span>${tags}` +
+          (badge ? `<span class="why">${escapeHtml(badge)}</span>` : '') + '</div>');
       }
+      return `<div class="cal">${cells.join('')}</div>`;
+    };
 
-      cells.push(`<div class="${cls.join(' ')}"${click}><span class="dn">${d}</span>` +
-        (duty ? `<span class="tag">${escapeHtml(duty.cat)}</span>` : '') +
-        (why ? `<span class="why">${escapeHtml(why)}</span>` : '') + '</div>');
-    }
-    host.className = 'cal';
-    host.innerHTML = cells.join('');
+    const need = mutual && !S.back;
+    host.innerHTML =
+      '<div class="ba">' +
+      `<div class="ba-side"><div class="ba-h"><span class="ba-t">قبل</span>` +
+      `<span class="ba-n"><span class="num">${before.filter(d => d.date.startsWith(month)).length}</span> مناوبة</span></div>` +
+      grid(before, { picker: mutual, after: false }) +
+      (mutual ? `<div class="ba-note">${need ? 'اختر من مناوباته ما تأخذه أنت — الأخضر فقط متاح' : 'المناوبة المختارة بالأخضر الغامق'}</div>` : '') +
+      '</div>' +
+      `<div class="ba-side"><div class="ba-h"><span class="ba-t after">بعد</span>` +
+      `<span class="ba-n"><span class="num">${after.filter(d => d.date.startsWith(month)).length}</span> مناوبة</span></div>` +
+      grid(after, { picker: false, after: true }) +
+      `<div class="ba-note">${takes ? 'المضافة بالأخضر' : 'المناوبة المضافة في شهر آخر'}${mutual && S.back ? ' · التي انتقلت إليك بالأحمر' : ''}</div>` +
+      '</div></div>';
   }
 
   function validateSend() {
-    const v = S.to && S.shift ? evaluate(S.to, S.shift.date, S.shift.cat, S.kind === 'تبديل' && S.back ? S.back.date : null) : null;
-    const mutualOk = S.kind !== 'تبديل' || !!S.back;
-    const ready = !!(S.from && S.to && S.shift && v && v.ok && mutualOk &&
-      $('agree').checked && $('reason').value && $('phone').value.trim().length >= 6 &&
-      keyOf(S.from) !== keyOf(S.to));
+    let ok = !!(S.from && S.to && S.shift) && keyOf(S.from) !== keyOf(S.to) && S.shift.date >= today;
+    if (ok) {
+      const mutual = S.kind === 'تبديل';
+      const give = mutual && S.back ? S.back.date : null;
+      ok = evaluate(S.to, S.shift.date, give).ok;
+      if (ok && mutual) ok = !!S.back && evaluate(S.from, S.back.date, S.shift.date).ok;
+    }
+    const ready = ok && $('agree').checked && !!$('reason').value && $('phone').value.trim().length >= 6;
     $('send').disabled = !ready;
   }
 
@@ -577,7 +649,9 @@
       shiftDate: S.shift.date, shiftType: formCategory(S.shift.cat),
       toName: S.to.name, toAbbr: S.to.abbr,
       backDate: back.date, backType: formCategory(back.cat),
-      conditions: 'نعم',
+      // The department reads "نفس نوع المناوبة" as the same GROUP
+      // (عنايات / إسعاف / أجنحة), not the exact category.
+      conditions: (S.kind !== 'تبديل' || !S.back || S.back.group === S.shift.group) ? 'نعم' : 'لا',
       reason: $('reason').value,
       notes
     };
@@ -738,13 +812,7 @@
     $('cal2').addEventListener('click', e => {
       const cell = e.target.closest('.day[data-date]');
       if (!cell || S.kind !== 'تبديل') return;
-      const date = cell.dataset.date;
-      const duty = dutiesOf(S.to).find(d => d.date === date) || null;
-      if (duty && S.shift && normAr(duty.cat) !== normAr(S.shift.cat)) {
-        toast('التبديل المتبادل يجب أن يكون بين مناوبتين من النوع نفسه', true);
-        return;
-      }
-      S.back = duty;
+      S.back = dutiesOf(S.to).find(d => d.date === cell.dataset.date) || null;
       refresh();
     });
 
