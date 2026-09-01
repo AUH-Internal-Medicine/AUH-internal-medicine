@@ -70,6 +70,118 @@
       unspecifiedValue: 'غير محدد'
     },
 
+    /**
+     * Second-year roster. A different sheet, kept by another team, with its own
+     * column names and — unlike the first year — monthly on-call counts written
+     * as "تموز 2025" rather than "مناوبات شهر 7". Rotations live in their own
+     * tab (`rotationsYear2`), not in this one.
+     */
+    residentsYear2: {
+      key: 'residentsYear2',
+      label: 'لائحة مقيمي السنة الثانية',
+      spreadsheet: 'year2',
+      gid: '146410155',
+      format: 'csv',
+      headerRow: 0,
+      columns: {
+        seq: { labels: ['الرقم', 'ت', '#'], match: ['exact'], type: 'number', fallbackIndex: 0 },
+        name: { labels: ['الاسم', 'الاسم الثلاثي', 'الاسم والكنية'], required: true, type: 'text' },
+        abbr: { labels: ['الاختصار', 'الكنية'], required: true, type: 'text' },
+        gender: { labels: ['الجنس'], type: 'text' },
+        spec: { labels: ['الاختصاص'], type: 'text' },
+        regType: { labels: ['القبول', 'نوع التسجيل'], type: 'text' },
+        phone: { labels: ['رقم واتساب', 'رقم الهاتف', 'الهاتف'], type: 'text' },
+        phoneStatus: { labels: ['حالة الهاتف'], type: 'text', silentIfMissing: true },
+        notes: { labels: ['ملاحظات'], type: 'text', silentIfMissing: true },
+        status: { labels: ['الحالة'], required: true, type: 'text',
+          note: 'قائم على رأس عمله / تم الانفكاك' }
+      },
+      patterns: {
+        /** "تموز 2025" → that month's on-call count. */
+        oncallsByMonthName: {
+          regex: /^(كانون الثاني|شباط|آذار|نيسان|أيار|حزيران|تموز|آب|أيلول|تشرين الأول|تشرين الثاني|كانون الأول)\s+(\d{4})$/,
+          field: 'monthName', numeric: false, label: 'عدد مناوبات الشهر'
+        }
+      },
+      skipNameValues: ['الاسم', 'الاسم والكنية'],
+      unspecifiedValue: 'غير محدد'
+    },
+
+    /**
+     * Second-year rotations. One row per resident: a set of per-rotation
+     * counters, then the rotation actually served each month, in order.
+     * «انفكاك» in that sequence means the resident left — it is NOT a rotation.
+     */
+    rotationsYear2: {
+      key: 'rotationsYear2',
+      label: 'فروزات السنة الثانية',
+      spreadsheet: 'year2',
+      gid: '248477730',
+      format: 'csv',
+      headerRow: 0,
+      columns: {
+        seq: { labels: ['#', 'الرقم', 'ت'], match: ['exact'], type: 'number', fallbackIndex: 0 },
+        name: { labels: ['الاسم والكنية', 'الاسم'], required: true, type: 'text' },
+        spec: { labels: ['الاختصاص'], type: 'text' },
+        total: { labels: ['عداد الفروزات كلية'], type: 'number', silentIfMissing: true }
+      },
+      skipNameValues: ['الاسم', 'الاسم والكنية'],
+      /** Everything after the counters is the month-by-month rotation history. */
+      trailingSequence: true
+    },
+
+    /**
+     * لائحة مقيمي السنة الثالثة. Laid out exactly like the first year's roster, but only the
+     * name, the abbreviation and the specialty carry data today — the view
+     * writes «لا يوجد» for the rest rather than leaving blanks.
+     */
+    residentsYear3: {
+      key: 'residentsYear3',
+      label: 'لائحة مقيمي السنة الثالثة',
+      spreadsheet: 'year34',
+      gid: '0',
+      format: 'csv',
+      headerRow: 0,
+      columns: {
+        seq: { labels: ['ت', 'م', '#', 'الرقم'], match: ['exact'], type: 'number', fallbackIndex: 0 },
+        name: { labels: ['الاسم الثلاثي', 'الاسم'], required: true, type: 'text' },
+        phone: { labels: ['رقم الهاتف', 'الهاتف', 'رقم واتساب'], type: 'text' },
+        abbr: { labels: ['الاختصار', 'الكنية'], required: true, type: 'text' },
+        gender: { labels: ['الجنس'], type: 'text' },
+        spec: { labels: ['الاختصاص'], type: 'text' },
+        join: { labels: ['تاريخ الالتحاق', 'الالتحاق'], type: 'date', silentIfMissing: true },
+        status: { labels: ['الحالة'], type: 'text', silentIfMissing: true }
+      },
+      skipNameValues: ['الاسم', 'الاسم الثلاثي'],
+      unspecifiedValue: 'غير محدد'
+    },
+
+    /**
+     * لائحة مقيمي السنة الرابعة. Laid out exactly like the first year's roster, but only the
+     * name, the abbreviation and the specialty carry data today — the view
+     * writes «لا يوجد» for the rest rather than leaving blanks.
+     */
+    residentsYear4: {
+      key: 'residentsYear4',
+      label: 'لائحة مقيمي السنة الرابعة',
+      spreadsheet: 'year34',
+      gid: '2007044953',
+      format: 'csv',
+      headerRow: 0,
+      columns: {
+        seq: { labels: ['ت', 'م', '#', 'الرقم'], match: ['exact'], type: 'number', fallbackIndex: 0 },
+        name: { labels: ['الاسم الثلاثي', 'الاسم'], required: true, type: 'text' },
+        phone: { labels: ['رقم الهاتف', 'الهاتف', 'رقم واتساب'], type: 'text' },
+        abbr: { labels: ['الاختصار', 'الكنية'], required: true, type: 'text' },
+        gender: { labels: ['الجنس'], type: 'text' },
+        spec: { labels: ['الاختصاص'], type: 'text' },
+        join: { labels: ['تاريخ الالتحاق', 'الالتحاق'], type: 'date', silentIfMissing: true },
+        status: { labels: ['الحالة'], type: 'text', silentIfMissing: true }
+      },
+      skipNameValues: ['الاسم', 'الاسم الثلاثي'],
+      unspecifiedValue: 'غير محدد'
+    },
+
     /* -------------------------------------------------------------- on-call */
     oncall: {
       key: 'oncall',

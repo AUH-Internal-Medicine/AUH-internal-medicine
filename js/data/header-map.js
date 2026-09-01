@@ -82,17 +82,21 @@
     const patterns = {};
     for (const [name, def] of Object.entries(source.patterns || {})) {
       const found = [];
+      // Most repeated headers capture a number ("فرز شهر 8"); a few capture a
+      // word instead ("تموز 2025"), and those must not go through parseInt.
+      const numeric = def.numeric !== false;
       for (let i = 0; i < headers.length; i++) {
         const raw = toAsciiDigits(headers[i]);
         const m = raw.match(def.regex);
         if (!m) continue;
-        const value = parseInt(m[1], 10);
+        const value = numeric ? parseInt(m[1], 10) : m[1];
+        if (numeric && !Number.isFinite(value)) continue;
         const entry = { col: i, label: headers[i], value };
         entry[def.field || 'value'] = value;
         found.push(entry);
         claimed.add(i);
       }
-      found.sort((a, b) => a.value - b.value);
+      found.sort((a, b) => (numeric ? a.value - b.value : a.col - b.col));
       patterns[name] = found;
     }
 

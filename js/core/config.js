@@ -55,13 +55,56 @@
       main: '1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4',
       /** Second-year on-call schedule — a separate sheet maintained by another team. */
       year2: '1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8',
+      /** Third and fourth years — one roster tab, names and abbreviations only. */
+      year34: '1zJ9O5jKp5YwZomLdCZMgUOV4wCaTenmVOvEfxkhFhY4',
       /** Swap-request responses (the Google Form's own sheet). Read-only, and
        *  only for the "متابعة طلبات التبديل" box in معلوماتي. */
       swaps: '1ILIE9UFtRwo0aHufEo9edOZ-XEpMM5EFvio9aylahFU'
     },
 
+    /**
+     * The residency years the site covers. Each year is a self-contained set of
+     * sources: its own roster, its own on-call sheet, its own rotations. They
+     * are never merged — a name or an abbreviation is only ever resolved inside
+     * ONE year, which is what keeps «عمر» of the first year and «عمر» of the
+     * second from being confused (37 abbreviations are shared between them).
+     *
+     * To add a year: fill in `sources` with its gids and flip `ready` to true.
+     */
+    years: [
+      {
+        id: 1, label: 'السنة الأولى', short: 'أولى', ready: true,
+        spreadsheet: 'main',
+        sources: { residents: 'residents', oncall: 'oncall' },
+        /** Only the first year has a swap request form so far. */
+        swaps: true
+      },
+      {
+        id: 2, label: 'السنة الثانية', short: 'ثانية', ready: true,
+        spreadsheet: 'year2',
+        sources: { residents: 'residentsYear2', oncall: 'oncallYear2', rotations: 'rotationsYear2' },
+        swaps: false
+      },
+      {
+        id: 3, label: 'السنة الثالثة', short: 'ثالثة', ready: true,
+        spreadsheet: 'year34',
+        sources: { residents: 'residentsYear3' },
+        /** Roster only — no on-call sheet and no rotations tab yet. */
+        rosterOnly: true, swaps: false
+      },
+      {
+        id: 4, label: 'السنة الرابعة', short: 'رابعة', ready: true,
+        spreadsheet: 'year34',
+        sources: { residents: 'residentsYear4' },
+        rosterOnly: true, swaps: false
+      }
+    ],
+
+    /** The year shown on first visit. */
+    defaultYear: 1,
+
     /** localStorage cache. Bump `cacheVersion` to invalidate every visitor's cache. */
-    cacheVersion: 'hc_v64',
+    cacheVersion: 'hc_v65',
     get cacheKey() {
       return `${this.cacheVersion}_${this.buildId}`;
     },

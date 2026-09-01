@@ -220,6 +220,54 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .img-save:hover{background:var(--primary-strong)}
 @media(max-width:560px){.img-foot{justify-content:center}.img-note{display:none}.img-save{width:100%;justify-content:center}}
 
+/* -------------------------------------------------- الرزنامة على الموبايل */
+/* الخانة على الجوال ضيقة جداً لاسم مناوبة كامل، فتتحول الشبكة إلى مربعات
+   مضغوطة: الرقم بارز، ونوع المناوبة بخط أصغر يلتف، والسبب يبقى مقروءاً. */
+@media(max-width:680px){
+  .cal{gap:4px}
+  .cal .dow{font-size:9.5px}
+  .day{min-height:56px;padding:4px 3px 3px;border-radius:8px;gap:2px}
+  .day .dn{font-size:11px}
+  .day .tag{font-size:8.5px;padding:1px 2px;border-radius:4px;line-height:1.25}
+  .day .why{font-size:7.6px;padding:1px 2px}
+}
+@media(max-width:430px){
+  .cal{gap:3px}
+  .cal .dow{font-size:8.5px;padding-bottom:2px}
+  .day{min-height:50px;padding:3px 2px}
+  .day .dn{font-size:10.3px}
+  /* اسم المناوبة يُقصّ بدل أن يكسر الخانة */
+  .day .tag{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .day .why{font-size:7.2px;line-height:1.2}
+  .picker-head{gap:5px}
+  .pk-who b{font-size:13.5px}
+}
+/* الجدولان قبل/بعد يتراصّان عمودياً قبل أن يضيقا أكثر من اللازم */
+@media(max-width:820px){
+  .ba{grid-template-columns:1fr;gap:20px}
+  .ba-side:last-child{padding-top:4px}
+}
+
+/* ------------------------------------------------ picker head + ستريب + سبب */
+.picker-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  margin-bottom:11px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.pk-who{font-size:13.5px;color:var(--ink-2)}
+.pk-who b{color:var(--ink);font-size:14.5px}
+.pk-who i{color:var(--primary);margin-inline-end:5px}
+.pk-n{font-size:12px;color:var(--ink-2)}
+.pk-ok{color:var(--primary);font-weight:700}
+.pk-hint{margin-top:11px;padding:9px 12px;background:var(--surface-sunk);border-radius:var(--radius);
+  font-size:12.2px;color:var(--ink-2);line-height:1.65;text-align:center}
+.pk-hint b{color:var(--primary)}
+
+.strip-permit{margin-top:13px;padding:12px 14px;border:1px dashed var(--ochre);border-radius:var(--radius);
+  background:var(--ochre-soft)}
+.strip-label{display:flex;align-items:flex-start;gap:11px;cursor:pointer}
+.strip-label input{margin-top:3px;width:17px;height:17px;accent-color:var(--ochre);flex:none;cursor:pointer}
+.strip-text{display:flex;flex-direction:column;gap:3px;font-size:12.3px;line-height:1.65;color:var(--ink-2)}
+.strip-text b{color:#7d5c16;font-size:13.3px}
+.reason-other{margin-top:8px;width:100%}
+
 /* -------------------------------------------------------------- verdict */
 .verdict{margin-top:14px;padding:14px 16px;border-radius:var(--radius);font-size:13.8px;line-height:1.75;
   border:1px solid var(--rule);border-inline-start:5px solid var(--ink-2);background:var(--surface-sunk)}
@@ -350,6 +398,14 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
           <input type="text" id="ab2" readonly placeholder="—" style="background:var(--surface-sunk)">
         </div>
       </div>
+      <div class="strip-permit" id="stripBox">
+        <label class="strip-label">
+          <input type="checkbox" id="stripOk">
+          <span class="strip-text"><b>لديّ إذن بمناوبتين متتاليتين (ستريب)</b>
+            <span>القاعدة تمنع أن تقع المناوبة في اليوم السابق أو التالي لمناوبة أخرى. فعّل هذا الخيار <b>قبل اختيار الطبيب</b> إن كنت قد أخذت إذناً من القسم — عندها تتّسع القائمة لتشمل من يسبب التبديل معهم ستريب. أما مناوبتان في اليوم نفسه فممنوعة دائماً.</span>
+          </span>
+        </label>
+      </div>
       <div id="elig"></div>
       <div id="ch2"></div>
       <div id="verdict"></div>
@@ -367,6 +423,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
         </div>
       </div>
       <div id="cal2"></div>
+
       <div class="legend">
         <span><i class="lg-duty"></i>مناوبة</span>
         <span><i class="lg-add"></i>مضافة بالتبديل</span>
@@ -388,7 +445,9 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
             <option value="">اختر السبب...</option>
             <option>ظرف عائلي</option><option>ظرف صحي</option><option>سفر</option>
             <option>امتحان أو محاضرة</option><option>تعارض مع مناوبة أخرى</option><option>سبب آخر</option>
-          </select></div>
+          </select>
+          <input type="text" id="reasonOther" class="reason-other" hidden maxlength="120"
+                 placeholder="اكتب السبب…" autocomplete="off"></div>
       </div>
       <div style="margin-top:12px"><label class="fl" for="notes">ملاحظات (اختياري)</label>
         <textarea id="notes" placeholder="أي تفصيل يساعد على مراجعة الطلب..."></textarea></div>
@@ -427,6 +486,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 <script src="js/data/gviz-client.js"></script>
 <script src="js/data/api-client.js"></script>
 <script src="js/data/parsers/residents.js"></script>
+<script src="js/data/parsers/rotations-year2.js"></script>
 <script src="js/data/parsers/oncall.js"></script>
 <script src="js/data/parsers/evaluation.js"></script>
 <script src="js/data/parsers/lectures.js"></script>
@@ -448,6 +508,6 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   </div>
 </div>
 
-<script src="js/swap.js?v=11"></script>
+<script src="js/swap.js?v=13"></script>
 </body>
 </html>

@@ -331,7 +331,7 @@
     const dirBtn = document.getElementById('doctorStatsSortDirBtn');
     if (dirBtn) {
       const asc = this.doctorStatsSort.dir === 'asc';
-      dirBtn.innerHTML = asc ? '<i class="fas fa-arrow-up-wide-short"></i> تصاعدي' : '<i class="fas fa-arrow-down-wide-short"></i> تنازلي';
+      dirBtn.innerHTML = asc ? '<i class="fas fa-arrow-up"></i> تصاعدي' : '<i class="fas fa-arrow-down"></i> تنازلي';
       dirBtn.classList.toggle('is-on', asc);
     }
 

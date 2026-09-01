@@ -190,6 +190,9 @@
         if (doScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
 
         this.renderTab(tabId);
+        // the switcher lives inside each tab's own header, so it is (re)drawn
+        // whenever a tab is shown
+        this.renderYearSwitches();
       };
 
       this.activateTab = activateTab;
@@ -487,6 +490,133 @@
      * Installs a parsed dataset: exposes the models, derives everything computed
      * from them (adjustments, statistics) and re-renders.
      */
+    /* --------------------------------------------------------------- years */
+    /**
+     * The site covers several residency years. Their data never mixes: each
+     * year has its own roster, on-call sheet and rotations, and every lookup
+     * happens inside ONE year. That separation is what keeps «عمر» of the first
+     * year from being taken for «عمر» of the second — 37 abbreviations are
+     * shared between the two rosters.
+     *
+     * Switching a year re-points the flat aliases the views already read
+     * (`this.res`, `this.oncRows` …), so no view needs to know about years.
+     */
+    yearsAvailable() {
+      return (AUH.config.years || []).filter(y => y.ready);
+    }
+
+
+    yearInfo(id) {
+      return (AUH.config.years || []).find(y => y.id === (id || this.year)) || null;
+    }
+
+
+    /** Builds the per-year bundles from a freshly parsed dataset. */
+    buildYearBundles(dataset) {
+      this.yearBundles = {
+        1: {
+          id: 1,
+          residents: dataset.residents.residents,
+          residentsModel: dataset.residents,
+          oncall: { headers: dataset.oncall.headers, rows: dataset.oncall.rows },
+          rotations: null
+        },
+        2: {
+          id: 2,
+          residents: (dataset.residentsYear2 && dataset.residentsYear2.residents) || [],
+          residentsModel: dataset.residentsYear2,
+          oncall: {
+            headers: dataset.oncallYear2.headers,
+            rows: dataset.oncallYear2.rows
+          },
+          rotations: dataset.rotationsYear2 || null
+        }
+      };
+
+      // The third and fourth years: a roster each — no on-call sheet and no
+      // rotations tab yet, so their calendars stay empty rather than borrowing
+      // another year's.
+      [[3, dataset.residentsYear3], [4, dataset.residentsYear4]].forEach(([id, model]) => {
+        this.yearBundles[id] = {
+          id,
+          residents: (model && model.residents) || [],
+          residentsModel: model,
+          oncall: { headers: [], rows: [] },
+          rotations: null
+        };
+      });
+    }
+
+
+    /** Points the flat aliases at one year's data. */
+    applyYear(id, options) {
+      const opts = options || {};
+      const bundle = (this.yearBundles || {})[id];
+      if (!bundle) return false;
+
+      this.year = id;
+      AUH.storage.set('activeYear', String(id));
+
+      if (id === 1) {
+        // The first year keeps every derived feature (statistics, adjustments,
+        // evaluation), so its aliases come straight from the main dataset.
+        this.res = this.dataset.residents.residents.map(r =>
+          Object.assign(r, { monthlyShift: this.dataset.residents.getShift(r, this.m + 1) })
+        );
+        this.residentsModel = this.dataset.residents;
+      } else {
+        this.res = bundle.residents;
+        this.residentsModel = bundle.residentsModel;
+      }
+      this.oncHeaders = bundle.oncall.headers;
+      this.oncRows = bundle.oncall.rows;
+      this.yearRotations = bundle.rotations;
+
+      if (!opts.silent) {
+        this._dirtyTabs = new Set(['residents', 'shifts', 'oncall', 'doctorstats', 'myinfo']);
+        this.renderTab(this.activeTab, { force: true, preserveScroll: true });
+        this.renderYearSwitches();
+      }
+      return true;
+    }
+
+
+    setYear(id) {
+      const n = Number(id);
+      if (n === this.year) return;
+      const info = this.yearInfo(n);
+      if (!info || !info.ready) {
+        AUH.ui.showToast(`بيانات ${info ? info.label : 'هذه السنة'} لم تُضف بعد`, true);
+        return;
+      }
+      this.applyYear(n);
+      AUH.ui.showToast(`عرض ${info.label}`);
+    }
+
+
+    /** The switcher markup, reused by every tab that shows year-bound data. */
+    yearSwitchHtml() {
+      const years = AUH.config.years || [];
+      return '<div class="year-switch" role="tablist" aria-label="اختيار السنة">' +
+        years.map(y => {
+          const on = y.id === this.year;
+          const cls = ['year-btn', on ? 'on' : '', y.ready ? '' : 'soon'].filter(Boolean).join(' ');
+          return `<button type="button" class="${cls}" role="tab" aria-selected="${on}"` +
+            `${y.ready ? '' : ' disabled'} onclick="app.setYear(${y.id})">` +
+            `<span class="year-n">${y.short}</span>` +
+            (y.ready ? '' : '<span class="year-soon">قريباً</span>') + '</button>';
+        }).join('') + '</div>';
+    }
+
+
+    /** Re-renders every switcher on the page so they stay in step. */
+    renderYearSwitches() {
+      document.querySelectorAll('.year-switch-host').forEach(host => {
+        host.innerHTML = this.yearSwitchHtml();
+      });
+    }
+
+
     applyDataset(dataset, options) {
       const opts = options || {};
       this.dataset = dataset;
@@ -498,12 +628,14 @@
       this.linksModel = dataset.links;
       this.qaModel = dataset.qa;
 
-      // Flat aliases used throughout the views.
-      this.res = dataset.residents.residents.map(r =>
-        Object.assign(r, { monthlyShift: dataset.residents.getShift(r, this.m + 1) })
-      );
-      this.oncHeaders = dataset.oncall.headers;
-      this.oncRows = dataset.oncall.rows;
+      // Flat aliases used throughout the views — pointed at the active year.
+      this.buildYearBundles(dataset);
+      const storedYear = Number(AUH.storage.get('activeYear')) || AUH.config.defaultYear || 1;
+      const wanted = this.yearInfo(storedYear) && this.yearInfo(storedYear).ready ? storedYear : 1;
+      this.applyYear(wanted, { silent: true });
+
+      // The second-year schedule stays available under its own alias: the
+      // calendar shows both years side by side on the same day.
       this.oncHeaders2 = dataset.oncallYear2.headers;
       this.oncRows2 = dataset.oncallYear2.rows;
       this.lectures = dataset.lectures.list;
@@ -538,6 +670,7 @@
       });
 
       this.renderAll(options);
+      this.renderYearSwitches();
       this.updateTime();
     }
 

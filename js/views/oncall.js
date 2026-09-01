@@ -286,6 +286,25 @@
     return cats;
   },
 
+  /**
+   * الإسعاف الداخلي يُقسَّم إلى فرق من ثلاثة: أول ثلاثة أسماء في خانة ذلك اليوم
+   * فرقة، والثلاثة التالون فرقة، وهكذا — بترتيب ظهورهم في الجدول الرسمي.
+   * تنطبق على السنة الأولى فقط، وعلى الإسعاف الداخلي (ليلي أو نهاري) دون غيره.
+   */
+  teamedCategory(categoryName, isYear1) {
+    if (!isYear1) return false;
+    const n = normAr(categoryName || '');
+    return n.includes(normAr('اسعاف داخلي'));
+  },
+
+  /** Splits a duty's doctors into consecutive teams of three. */
+  splitIntoTeams(names, size) {
+    const per = size || 3;
+    const teams = [];
+    for (let i = 0; i < names.length; i += per) teams.push(names.slice(i, i + per));
+    return teams;
+  },
+
   oncallCategoriesSectionHtml(catEntries, dstr, isYear1) {
     if (!catEntries.length) return '';
     let h = '<div class="oncall-categories-grid">';
@@ -293,14 +312,28 @@
       const schedule = isYear1 ? this.getCategorySchedule(cn, dstr) : null;
       const scheduleHtml = schedule && (schedule.time || schedule.duration) ? `<div class="oncall-schedule-meta${schedule.isHoliday ? ' holiday' : ''}"><span>${schedule.time || '-'}</span><span>${schedule.duration || '-'}</span></div>` : '';
 
-      h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}<div class="oncall-names-list">`;
-      for (const n of names) {
+      const nameTag = n => {
         let extra = '';
         if (n.isVolunteer) extra = ` <span class="oncall-mini-badge volunteer">تطوعي · ${this.formatNumDisplay(n.hoursOverride)} س</span>`;
         else if (n.hoursOverride !== undefined) extra = ` <span class="oncall-mini-badge adjusted">${this.formatNumDisplay(n.hoursOverride)} س</span>`;
-        h += `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}${extra}</span>`;
+        return `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}${extra}</span>`;
+      };
+
+      const teamed = this.teamedCategory(cn, isYear1) && names.length > 3;
+      h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}${teamed ? ' teamed' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}`;
+
+      if (teamed) {
+        const teams = this.splitIntoTeams(names, 3);
+        h += '<div class="oncall-teams">';
+        teams.forEach((team, i) => {
+          h += `<div class="oncall-team"><span class="team-label">فرقة ${i + 1}</span>` +
+            `<div class="oncall-names-list">${team.map(nameTag).join('')}</div></div>`;
+        });
+        h += '</div>';
+      } else {
+        h += `<div class="oncall-names-list">${names.map(nameTag).join('')}</div>`;
       }
-      h += '</div></div>';
+      h += '</div>';
     }
     h += '</div>';
     return h;

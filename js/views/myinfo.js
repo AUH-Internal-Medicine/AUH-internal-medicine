@@ -25,6 +25,13 @@
     const other = (mine ? req.toName : req.name) || '—';
     const mutual = (req.kind || '').indexOf('تبديل') >= 0;
 
+    // Said the way a resident would say it, from their own side:
+    //   شيل   → «شال عنك فلان» / «شلت عن فلان»
+    //   تبديل → «بدّلت مع فلان»
+    const headline = mutual
+      ? `بدّلت مع <b>${escapeHtml(other)}</b>`
+      : (mine ? `شال عنك <b>${escapeHtml(other)}</b>` : `شلت عن <b>${escapeHtml(other)}</b>`);
+
     // What leaves, and what comes back — always from this resident's side.
     const gave = { type: req.type, date: req.date };
     const got = mutual && req.backDate ? { type: req.backType, date: req.backDate } : null;
@@ -45,7 +52,7 @@
     return `<article class="sr ${meta.cls}">` +
       `<header class="sr-top">` +
         `<span class="sr-badge"><i class="fas ${meta.icon}"></i>${meta.label}</span>` +
-        `<span class="sr-with"><i class="fas fa-user-doctor"></i>${escapeHtml(other)}</span>` +
+        `<span class="sr-with"><i class="fas fa-user-doctor"></i>${headline}</span>` +
         `<span class="sr-kind">${mutual ? 'تبديل' : 'شيل'}</span>` +
       `</header>` +
       `<div class="sr-legs">${leg(out, 'أعطيت', 'out')}${leg(back, 'أخذت', 'in')}</div>` +
@@ -593,10 +600,11 @@
 
     // Swap request — opens the dedicated page with this doctor already filled in.
     const who = encodeURIComponent(r.abbr || r.name);
-    h += `<div class="swap-cta"><span class="swap-cta-badge">تجريبي</span>` +
-      `<a class="swap-cta-btn" href="swap.html?from=${who}" target="_blank" rel="noopener">` +
-      `<i class="fas fa-right-left"></i> طلب تبديل أو شيل مناوبة</a>` +
-      `<span class="swap-cta-note">تختار المناوبة من رزنامتك، والنظام يمنع أي تبديل يخالف القواعد</span></div>`;
+    h += `<a class="swap-cta" href="swap.html?from=${who}" target="_blank" rel="noopener">` +
+      `<span class="swap-cta-icon"><i class="fas fa-right-left"></i></span>` +
+      `<span class="swap-cta-text"><b>طلب تبديل أو شيل مناوبة</b>` +
+      `<span class="swap-cta-note">اختر المناوبة من رزنامتك، وسيعرض النظام من يستطيع أخذها</span></span>` +
+      `<span class="swap-cta-go"><i class="fas fa-chevron-left"></i></span></a>`;
 
     // Request tracking — filled in asynchronously by loadSwapRequests().
     h += `<div class="swap-track" id="swapTrack"><div class="swap-track-head">` +

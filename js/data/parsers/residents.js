@@ -20,8 +20,14 @@
    * @param {Array<Array<string>>} table raw `[headerRow, ...rows]`
    * @returns {object} residents model
    */
+  const AR_MONTH_NUM = {
+    'كانون الثاني': 1, 'شباط': 2, 'آذار': 3, 'نيسان': 4, 'أيار': 5, 'حزيران': 6,
+    'تموز': 7, 'آب': 8, 'أيلول': 9, 'تشرين الأول': 10, 'تشرين الثاني': 11, 'كانون الأول': 12
+  };
+
   function parseResidents(table, options) {
-    const source = AUH.data.schema.residents;
+    const opts = options || {};
+    const source = AUH.data.schema[opts.schemaKey || 'residents'];
     const rows = Array.isArray(table) ? table : [];
     const headerRow = rows[0] || [];
     const resolution = headersApi.resolveColumns(headerRow, source);
@@ -29,6 +35,9 @@
 
     const shiftMonths = resolution.patterns.shiftByMonth || [];
     const oncallMonths = resolution.patterns.oncallsByMonth || [];
+    const namedMonths = (resolution.patterns.oncallsByMonthName || []).map(m => ({
+      col: m.col, month: AR_MONTH_NUM[(m.monthName || '').trim()] || 0
+    })).filter(m => m.month);
     const skipNames = (source.skipNameValues || []).map(normAr);
 
     const residents = [];
@@ -47,6 +56,11 @@
 
       const oncallCounts = {};
       oncallMonths.forEach(m => {
+        const v = (row[m.col] || '').trim();
+        if (v) oncallCounts[m.month] = safeNum(v);
+      });
+      // Second-year sheets label the columns "تموز 2025" instead of "مناوبات شهر 7".
+      namedMonths.forEach(m => {
         const v = (row[m.col] || '').trim();
         if (v) oncallCounts[m.month] = safeNum(v);
       });
@@ -69,6 +83,7 @@
         detachReason: get(row, 'detachReason'),
         shifts,
         oncallCounts,
+        year: opts.year || 1,
         rowIndex: i + 1,
         row
       });

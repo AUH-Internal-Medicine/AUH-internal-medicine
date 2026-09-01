@@ -203,7 +203,21 @@
     });
   }
 
+  /**
+   * A phone cell may hold more than one number — separated by "/", a comma, or
+   * a line break. Returns them individually so each gets its own call link and
+   * copy button; anything without at least 6 digits is discarded.
+   */
+  function splitPhones(raw) {
+    return (raw || '')
+      .toString()
+      .split(/[\/\\،,؛;|\n\r]+|\s{2,}/)
+      .map(p => p.trim())
+      .filter(p => (p.match(/\d/g) || []).length >= 6);
+  }
+
   AUH.text = {
+    splitPhones,
     normAr,
     prepSearch,
     smartSearch,

@@ -23,6 +23,10 @@
     { schemaKey: 'residents', datasetKey: 'residents' },
     { schemaKey: 'oncall', datasetKey: 'oncall' },
     { schemaKey: 'oncallYear2', datasetKey: 'oncallYear2' },
+    { schemaKey: 'residentsYear2', datasetKey: 'residentsYear2' },
+    { schemaKey: 'rotationsYear2', datasetKey: 'rotationsYear2' },
+    { schemaKey: 'residentsYear3', datasetKey: 'residentsYear3' },
+    { schemaKey: 'residentsYear4', datasetKey: 'residentsYear4' },
     { schemaKey: 'oncallAdjustments', datasetKey: 'adjustments' },
     { schemaKey: 'evaluation', datasetKey: 'evaluation' },
     { schemaKey: 'links', datasetKey: 'links' },
@@ -91,6 +95,24 @@
     const oncallYear2 = source.oncallYear2
       ? AUH.parse.oncallYear2(source.oncallYear2)
       : prev.oncallYear2 || AUH.parse.emptyOncall('oncallYear2');
+    // Second year: its own roster and rotations, parsed with their own schema
+    // and tagged with `year: 2` so no lookup can ever cross into the first year.
+    const residentsYear2 = source.residentsYear2
+      ? AUH.parse.residents(source.residentsYear2, { schemaKey: 'residentsYear2', year: 2 })
+      : prev.residentsYear2 || AUH.parse.emptyResidents();
+    // Optional: lighter pages (swap.html) do not load this parser at all.
+    const rotationsYear2 = source.rotationsYear2 && typeof AUH.parse.rotationsYear2 === 'function'
+      ? AUH.parse.rotationsYear2(source.rotationsYear2)
+      : prev.rotationsYear2 || { list: [], byName: new Map(), rotations: [] };
+
+    // Third and fourth years: one tab each, in the same spreadsheet.
+    const residentsYear3 = source.residentsYear3
+      ? AUH.parse.residents(source.residentsYear3, { schemaKey: 'residentsYear3', year: 3 })
+      : prev.residentsYear3 || AUH.parse.emptyResidents();
+    const residentsYear4 = source.residentsYear4
+      ? AUH.parse.residents(source.residentsYear4, { schemaKey: 'residentsYear4', year: 4 })
+      : prev.residentsYear4 || AUH.parse.emptyResidents();
+
     const adjustments = source.adjustments ? AUH.parse.oncallAdjustments(source.adjustments) : prev.adjustments || { entries: [] };
     const evaluation = source.evaluation ? AUH.parse.evaluation(source.evaluation) : prev.evaluation || AUH.parse.emptyEvaluation();
     const links = source.links ? AUH.parse.links(source.links) : prev.links || { list: [] };
@@ -103,6 +125,10 @@
       residents,
       oncall,
       oncallYear2,
+      residentsYear2,
+      rotationsYear2,
+      residentsYear3,
+      residentsYear4,
       adjustments,
       evaluation,
       links,
@@ -114,7 +140,7 @@
     };
 
     dataset.issues = []
-      .concat(residents.issues || [], oncall.issues || [], evaluation.issues || [], links.issues || [], qa.issues || [], lectures.issues || [], holidays.issues || [])
+      .concat(residents.issues || [], oncall.issues || [], residentsYear2.issues || [], evaluation.issues || [], links.issues || [], qa.issues || [], lectures.issues || [], holidays.issues || [])
       .filter(Boolean);
 
     return dataset;

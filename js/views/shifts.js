@@ -43,6 +43,10 @@
 
     /** One card per rotation, largest group first. */
     dispShiftsByMonth(month) {
+      // Cards are labelled by the year on screen, so adding the other years
+      // later is a matter of data rather than of rewriting this view.
+      const yearInfo = this.yearInfo ? this.yearInfo() : null;
+      const yearLabel = `أطباء ${yearInfo ? yearInfo.label : 'السنة الأولى'}`;
       const grid = document.getElementById('shiftsGrid');
       if (!grid) return;
 
@@ -69,9 +73,9 @@
         .map(([shiftName, members]) => {
           const list = members.map(m => `<li>${mcn(m.name, m.phone, m.abbr)}</li>`).join('');
           const dropdown = members.length
-            ? `<div class="names-dropdown"><button class="names-dropdown-btn"><span><i class="fas fa-users"></i> الأطباء الملتحقين (${members.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${list}</ul></div>`
+            ? `<div class="names-dropdown"><button class="names-dropdown-btn"><span><i class="fas fa-users"></i> ${yearLabel} (${members.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${list}</ul></div>`
             : '';
-          return `<div class="shift-card-full"><h3><i class="fas fa-clipboard-list"></i> ${escapeHtml(shiftName)}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${members.length}</div><div class="lbl">عدد الأطباء الملتحقين</div></div></div>${dropdown}</div>`;
+          return `<div class="shift-card-full"><h3><i class="fas fa-clipboard-list"></i> ${escapeHtml(shiftName)}</h3><div class="shift-stats"><div class="shift-stat"><div class="num">${members.length}</div><div class="lbl">${yearLabel}</div></div></div>${dropdown}</div>`;
         })
         .join('');
     },

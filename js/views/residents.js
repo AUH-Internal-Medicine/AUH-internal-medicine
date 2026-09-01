@@ -95,6 +95,18 @@
    * elements one by one (and letting the browser lay out after each) was a
    * visible stall on a 200-row roster.
    */
+  /** The table head follows the year: the full set, or the four real columns. */
+  renderResidentsHead(full) {
+    const head = document.querySelector('#residents-tab .desktop-table thead tr');
+    if (!head) return;
+    head.innerHTML = full
+      ? '<th style="width:35px">ت</th><th style="width:40px"><i class="fas fa-check"></i></th>' +
+        '<th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th>' +
+        '<th>الفرز</th><th>الالتحاق</th><th>المناوبات</th><th>الحالة</th>'
+      : '<th style="width:35px">ت</th><th style="width:40px"><i class="fas fa-check"></i></th>' +
+        '<th>الاسم الثلاثي</th><th>الاختصار</th><th>الاختصاص</th><th>الهاتف</th>';
+  },
+
   displayResidents() {
     const tbody = document.getElementById('residentsBody');
     const cards = document.getElementById('residentsCards');
@@ -103,6 +115,16 @@
     const list = this.getFilteredList();
     const rows = [];
     const cardHtml = [];
+
+    // The first year's sheet carries rotations, join dates, counts and status.
+    // The other years are rosters only, so they show the four columns that
+    // actually hold data — and say «لا يوجد» rather than leaving a blank.
+    const full = this.year === 1;
+    const orNone = v => {
+      const t = (v || '').toString().trim();
+      return t ? escapeHtml(t) : '<span class="none-val">لا يوجد</span>';
+    };
+    this.renderResidentsHead(full);
 
     list.forEach(res => {
       const ok = isJoined(res.st);
@@ -116,12 +138,45 @@
       const statusBadge = `<span class="status-badge ${ok ? 'status-joined' : statusClass}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${escapeHtml(res.st || 'غير محدد')}</span>`;
       const copyBtn = phone ? `<button class="copy-btn" onclick="copyPhone('${phoneJs}',this)"><i class="fas fa-copy"></i></button>` : '';
 
+      // A cell may carry two numbers ("093… / 094…"); each gets its own line,
+      // its own call link and its own copy button.
+      const numbers = AUH.text.splitPhones(phone);
+      const phoneCell = numbers.length
+        ? `<div class="phone-cell">${numbers.map(n =>
+            `<span class="phone-one"><a href="tel:${escapeHtml(n)}" dir="ltr">${escapeHtml(n)}</a>` +
+            `<button class="copy-btn" title="نسخ" onclick="copyPhone('${escapeJsString(n)}',this)"><i class="fas fa-copy"></i></button></span>`
+          ).join('')}</div>`
+        : '<span class="muted">-</span>';
+
+      if (!full) {
+        rows.push(
+          `<tr><td class="seq-cell">${res.seq}</td>` +
+            `<td><input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')"></td>` +
+            `<td style="text-align:right;">${mcn(res.name, phone)}</td>` +
+            `<td>${orNone(res.abbr)}</td>` +
+            `<td>${orNone(res.spec)}</td>` +
+            `<td>${numbers.length ? phoneCell : '<span class="none-val">لا يوجد</span>'}</td></tr>`
+        );
+        cardHtml.push(
+          `<div class="resident-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">` +
+            `<span class="seq-badge">${res.seq}</span>` +
+            `<input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')">` +
+            `<div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;">` +
+            `<span class="card-name" style="word-break:break-word;">${mcn(res.name, phone)}</span>` +
+            `<span class="card-abbr">${escapeHtml(res.abbr || '')}</span></div></div>` +
+            `<div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${orNone(res.spec)}</span></div>` +
+            `<div class="card-row"><span class="card-label">الهاتف</span><span class="card-value">${numbers.length ? phoneCell : '<span class="none-val">لا يوجد</span>'}</span></div>` +
+          `</div>`
+        );
+        return;
+      }
+
       rows.push(
         `<tr><td class="seq-cell">${res.seq}</td>` +
           `<td><input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')"></td>` +
           `<td style="text-align:right;">${mcn(res.name, phone)}</td>` +
           `<td>${escapeHtml(res.abbr)}</td><td>${escapeHtml(res.spec)}</td>` +
-          `<td><span dir="ltr">${escapeHtml(phone)}</span> ${copyBtn}</td>` +
+          `<td>${phoneCell}</td>` +
           `<td>${escapeHtml(res.monthlyShift || '-')}</td><td>${escapeHtml(res.join || '-')}</td>` +
           `<td>${oncalls}</td><td>${statusBadge}</td></tr>`
       );
@@ -134,7 +189,7 @@
           `<span class="card-name" style="word-break:break-word;">${mcn(res.name, phone)}</span>` +
           `<span class="card-abbr">${escapeHtml(res.abbr)}</span></div></div>` +
           `<div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${escapeHtml(res.spec || '-')}</span></div>` +
-          `<div class="card-row"><span class="card-label">الهاتف</span><span class="card-value"><span dir="ltr">${escapeHtml(phone || '-')}</span> ${copyBtn}</span></div>` +
+          `<div class="card-row"><span class="card-label">الهاتف</span><span class="card-value">${phoneCell}</span></div>` +
           `<div class="card-row"><span class="card-label">الفرز</span><span class="card-value">${escapeHtml(res.monthlyShift || '-')}</span></div>` +
           `<div class="card-row"><span class="card-label">الالتحاق</span><span class="card-value">${escapeHtml(res.join || '-')}</span></div>` +
           `<div class="card-row"><span class="card-label">المناوبات</span><span class="card-value">${oncalls}</span></div>` +

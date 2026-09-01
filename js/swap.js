@@ -72,6 +72,8 @@
 
   /* -------------------------------------------------------------- app state */
   const S = {
+    /** true once the resident confirms they have permission for a ستريب. */
+    stripOk: false,
     roster: [],          // [{name, abbr, spec, status}]
     duties: new Map(),   // key -> [{date, cat, group, night, holiday, hard, hours}]
     months: [],          // ['2026-07', ...] present in the on-call sheet
@@ -249,20 +251,29 @@
    */
   function evaluate(taker, date, ignore) {
     const list = dutiesOf(taker).filter(d => d.date !== ignore);
-    const blocks = [];
     const n = dayNum(date);
 
     const same = list.find(d => d.date === date);
-    if (same) blocks.push(`مناوبة في نفس اليوم (${same.cat})`);
-
     const prev = list.find(d => dayNum(d.date) === n - 1);
-    if (prev) blocks.push(`مناوبة في اليوم السابق ${fmt(prev.date)}`);
-
     const next = list.find(d => dayNum(d.date) === n + 1);
+
+    const blocks = [];
+    if (same) blocks.push(`مناوبة في نفس اليوم (${same.cat})`);
+    if (prev) blocks.push(`مناوبة في اليوم السابق ${fmt(prev.date)}`);
     if (next) blocks.push(`مناوبة في اليوم التالي ${fmt(next.date)}`);
 
+    // Two duties on ONE day is impossible, always. Two on consecutive days —
+    // a "ستريب" — is normally refused, but the department does allow it by
+    // exception, so it only blocks until the resident confirms permission.
+    const strip = !same && !!(prev || next);
+    const ok = !same && (!strip || S.stripOk);
+
     const month = date.slice(0, 7);
-    return { ok: !blocks.length, blocks, after: list.filter(d => d.date.startsWith(month)).length + 1 };
+    return {
+      ok, blocks, sameDay: !!same, strip,
+      stripWhy: [prev && `اليوم السابق ${fmt(prev.date)}`, next && `اليوم التالي ${fmt(next.date)}`].filter(Boolean),
+      after: list.filter(d => d.date.startsWith(month)).length + 1
+    };
   }
 
   /**
@@ -535,14 +546,18 @@
     else { $('cal1').innerHTML = ''; $('cal1t').textContent = '—'; }
 
     const mutual = S.kind === 'تبديل';
-    $('s5t').textContent = mutual ? 'رزنامته: اختر المناوبة المقابلة' : 'رزنامته قبل الشيل وبعده';
+    $('s5t').textContent = mutual ? 'اختر المناوبة التي تأخذها أنت' : 'رزنامته قبل الشيل وبعده';
     $('s5h').textContent = mutual
-      ? 'على اليمين جدوله الحالي — اضغط على مناوبة خضراء لتأخذها أنت. على اليسار النتيجة بعد التبديل.'
-      : 'على اليمين جدوله كما هو الآن، وعلى اليسار كما يصبح بعد أخذه المناوبة.';
+      ? 'هذه رزنامة الزميل. اضغط على مناوبة خضراء لتأخذها أنت مقابل مناوبتك؛ الحمراء لا تصلح والسبب مكتوب عليها.'
+      : 'على اليمين جدوله كما هو الآن، وعلى اليسار كما يصبح بعد أخذه مناوبتك.';
 
-    if (S.to && S.shift) renderBeforeAfter();
+    if (S.to && S.shift) renderStep5();
     else { $('cal2').innerHTML = ''; $('cal2t').textContent = '—'; }
     $('saveImg').disabled = !(S.to && S.shift);
+    // in a mutual swap step 5 draws ONE calendar, not two
+    $('saveImg').innerHTML = mutual
+      ? '<i class="fas fa-image"></i> حفظ الرزنامة كصورة'
+      : '<i class="fas fa-image"></i> حفظ الجدولين كصورة';
 
     renderEligible();
     verdictBox();
@@ -555,71 +570,117 @@
    * request goes through. In a mutual swap the "قبل" grid is also the picker —
    * only the duties I could actually take in return are selectable.
    */
-  function renderBeforeAfter() {
+  /**
+   * Step 5 draws the colleague's month. What it draws depends on the request:
+   *
+   *   شيل   — the month as it stands and as it becomes, side by side, so the
+   *           resident can see exactly what they are adding to someone's load.
+   *   تبديل — ONE calendar: the colleague's duties, the ones I can take in
+   *           green and selectable, everything else red and inert. A duty on
+   *           my own date is never selectable, whatever permission I hold.
+   */
+  function renderStep5() {
     const host = $('cal2');
     const month = S.months[S.m2];
     if (!S.to || !S.shift || !month) { host.innerHTML = ''; $('cal2t').textContent = '—'; return; }
 
     const [y, m] = month.split('-').map(Number);
     $('cal2t').textContent = `${AR_MONTHS[m - 1]} ${y}`;
+    if (S.kind === 'تبديل') renderSwapPicker(host, y, m, month);
+    else renderBeforeAfter(host, y, m, month);
+  }
 
-    const mutual = S.kind === 'تبديل';
-    const options = mutual ? feasibleSwaps(S.from, S.shift, S.to) : [];
+  /** The month grid. `mode` decides how each day is judged and painted. */
+  function monthGrid(y, m, month, duties, mode) {
+    const byDate = {};
+    duties.filter(d => d.date.startsWith(month)).forEach(d => {
+      (byDate[d.date] = byDate[d.date] || []).push(d);
+    });
+
+    const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const cells = [];
+    for (let i = 0; i < 7; i++) cells.push(`<div class="dow">${DOW[i]}</div>`);
+    for (let i = 0; i < first; i++) cells.push('<div class="day pad"></div>');
+
+    for (let d = 1; d <= days; d++) {
+      const iso = isoOf(y, m, d);
+      const mine = byDate[iso] || [];
+      const cls = ['day'];
+      let click = '', badge = '';
+
+      if (schedule.isHolidayDate(iso, new Set())) cls.push('hol');
+      if (iso < today) cls.push('past');
+
+      const state = mode.cell(iso, mine);
+      if (state.cls) cls.push(...state.cls.split(' ').filter(Boolean));
+      if (state.pick) click = ` data-date="${iso}"`;
+      badge = state.badge || '';
+
+      const tags = mine.map(x => `<span class="tag">${escapeHtml(x.cat)}</span>`).join('');
+      cells.push(`<div class="${cls.join(' ')}"${click}><span class="dn">${d}</span>${tags}` +
+        (badge ? `<span class="why">${escapeHtml(badge)}</span>` : '') + '</div>');
+    }
+    return `<div class="cal">${cells.join('')}</div>`;
+  }
+
+  function renderSwapPicker(host, y, m, month) {
+    const options = feasibleSwaps(S.from, S.shift, S.to);
     const optionDates = new Set(options.map(d => d.date));
+    const duties = dutiesOf(S.to);
+    const inMonth = duties.filter(d => d.date.startsWith(month)).length;
 
-    const before = dutiesOf(S.to);
-    const takes = S.shift.date.startsWith(month);
-    const after = dutiesAfter(S.to, S.shift, mutual ? S.back : null);
-
-    const grid = (duties, opts) => {
-      const byDate = {};
-      duties.filter(d => d.date.startsWith(month)).forEach(d => (byDate[d.date] = byDate[d.date] || []).push(d));
-      const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
-      const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
-      const cells = [];
-      for (let i2 = 0; i2 < 7; i2++) cells.push(`<div class="dow">${DOW[i2]}</div>`);
-      for (let i2 = 0; i2 < first; i2++) cells.push('<div class="day pad"></div>');
-
-      for (let d = 1; d <= days; d++) {
-        const iso = isoOf(y, m, d);
-        const mine = byDate[iso] || [];
-        const cls = ['day'];
-        let click = '', badge = '';
-
-        if (schedule.isHolidayDate(iso, new Set())) cls.push('hol');
-        if (iso < today) cls.push('past');
-
-        if (opts.picker) {
-          // choosing what I take in return
-          if (mine.length && optionDates.has(iso)) { cls.push('pick', 'swappable'); click = ` data-date="${iso}"`; }
-          else if (mine.length && iso >= today) { cls.push('blocked'); badge = 'لا يناسب جدولك'; }
-          else if (mine.length) cls.push('gone');
-          if (S.back && S.back.date === iso) cls.push('sel');
-        } else if (opts.after) {
-          if (iso === S.shift.date) { cls.push('added'); badge = 'مناوبة مضافة'; }
-          else if (mutual && S.back && iso === S.back.date) { cls.push('removed'); badge = 'انتقلت إليك'; }
-        }
-
-        const tags = mine.map(x => `<span class="tag">${escapeHtml(x.cat)}</span>`).join('');
-        cells.push(`<div class="${cls.join(' ')}"${click}><span class="dn">${d}</span>${tags}` +
-          (badge ? `<span class="why">${escapeHtml(badge)}</span>` : '') + '</div>');
+    const grid = monthGrid(y, m, month, duties, {
+      cell: (iso, mine) => {
+        if (!mine.length) return {};
+        if (S.back && S.back.date === iso) return { cls: 'pick swappable sel' };
+        if (optionDates.has(iso)) return { cls: 'pick swappable', pick: true };
+        if (iso < today) return { cls: 'gone', badge: 'مضت' };
+        if (iso === S.shift.date) return { cls: 'blocked', badge: 'مناوبتك في نفس اليوم' };
+        // say WHY, precisely — it is the difference between "ask for permission"
+        // and "this can never work"
+        const his = evaluate(S.to, S.shift.date, iso);
+        const mineSide = evaluate(S.from, iso, S.shift.date);
+        const why = !his.ok
+          ? (his.sameDay ? 'لديه مناوبة يوم مناوبتك' : 'يسبب له ستريب')
+          : (mineSide.sameDay ? 'لديك مناوبة هذا اليوم' : 'يسبب لك ستريب');
+        return { cls: 'blocked', badge: why };
       }
-      return `<div class="cal">${cells.join('')}</div>`;
-    };
+    });
 
-    const need = mutual && !S.back;
+    const nOpts = options.length;
     host.innerHTML =
+      `<div class="picker-head"><div class="pk-who"><i class="fas fa-user-doctor"></i> ` +
+      `رزنامة <b>${escapeHtml(S.to.name)}</b></div>` +
+      `<div class="pk-n"><span class="num">${inMonth}</span> مناوبة هذا الشهر · ` +
+      `<span class="pk-ok"><span class="num">${nOpts}</span> متاحة للتبديل</span></div></div>` +
+      grid +
+      `<div class="pk-hint">${nOpts
+        ? 'اضغط على مناوبة <b>خضراء</b> لتأخذها أنت. الحمراء لا تصلح، والسبب مكتوب عليها.'
+        : 'لا توجد مناوبة لديه تناسب جدولك في هذا الشهر — جرّب شهراً آخر بالأسهم أعلاه.'}</div>`;
+  }
+
+  function renderBeforeAfter(host, y, m, month) {
+    const before = dutiesOf(S.to);
+    const after = dutiesAfter(S.to, S.shift, null);
+    const takes = S.shift.date.startsWith(month);
+    const count = l => l.filter(d => d.date.startsWith(month)).length;
+
+    const plain = monthGrid(y, m, month, before, { cell: () => ({}) });
+    const marked = monthGrid(y, m, month, after, {
+      cell: iso => (iso === S.shift.date ? { cls: 'added', badge: 'مناوبتك' } : {})
+    });
+
+    host.innerHTML =
+      `<div class="picker-head"><div class="pk-who"><i class="fas fa-user-doctor"></i> ` +
+      `رزنامة <b>${escapeHtml(S.to.name)}</b> قبل الشيل وبعده</div></div>` +
       '<div class="ba">' +
       `<div class="ba-side"><div class="ba-h"><span class="ba-t">قبل</span>` +
-      `<span class="ba-n"><span class="num">${before.filter(d => d.date.startsWith(month)).length}</span> مناوبة</span></div>` +
-      grid(before, { picker: mutual, after: false }) +
-      (mutual ? `<div class="ba-note">${need ? 'اختر من مناوباته ما تأخذه أنت — الأخضر فقط متاح' : 'المناوبة المختارة بالأخضر الغامق'}</div>` : '') +
-      '</div>' +
+      `<span class="ba-n"><span class="num">${count(before)}</span> مناوبة</span></div>${plain}</div>` +
       `<div class="ba-side"><div class="ba-h"><span class="ba-t after">بعد</span>` +
-      `<span class="ba-n"><span class="num">${after.filter(d => d.date.startsWith(month)).length}</span> مناوبة</span></div>` +
-      grid(after, { picker: false, after: true }) +
-      `<div class="ba-note">${takes ? 'المضافة بالأخضر' : 'المناوبة المضافة في شهر آخر'}${mutual && S.back ? ' · التي انتقلت إليك بالأحمر' : ''}</div>` +
-      '</div></div>';
+      `<span class="ba-n"><span class="num">${count(after)}</span> مناوبة</span></div>${marked}` +
+      `<div class="ba-note">${takes ? 'مناوبتك مضافة بالأخضر' : 'المناوبة المضافة في شهر آخر'}</div></div>` +
+      '</div>';
   }
 
   /* ---------------------------------------------------------- save as image */
@@ -646,7 +707,10 @@
     const rows = Math.ceil((first + days) / COLS);
     const gridH = DOW_H + rows * (CELL_H + GAP);
     const HEAD = 118, SECT = 46, FOOT = 58;
-    const H = HEAD + (SECT + gridH + 26) * 2 + FOOT;
+    // شيل shows the month twice (before / after); تبديل shows it once, exactly
+    // as step 5 does — the button is labelled accordingly.
+    const panels = mutual ? 1 : 2;
+    const H = HEAD + (SECT + gridH + 26) * panels + FOOT;
 
     // Always 2×: the file is meant to be read on a phone, so it must stay
     // crisp even when the browser reports a 1× screen.
@@ -764,11 +828,16 @@
 
     const inMonth = l => l.filter(d => d.date.startsWith(month)).length;
     let top = HEAD;
-    section('قبل التبديل', inMonth(before), top, '#5c6b64');
-    grid(before, top + SECT, false);
-    top += SECT + gridH + 26;
-    section('بعد التبديل', inMonth(after), top, '#1b5e43');
-    grid(after, top + SECT, true);
+    if (panels === 2) {
+      section('قبل الشيل', inMonth(before), top, '#5c6b64');
+      grid(before, top + SECT, false);
+      top += SECT + gridH + 26;
+      section('بعد الشيل', inMonth(after), top, '#1b5e43');
+      grid(after, top + SECT, true);
+    } else {
+      section('الرزنامة بعد التبديل', inMonth(after), top, '#1b5e43');
+      grid(after, top + SECT, true);
+    }
 
     c.textAlign = 'center';
     c.font = font(11.5, 400);
@@ -817,7 +886,9 @@
       ok = evaluate(S.to, S.shift.date, give).ok;
       if (ok && mutual) ok = !!S.back && evaluate(S.from, S.back.date, S.shift.date).ok;
     }
-    const ready = ok && $('agree').checked && !!$('reason').value && $('phone').value.trim().length >= 6;
+    const reason = $('reason').value;
+    const reasonGiven = !!reason && (reason !== 'سبب آخر' || $('reasonOther').value.trim().length >= 3);
+    const ready = ok && $('agree').checked && reasonGiven && $('phone').value.trim().length >= 6;
     $('send').disabled = !ready;
   }
 
@@ -829,7 +900,11 @@
     const notes = [
       $('notes').value.trim(),
       $('phone').value.trim() ? `هاتف مُقدّم الطلب: ${$('phone').value.trim()}` : '',
-      `تم التحقق آلياً: لا مناوبة في نفس اليوم، ولا في اليوم السابق أو التالي.`
+      // The reviewer must be able to see, in the sheet, that a strip was
+      // deliberate and permitted — not something the checks missed.
+      S.stripOk
+        ? 'تنبيه: الطلب يتضمّن مناوبتين متتاليتين (ستريب)، وقد أقرّ مُقدّم الطلب بحصوله على إذن بذلك.'
+        : 'تم التحقق آلياً: لا مناوبة في نفس اليوم، ولا في اليوم السابق أو التالي.'
     ].filter(Boolean).join('\n');
 
     return {
@@ -841,7 +916,9 @@
       // The department reads "نفس نوع المناوبة" as the same GROUP
       // (عنايات / إسعاف / أجنحة), not the exact category.
       conditions: (S.kind !== 'تبديل' || !S.back || S.back.group === S.shift.group) ? 'نعم' : 'لا',
-      reason: $('reason').value,
+      reason: $('reason').value === 'سبب آخر' && $('reasonOther').value.trim()
+        ? `سبب آخر: ${$('reasonOther').value.trim()}`
+        : $('reason').value,
       notes
     };
   }
@@ -997,6 +1074,22 @@
       refresh();
       $('s4').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+
+    $('stripOk').addEventListener('change', e => {
+      S.stripOk = e.target.checked;
+      // the whole judgement changes, so the colleague list and the picker
+      // are both rebuilt — and a choice that is no longer valid is dropped
+      if (S.back && !feasibleSwaps(S.from, S.shift, S.to).some(d => d.date === S.back.date)) S.back = null;
+      refresh();
+    });
+
+    $('reason').addEventListener('change', () => {
+      const other = $('reason').value === 'سبب آخر';
+      $('reasonOther').hidden = !other;
+      if (other) $('reasonOther').focus(); else $('reasonOther').value = '';
+      validateSend();
+    });
+    $('reasonOther').addEventListener('input', validateSend);
 
     $('saveImg').addEventListener('click', showImage);
     $('imgClose').addEventListener('click', closeImage);

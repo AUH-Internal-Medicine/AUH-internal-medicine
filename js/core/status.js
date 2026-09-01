@@ -13,8 +13,15 @@
 
   /** True when the status text says the resident has actually joined. */
   function isJoined(s) {
-    const st = (s || '').toLowerCase();
-    return st.includes('التحق') || st.includes('ملتحق') || st.includes('التحاق');
+    const st = normAr(s || '');
+    if (!st) return false;
+    // "تم الانفكاك" also contains "انفكاك" but must never read as joined.
+    if (isDetachedStatus(s)) return false;
+    // The two rosters word the same fact differently: the first year writes
+    // "تم الالتحاق", the second "قائم على رأس عمله". Both mean the resident is
+    // working, and both must show as joined.
+    return ['التحق', 'ملتحق', 'التحاق', 'على راس عمله', 'راس عمله', 'مباشر', 'يعمل']
+      .some(w => st.includes(normAr(w)));
   }
 
   /** True for residents who left ("تم الانفكاك") — hidden from the roster by default. */
