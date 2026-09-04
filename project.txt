@@ -12,7 +12,7 @@ docs/DATA-CONTRACT.md lists every sheet column the app depends on.
 Excluded here: images, CHANGELOG.md (long history — read it in the repo),
 and _legacy/ (a pre-refactor snapshot kept only for reference).
 
-Files included: 49
+Files included: 50
 
 ================================================================
 FILE INDEX
@@ -42,6 +42,7 @@ FILE INDEX
   js/data/header-map.js
   js/data/parsers/content.js
   js/data/parsers/evaluation.js
+  js/data/parsers/holidays.js
   js/data/parsers/lectures.js
   js/data/parsers/oncall.js
   js/data/parsers/residents.js
@@ -188,6 +189,8 @@ good reason and a CHANGELOG entry that says so explicitly.
 | A background refresh must never move the reader: same tab, same selected day/month, same scroll. | People read on-call lists on their phone while the timer ticks. |
 | Only the visible tab is rendered; others are marked dirty and render when opened. | Rendering every tab on a timer is what made the UI stutter (~1.5 MB of HTML). |
 | PNG exports render a dedicated layout (`views/capture-layouts.js`), not the live DOM. | The screen wants compact dots; the image wants the duty name spelled out. |
+| Colours come from the tokens in `:root` / `body.dark-mode`, never hardcoded hexes. | The palette was unified once; a stray `#1b3a5c` breaks dark mode silently. |
+| No decorative gradients, no glassmorphism, no colour-blur orbs, no shadow on cards. | These were removed on purpose — they are what made the site look machine-made. |
 | No build step, no framework, no bundler. | Deliberate: anyone can edit a file and publish. |
 
 ---
@@ -452,6 +455,16 @@ opens the technical-contact view when needed.
 - **Deployment cache busting**: each GitHub Pages deploy now injects a unique build id into `index.html`, appends it to local asset URLs (`styles.css`, every file under `js/`, images), and exposes it via `<meta name="app-build">`.
 - **Automatic client update**: running clients periodically fetch the latest `index.html` with `no-store`; when a newer build id is detected, stale local app caches are cleared and the page reloads to the latest version.
 - **Doctor statistics tab** computed directly by the app from the residents roster + the on-call log (no separate hand-maintained sheet tab), shown as cards with group breakdowns, holiday/night counts, and total hours.
+- **Bonus hours**: a row in the adjustments sheet whose date/type says `Bonus` credits
+  hours to a resident without inventing an on-call shift — shown as a separate figure on
+  the statistics card, in the "معلوماتي" summary, per month, and in the Excel export,
+  while still counting toward the hours ranking.
+- **Excel export** now includes the praise count, the number of rotations and one column
+  per `فرز شهر N`, so rotations are filterable in the spreadsheet.
+- **Official holidays from their own sheet tab** (date + name): every listed day becomes a
+  holiday everywhere — holiday duty times and durations (so the computed hours change),
+  the holiday counter, distinct colouring plus the holiday's name in both calendars, a
+  dedicated "العطل الرسمية" panel in معلوماتي, and the exported image.
 - **On-call timing rules** sourced from a dedicated sheet tab to show duty times/durations and holiday-aware highlights (Fri/Sat + annual holidays from sheet).
 - **My Info on-call UX upgrade**: the personal card now uses a cleaner identity header, static cumulative/join-day cards, an always-visible cumulative distribution panel, a month dropdown for on-calls, cleaner month statistics, and a denser month calendar with on-call labels inside each active day.
 - **My Info completed/holiday styling**: finished on-calls are highlighted in green with a clear `تم` badge, while holiday on-calls keep the normal card color and only use a red dot / `عطلة` badge.
@@ -644,7 +657,7 @@ js/
     gviz-client.js    Google Sheets transport: fetch (CSV/JSON) + JSONP fallback
     api-client.js     the future JSON backend, same contract, inert until configured
     parsers/          raw table → domain model (residents, oncall, evaluation,
-                      lectures, content)
+                      lectures, holidays, content)
     repository.js     fetch all → parse all → dataset, plus the localStorage cache
   domain/           business rules, pure functions
     oncall-schedule.js  fixed duty times/durations, holidays, group classification
@@ -841,6 +854,57 @@ methods on the app (`this.findRbyExact`, `this.isHolidayDate`,
 
 ---
 
+## Design language — "دفتر المناوبات" (the duty ledger)
+
+The visual direction comes from the object this app replaces: the duty roster
+taped to the ward wall. Paper, ink, hairline rules, and a stamp.
+
+| Token | Light | Dark | Used for |
+|---|---|---|---|
+| `--paper` | `#f6f4ef` | `#0a0b0c` | page background (warm paper / true black) |
+| `--surface` | `#ffffff` | `#131518` | panels and cards |
+| `--surface-sunk` | `#efece5` | `#1a1d21` | inputs, table headers, chips |
+| `--ink` / `--ink-2` | `#15181b` / `#59616b` | `#eae7e1` / `#99a1aa` | text |
+| `--rule` | `#ddd8cd` | `#262a2f` | every border — 1px, no shadows |
+| `--primary` | `#14563f` | `#4ca987` | duty green: the one emphasis colour |
+| `--signal` | `#a62b22` | `#e0655a` | holidays, weekends, errors — nothing else |
+| `--ochre` | `#9a6b15` | `#d3a24a` | things that were *earned*: praise, Bonus |
+
+Rules that keep it from drifting back into a template:
+
+- **One family**: IBM Plex Sans Arabic (400/500/600/700), with
+  `font-variant-numeric: tabular-nums` everywhere numbers are compared. Hours,
+  dates and counts are the content — they line up in columns.
+- **Radius language**: `12px` panels, `8px` controls, `999px` pills, `0` table
+  cells. Nothing else.
+- **Structure comes from rules, not shadows.** `--shadow` is `none`; elevation
+  exists only for things that genuinely float (modal, dropdown, tooltip, toast).
+- **No gradients as decoration.** The only gradient left is the veil that makes
+  the header photograph readable.
+- **The photograph is the identity** — the real building, desaturated behind a
+  dark veil, with a green hairline under it. No stock imagery, no blurred colour
+  orbs, no glassmorphism.
+- **The signature element is the calendar day cell**: green fill = duty, red
+  stamp = official holiday with its name, `✓` = completed. It is what people
+  open the site for, so it is where the colour goes.
+
+Dark mode is genuinely dark (`#0a0b0c`), not navy: the app is read at 2 a.m. on
+a phone in a lit ward.
+
+Two surfaces carry the photograph and must stay that way:
+
+- **The loading screen** (`.loading-screen`) is the building behind a dark veil,
+  with the percentage set large in tabular numerals over it. It covers the page
+  completely (`position:fixed;inset:0;z-index:10000`) — if its `background`
+  declaration ever breaks, the screen turns transparent and the half-built UI
+  shows through, which is exactly the bug it was rebuilt to fix.
+- **The masthead** (`.main-header`) is sized with
+  `min-height: clamp(300px, 38vh, 430px)` (≥1200px: `clamp(340px,40vh,470px)`;
+  ≤768px: `clamp(230px,34vh,300px)`), so the photo has room on a laptop and on a
+  phone without pushing the content off screen. The title uses
+  `clamp(1.55em, 5.6vw, 2.7em)` so it stays on two lines at 375px.
+
+
 ## Conventions
 
 - **Arabic + RTL everywhere.** New user-facing strings stay Arabic and match the
@@ -878,12 +942,13 @@ browser through Google's **gviz** endpoint. There is no server and no write path
 | `residents` | main | `0` | CSV | لائحة المقيمين |
 | `oncall` | main | `238974679` | JSON | المناوبات (السنة الأولى) |
 | `oncallYear2` | year2 | `0` | CSV | مناوبات السنة الثانية (spreadsheet `1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8`) |
-| `oncallAdjustments` | main | `1181737768` | CSV | تعديلات المناوبات |
+| `oncallAdjustments` | main | `1181737768` | CSV | تعديل الساعات والبونص |
 | `evaluation` | main | `253629565` | CSV | التقييم السنوي |
 | `links` | main | `1649404909` | CSV | روابط هامة |
 | `qa` | main | `680270268` | JSON | الأسئلة والأجوبة |
 | `lectures` | main | `393274093` | CSV | رزنامة المحاضرات |
-| `oncallRules` | main | `1364488029` | CSV | العطل السنوية فقط |
+| `holidays` | main | `1388329552` | CSV | العطل الرسمية (تاريخ + اسم) |
+| `oncallRules` | main | `1364488029` | CSV | العطل السنوية (تبويب قديم، ما زال يُدمج) |
 
 Main spreadsheet: `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4`.
 Both spreadsheets must stay shared as **"anyone with the link can view"**.
@@ -1014,27 +1079,63 @@ Arabic strings shown as-is; hours are parsed out of the duration text
 the category by normalized name (with an emergency-prefix fallback), then picks
 the holiday or workday row.
 
-A **holiday** is Friday/Saturday or a date listed under `العطل السنوية` in the
-rules tab (`GID 1364488029`, column B under that label). Nothing else in that tab
-is read anymore.
+### What counts as a holiday
+
+A day is a holiday when it is **Friday or Saturday**, or when it appears in the
+**العطل الرسمية** tab (`GID 1388329552`) — two columns, `التاريخ` (day-month-year)
+and `اسم العطلة`. Dates from the old `العطل السنوية` section of the rules tab are
+still merged in for backward compatibility.
+
+`app.applyDataset()` merges both into `this.annualHolidays`, which is the single
+`Set` every holiday-aware code path reads, so **adding one row to that sheet**
+automatically changes:
+
+- the duty **time and duration** for that day (`getCategorySchedule` picks the
+  holiday row) — and therefore every computed hour figure and ranking;
+- the `holiday` counter in the doctor statistics;
+- the colouring of both calendars (a named holiday gets its own red/gold cell,
+  a star and the holiday's name) and the badge in the on-call day card;
+- the "العطل الرسمية" panel in معلوماتي and the exported PNG calendar.
+
+`AUH.parse.holidays` also exposes `nameFor(date)`, `inMonth('YYYY-MM')` and
+`upcoming(fromDate, limit)` for the UI.
 
 ---
 
-## 7. On-call adjustments
+## 7. Hour adjustments and bonus hours
 
-Each row of `oncallAdjustments` (name, abbr, date, category, hours) is resolved
-into exactly one of:
+The `oncallAdjustments` tab (`GID 1181737768`) carries three different things,
+told apart by its own content — columns are: name, abbreviation, date, type, hours.
+
+**Shift rows** (a real date + a duty category) resolve into exactly one of:
 
 - **override** — the person is already listed for that date+category, so their
   hours replace the standard duration (badge "ساعات معدّلة").
 - **addition** — they are not listed: a volunteer/extra shift, treated everywhere
   as a real assignment (badge "تطوعي", gold dot on the month calendar).
 
-Consumed by `computeDoctorStats`, `showMe`, `showOncallDate` and
-`renderMonthlyCalendar`. Not applied to the raw "عرض كجدول" table, which mirrors
-the sheet literally. Only Year-1 gets adjustments.
+**Bonus rows** — the date **or** the type cell says `Bonus` (also accepted:
+`بونص`, `بونس`, `مكافأة`):
 
----
+| Date cell | Type cell | Meaning |
+|---|---|---|
+| a real date | `Bonus` | bonus hours belonging to that month |
+| `Bonus` | `Bonus` | undated bonus hours (totals only) |
+
+Bonus hours are credited to the person **without creating an on-call
+assignment**: the shift count, group breakdown, holiday/night counters and the
+calendars are untouched. They are added to `hoursTotal` (and to `hoursCompleted`
+when undated or already past), so they do affect the hours ranking.
+
+`computeDoctorStats()` exposes them as `bonusHours`, `bonusCompleted`,
+`bonusByMonth` (`{'YYYY-MM': hours}`) and `bonusEntries`, alongside
+`hoursShiftsTotal` / `hoursShiftsCompleted` (the same figures without bonus), so
+every card can show "منها X بونص" and stay traceable.
+
+Consumed by `computeDoctorStats`, the statistics cards, "معلوماتي" (top summary,
+a per-month card and a dedicated ساعات البونص section) and the Excel export.
+Not applied to the raw "عرض كجدول" table, which mirrors the sheet literally.
+Only Year-1 gets adjustments.
 
 ## 8. Caching & refresh
 
@@ -1430,11 +1531,12 @@ node tools/generate-data-contract.mjs
 | `residents` | لائحة المقيمين | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `0` | CSV |
 | `oncall` | المناوبات (السنة الأولى) | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `238974679` | JSON |
 | `oncallYear2` | مناوبات السنة الثانية | `1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8` | `0` | CSV |
-| `oncallAdjustments` | تعديلات المناوبات | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1181737768` | CSV |
+| `oncallAdjustments` | تعديل الساعات والبونص | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1181737768` | CSV |
 | `evaluation` | التقييم السنوي | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `253629565` | CSV |
 | `links` | روابط هامة | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1649404909` | CSV |
 | `qa` | الأسئلة والأجوبة | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `680270268` | JSON |
 | `lectures` | رزنامة المحاضرات والأنشطة | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `393274093` | CSV |
+| `holidays` | العطل الرسمية | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1388329552` | CSV |
 | `oncallRules` | قواعد المناوبات (العطل السنوية) | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1364488029` | CSV |
 
 ---
@@ -1500,7 +1602,7 @@ node tools/generate-data-contract.mjs
 
 ---
 
-## تعديلات المناوبات  `oncallAdjustments`
+## تعديل الساعات والبونص  `oncallAdjustments`
 
 - **الشيت:** `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4`
 - **GID:** `1181737768` — **الصيغة:** CSV
@@ -1510,8 +1612,8 @@ node tools/generate-data-contract.mjs
 |---|---|---|---|---|
 | `name` | `الاسم` · `الاسم الثلاثي` | ✅ | نص | موضع افتراضي: 0 |
 | `abbr` | `الاختصار` | — | نص | موضع افتراضي: 1 |
-| `date` | `تاريخ المناوبة` · `التاريخ` | ✅ | تاريخ | موضع افتراضي: 2 |
-| `category` | `نوع المناوبة` · `المناوبة` | ✅ | نص | موضع افتراضي: 3 |
+| `date` | `تاريخ المناوبة` · `التاريخ` | — | تاريخ | تاريخ المناوبة، أو Bonus لساعات Bonus غير مؤرخة — موضع افتراضي: 2 |
+| `category` | `نوع المناوبة` · `المناوبة` · `النوع` | ✅ | نص | اسم فئة المناوبة، أو Bonus لإضافة ساعات Bonus (تُقبل صيغ مختلفة وأخطاء إملائية بسيطة) — موضع افتراضي: 3 |
 | `hours` | `عدد الساعات` · `الساعات` | ✅ | رقم | موضع افتراضي: 4 |
 
 ---
@@ -1608,6 +1710,21 @@ node tools/generate-data-contract.mjs
 
 ---
 
+## العطل الرسمية  `holidays`
+
+- **الشيت:** `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4`
+- **GID:** `1388329552` — **الصيغة:** CSV
+- **صف العناوين:** الصف 0
+
+| الحقل في الكود | أسماء العمود المقبولة | إلزامي | النوع | ملاحظات |
+|---|---|---|---|---|
+| `date` | `التاريخ` · `تاريخ العطلة` · `اليوم` | ✅ | تاريخ | يوم - شهر - سنة (يقبل - / . \ كفواصل) — موضع افتراضي: 0 |
+| `name` | `اسم العطلة` · `المناسبة` · `العطلة` · `الاسم` | ✅ | نص | موضع افتراضي: 1 |
+
+> كل تاريخ هنا يُعامل كعطلة في كل الموقع: توقيت ومدة المناوبة، حساب الساعات، عدّاد مناوبات العطل، وتلوين الرزنامات.
+
+---
+
 ## قواعد المناوبات (العطل السنوية)  `oncallRules`
 
 - **الشيت:** `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4`
@@ -1682,7 +1799,7 @@ FILE: docs/OVERVIEW-AR.md
 
 | الجدول | المحتوى | من يحرره |
 |---|---|---|
-| الجدول الرئيسي (٨ تبويبات) | المقيمون · المناوبات · التقييم · الروابط · الأسئلة · المحاضرات · تعديلات المناوبات · العطل السنوية | رئاسة المقيمين ومن تفوّضه |
+| الجدول الرئيسي (٩ تبويبات) | المقيمون · المناوبات · التقييم · الروابط · الأسئلة · المحاضرات · تعديلات المناوبات · **العطل الرسمية** · قواعد المناوبات | رئاسة المقيمين ومن تفوّضه |
 | جدول السنة الثانية | مناوبات السنة الثانية | فريق السنة الثانية (جدول منفصل تماماً) |
 
 **شرطان أساسيان:**
@@ -1708,8 +1825,22 @@ FILE: docs/OVERVIEW-AR.md
 - مناوبات العطل (الجمعة/السبت + العطل السنوية من الشيت) والمناوبات الليلية.
 - الترتيب بين الأطباء حسب الساعات.
 - عدد الثناءات (من شيت التقييم) والفروز المنجزة حتى الشهر الحالي.
-- **تعديلات المناوبات**: تصحيح ساعات شخص في مناوبة موجودة، أو إضافة مناوبة تطوعية
+- **تعديل الساعات**: تصحيح ساعات شخص في مناوبة موجودة، أو إضافة مناوبة تطوعية
   جديدة — يُدمج كلاهما في كل الحسابات والعرض.
+- **ساعات Bonus**: في تبويب «تعديل الساعات» اكتب `Bonus` في عمود نوع المناوبة
+  (ومعه `Bonus` في عمود التاريخ إن كان غير مرتبط بشهر، أو تاريخاً حقيقياً لينتسب
+  لذلك الشهر)، وضع الساعات في العمود الأخير. الكتابة **متسامحة**: تُقبل
+  `Bonus` و`bonus` و`BONUS` ومع مسافات زائدة، وحتى خطأ إملائي بسيط مثل `bouns`،
+  كما تُقبل `بونص` و`بونس` و`مكافأة`. تُضاف هذه الساعات إلى ساعات الطبيب وترتيبه
+  **دون أن تُحسب كمناوبة**، وتظهر منفصلة في بطاقة الإحصائيات وفي «معلوماتي»
+  (الإجمالي + لكل شهر) وفي ملف الإكسل — ولا يظهر شيء لمن ليس لديه Bonus.
+
+**إضافة عطلة رسمية:** أضف سطراً في تبويب **العطل الرسمية** (عمودان فقط: التاريخ
+بصيغة يوم - شهر - سنة، واسم العطلة) — ولا حاجة لأي تعديل برمجي. خلال دقائق يصبح ذلك
+اليوم عطلة في كل الموقع: توقيت ومدة المناوبة يتحوّلان إلى توقيت العطلة (فتتغيّر
+الساعات المحسوبة والترتيب)، ويُحتسب ضمن «مناوبات العطل»، ويظهر بلون مميّز واسمه في
+رزنامة المناوبات وفي رزنامة «معلوماتي» وفي الصورة المصدَّرة، إضافة إلى قسم
+**العطل الرسمية** أسفل مناوبات «معلوماتي».
 
 لذلك: تعديل الشيت ينعكس على الإحصائيات تلقائياً خلال دقيقتين، ولا يحتاج أحد لحساب
 أي رقم يدوياً.
@@ -1875,6 +2006,24 @@ node tools/verify-data.mjs --debug  # مع خريطة الأعمدة المكت�
 الجديدة مطبَّقة فعلاً، والشارة تذكّرك بالضغط عليها لإعادة عرض الصفحة كاملة (بما فيها
 بطاقة «معلوماتي» إن كنت باحثاً عن اسم). بعد الضغط تعود الشارة إلى وضعها الطبيعي.
 
+### أضفت بونص ولم يظهر
+
+- تأكد أن كلمة `Bonus` مكتوبة في عمود **نوع المناوبة** (وإن أردته غير مؤرّخ فاكتبها
+  في عمود التاريخ أيضاً)، وأن عمود الساعات يحوي رقماً. الكتابة متسامحة:
+  `Bonus` / `bonus` / `BONUS` / ` Bonus ` / `bouns` / `بونص` / `بونس` / `مكافأة`
+  كلها مقبولة.
+- البونص **لا يزيد عدد المناوبات** — يزيد الساعات فقط؛ هذا هو السلوك المقصود.
+- للتأكد: `node tools/verify-data.mjs` يطبع عدد صفوف البونص وأسماء أصحابها.
+
+### أضفت عطلة ولم تظهر / تغيّرت ساعات الجميع فجأة
+
+- **لم تظهر:** تأكد أن التاريخ في تبويب «العطل الرسمية» مكتوب بصيغة يوم - شهر - سنة
+  (مثل `25 - 8 - 2026`)، وأن عمود الاسم غير فارغ. الصفوف ذات التاريخ غير المقروء
+  تُتجاهَل ويظهر تنبيه في `node tools/verify-data.mjs`.
+- **تغيّرت الساعات:** هذا هو المقصود — يوم العطلة يُحسب بتوقيت ومدة العطلة
+  (مثلاً ٢٤ ساعة بدل ١٨ للأجنحة والعنايات)، فترتفع ساعات كل من ناوب ذلك اليوم
+  ويتغيّر ترتيبه. أداة الفحص تطبع العطل المقروءة وتتحقق أن المدة تبدّلت فعلاً.
+
 ### البيانات المعروضة قديمة
 
 - الموقع يحدّث كل ٣ دقائق، وعند العودة للتبويب، وعند الضغط على شارة «Last update».
@@ -1921,7 +2070,7 @@ node tools/verify-data.mjs --debug  # مع خريطة الأعمدة المكت�
 ================================================================
 FILE: index.html
 ================================================================
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="app-build" content="__BUILD_ID__"><title>أطباء قسم الداخلية السنة الاولى - مشفى حلب الجامعي</title><link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>"><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Changa:wght@500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><link rel="preload" as="image" href="bg.webp?v=__BUILD_ID__" fetchpriority="high"><link rel="preload" as="image" href="bg.png?v=__BUILD_ID__" fetchpriority="high"><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script><script>window.__APP_BUILD_ID__='__BUILD_ID__';</script><link rel="stylesheet" href="styles.css?v=__BUILD_ID__"></head><body>
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="app-build" content="__BUILD_ID__"><title>أطباء قسم الداخلية السنة الاولى - مشفى حلب الجامعي</title><link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>"><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="preload" as="image" href="bg.webp?v=__BUILD_ID__" fetchpriority="high"><link rel="preload" as="image" href="bg.png?v=__BUILD_ID__" fetchpriority="high"><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script><script>window.__APP_BUILD_ID__='__BUILD_ID__';</script><link rel="stylesheet" href="styles.css?v=__BUILD_ID__"></head><body>
 <div class="animated-bg"></div><div class="bg-dots"></div><div class="bg-orb bg-orb-1"></div><div class="bg-orb bg-orb-2"></div><div class="bg-orb bg-orb-3"></div>
 <div class="loading-screen" id="loadingScreen"><div class="loader-orb"><div class="loader-orb-ring"></div><div class="loader-orb-ring loader-orb-ring-2"></div><i class="fas fa-stethoscope loader-icon"></i></div><div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div><div class="loader-percentage" id="loaderPercentage">0%</div><div class="loader-subtitle" id="loaderSubtitle">جاري التحميل...</div></div>
 <div class="download-progress-overlay hidden" id="downloadProgressOverlay"><div class="download-progress-box"><div class="dp-icon"><i class="fas fa-image"></i></div><div class="dp-title" id="dpTitle">جاري توليد الصورة...</div><div class="dp-sub" id="dpSub">يرجى الانتظار قليلاً</div><div class="dp-bar-container"><div class="dp-bar" id="dpBar"></div></div><div class="dp-percent" id="dpPercent">0%</div><div class="dp-hint">لأفضل جودة عند المشاركة، أرسل الصورة كـ «ملف/Document»</div></div></div>
@@ -1948,6 +2097,7 @@ FILE: index.html
 <script src="js/data/parsers/oncall.js?v=__BUILD_ID__" defer></script>
 <script src="js/data/parsers/evaluation.js?v=__BUILD_ID__" defer></script>
 <script src="js/data/parsers/lectures.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/holidays.js?v=__BUILD_ID__" defer></script>
 <script src="js/data/parsers/content.js?v=__BUILD_ID__" defer></script>
 <script src="js/data/repository.js?v=__BUILD_ID__" defer></script>
 <script src="js/domain/oncall-schedule.js?v=__BUILD_ID__" defer></script>
@@ -2017,9 +2167,11 @@ FILE: js/app.js
       this.oncHeaders2 = [];
       this.oncRows2 = [];
       this.lectures = [];
+      this.holidaysModel = AUH.parse.emptyHolidays();
       this.annualHolidays = new Set();
       this.adjustmentOverrides = new Map();
       this.adjustmentAdditions = [];
+      this.bonusHours = [];
       this.doctorStats = [];
 
       /* --- roster tab state ------------------------------------------------ */
@@ -2473,16 +2625,23 @@ FILE: js/app.js
       this.oncHeaders2 = dataset.oncallYear2.headers;
       this.oncRows2 = dataset.oncallYear2.rows;
       this.lectures = dataset.lectures.list;
-      this.annualHolidays = dataset.rules.annualHolidays;
+
+      // Official holidays come from their own sheet tab; the old rules tab is
+      // still merged in for backward compatibility. Everything downstream
+      // (duty times, hours, holiday counters, calendar colours) reads this set.
+      this.holidaysModel = dataset.holidays;
+      this.annualHolidays = new Set([...(dataset.rules.annualHolidays || []), ...dataset.holidays.dates]);
 
       // Derived data (order matters: adjustments need residents + on-call,
       // statistics need adjustments).
       const resolved = AUH.domain.adjustments.resolveAdjustments(dataset.adjustments.entries, {
         residents: dataset.residents,
-        oncall: dataset.oncall
+        oncall: dataset.oncall,
+        bonuses: dataset.adjustments.bonuses
       });
       this.adjustmentOverrides = resolved.overrides;
       this.adjustmentAdditions = resolved.additions;
+      this.bonusHours = resolved.bonuses;
 
       this.doctorStats = AUH.domain.doctorStats.computeDoctorStats({
         residents: dataset.residents,
@@ -2490,6 +2649,7 @@ FILE: js/app.js
         evaluation: dataset.evaluation,
         overrides: this.adjustmentOverrides,
         additions: this.adjustmentAdditions,
+        bonuses: this.bonusHours,
         annualHolidays: this.annualHolidays,
         today: this.today,
         currentMonth: this.m + 1
@@ -2673,6 +2833,21 @@ FILE: js/app.js
 
     isHolidayDate(dateIso) {
       return schedule.isHolidayDate(dateIso, this.annualHolidays);
+    }
+
+    /** Name of an official holiday ('' for weekends and ordinary days). */
+    getHolidayName(dateIso) {
+      return this.holidaysModel.nameFor(dateIso);
+    }
+
+    /** True only for a date listed in the holidays sheet (not for Fri/Sat). */
+    isOfficialHoliday(dateIso) {
+      return this.holidaysModel.isOfficialHoliday(dateIso);
+    }
+
+    /** Official holidays inside a `YYYY-MM` month. */
+    getHolidaysInMonth(key) {
+      return this.holidaysModel.inMonth(key);
     }
 
     getCategorySchedule(category, dateIso) {
@@ -3343,6 +3518,68 @@ FILE: js/core/text.js
     return n;
   }
 
+
+  /**
+   * Damerau-Levenshtein distance (edit distance that also counts a swap of two
+   * neighbouring letters as ONE mistake). Used to accept human typos in keywords.
+   */
+  function editDistance(a, b) {
+    const s1 = String(a || '');
+    const s2 = String(b || '');
+    if (s1 === s2) return 0;
+    if (!s1.length) return s2.length;
+    if (!s2.length) return s1.length;
+
+    const d = [];
+    for (let i = 0; i <= s1.length; i++) d[i] = [i];
+    for (let j = 0; j <= s2.length; j++) d[0][j] = j;
+
+    for (let i = 1; i <= s1.length; i++) {
+      for (let j = 1; j <= s2.length; j++) {
+        const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && s1[i - 1] === s2[j - 2] && s1[i - 2] === s2[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost); // transposition
+        }
+      }
+    }
+    return d[s1.length][s2.length];
+  }
+
+  /**
+   * Forgiving keyword test for cells people type by hand.
+   *
+   * Matches the word anywhere in the cell, ignores case, spaces, punctuation and
+   * Arabic letter variants, and tolerates one typo (including a swapped pair, so
+   * "bouns" still reads as "bonus").
+   */
+  function matchesKeyword(value, keywords) {
+    const raw = String(value === null || value === undefined ? '' : value).trim();
+    if (!raw) return false;
+
+    const latin = raw.toLowerCase().replace(/[^a-z]/g, '');
+    const arabic = normAr(raw).replace(/[^\u0600-\u06FF]/g, '');
+
+    return (keywords || []).some(keyword => {
+      const k = String(keyword).toLowerCase();
+      const kLatin = k.replace(/[^a-z]/g, '');
+      const kArabic = normAr(k).replace(/[^\u0600-\u06FF]/g, '');
+
+      if (kLatin) {
+        if (!latin) return false;
+        if (latin.includes(kLatin)) return true;
+        // one typo anywhere, only for words long enough to stay unambiguous
+        return kLatin.length >= 4 && Math.abs(latin.length - kLatin.length) <= 1 && editDistance(latin, kLatin) <= 1;
+      }
+      if (kArabic) {
+        if (!arabic) return false;
+        if (arabic.includes(kArabic)) return true;
+        return kArabic.length >= 4 && Math.abs(arabic.length - kArabic.length) <= 1 && editDistance(arabic, kArabic) <= 1;
+      }
+      return false;
+    });
+  }
+
   AUH.text = {
     normAr,
     prepSearch,
@@ -3356,7 +3593,9 @@ FILE: js/core/text.js
     escapeHtml,
     escapeJsString,
     formatNumber,
-    parseDurationHours
+    parseDurationHours,
+    editDistance,
+    matchesKeyword
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -4521,6 +4760,110 @@ FILE: js/data/parsers/evaluation.js
 })(typeof window !== 'undefined' ? window : globalThis);
 
 ================================================================
+FILE: js/data/parsers/holidays.js
+================================================================
+/**
+ * Official holidays (العطل الرسمية).
+ *
+ * A tiny two-column tab — date + name — that carries real weight: every date
+ * listed here becomes a holiday everywhere in the app, exactly like a Friday or
+ * a Saturday. That means holiday duty times and durations (so the computed
+ * hours change), the holiday counter in the statistics, the red styling in both
+ * calendars, and the named badge in the day view.
+ *
+ * Adding a holiday is therefore a sheet edit, never a code change.
+ */
+(function (global) {
+  'use strict';
+
+  const AUH = global.AUH;
+  const { extractDate, getDayName } = AUH.dates;
+  const { monthKey } = AUH.dates;
+  const headersApi = AUH.data.headers;
+  const log = AUH.log;
+
+  function parseHolidays(table, options) {
+    const source = AUH.data.schema.holidays;
+    const rows = Array.isArray(table) ? table : [];
+    const resolution = headersApi.resolveColumns(rows[0] || [], source);
+    const get = headersApi.createAccessor(resolution.map);
+
+    const list = [];
+    const byDate = new Map();
+    const skipped = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row.length) continue;
+
+      const rawDate = get(row, 'date');
+      const name = get(row, 'name');
+      if (!rawDate && !name) continue;
+
+      const date = extractDate(rawDate);
+      if (!date) {
+        skipped.push(rawDate || '(فارغ)');
+        continue;
+      }
+      if (byDate.has(date)) continue; // first entry wins
+
+      const entry = { date, name: name || 'عطلة رسمية', day: getDayName(date) };
+      list.push(entry);
+      byDate.set(date, entry);
+    }
+
+    list.sort((a, b) => a.date.localeCompare(b.date));
+
+    const model = {
+      key: 'holidays',
+      list,
+      byDate,
+      /** Just the dates — merged into the app's holiday set. */
+      dates: new Set(byDate.keys()),
+      issues: resolution.issues,
+
+      /** True for a date listed in the sheet (weekends are handled elsewhere). */
+      isOfficialHoliday(date) {
+        return byDate.has(date);
+      },
+
+      /** The holiday's name, or '' when the date is not an official holiday. */
+      nameFor(date) {
+        const entry = byDate.get(date);
+        return entry ? entry.name : '';
+      },
+
+      /** Every holiday inside a `YYYY-MM` month, in date order. */
+      inMonth(key) {
+        return list.filter(h => monthKey(h.date) === key);
+      },
+
+      /** Holidays from `fromDate` onwards (today by default). */
+      upcoming(fromDate, limit) {
+        const from = fromDate || '';
+        const out = list.filter(h => h.date >= from);
+        return typeof limit === 'number' ? out.slice(0, limit) : out;
+      }
+    };
+
+    if (!(options && options.quiet)) {
+      headersApi.logResolution(source, resolution);
+      log.debug('holidays', `${list.length} عطلة رسمية`);
+      if (skipped.length) log.warn('holidays', 'تواريخ عطل غير مقروءة تم تجاهلها:', skipped);
+    }
+
+    return model;
+  }
+
+  function emptyHolidays() {
+    return parseHolidays([[]], { quiet: true });
+  }
+
+  AUH.parse.holidays = parseHolidays;
+  AUH.parse.emptyHolidays = emptyHolidays;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+================================================================
 FILE: js/data/parsers/lectures.js
 ================================================================
 /**
@@ -4747,7 +5090,7 @@ FILE: js/data/parsers/oncall.js
   'use strict';
 
   const AUH = global.AUH;
-  const { normAr, splitNames, safeNum } = AUH.text;
+  const { normAr, splitNames, safeNum, matchesKeyword } = AUH.text;
   const { extractDate, getDayName } = AUH.dates;
   const headersApi = AUH.data.headers;
   const log = AUH.log;
@@ -4979,20 +5322,32 @@ FILE: js/data/parsers/oncall.js
   /* --------------------------------------------------------------- adjustments */
 
   /**
-   * Manual on-call adjustments: per-person hour corrections and volunteer shifts
-   * that cannot be expressed in the main table.
+   * Manual adjustments: per-person hour corrections, volunteer shifts, and
+   * bonus hours.
+   *
+   * Row kinds (see the schema for the exact wording):
+   *   'shift' — a real date + a duty category
+   *   'bonus' — the date or the category says "Bonus"; hours are credited to the
+   *             person without creating an on-call assignment. A bonus row that
+   *             still carries a real date belongs to that month; one written as
+   *             `Bonus | Bonus` is undated and only affects the totals.
    */
   function parseOncallAdjustments(table) {
     const source = AUH.data.schema.oncallAdjustments;
     const rows = Array.isArray(table) ? table : [];
-    if (!rows.length) return { entries: [], issues: [] };
+    if (!rows.length) return { entries: [], bonuses: [], issues: [] };
 
     const resolution = headersApi.resolveColumns(rows[0] || [], source);
     const get = headersApi.createAccessor(resolution.map);
+    const bonusWords = source.bonusKeywords || ['bonus'];
+    // Forgiving on purpose: "Bonus", "bonus ", "BONUS", "bouns", "بونص", "بونس"
+    // and "مكافأة" all mean the same thing to whoever is filling the sheet.
+    const isBonusWord = value => matchesKeyword(value, bonusWords);
 
     // If the first row is not a header (no recognizable labels), treat it as data.
     const firstIsHeader = normAr((rows[0] || [])[resolution.map.name || 0] || '').includes(normAr('الاسم'));
     const entries = [];
+    const bonuses = [];
     const skipped = [];
 
     for (let i = firstIsHeader ? 1 : 0; i < rows.length; i++) {
@@ -5003,23 +5358,33 @@ FILE: js/data/parsers/oncall.js
       const abbr = get(row, 'abbr');
       if (!name && !abbr) continue;
 
-      const date = extractDate(get(row, 'date'));
+      const rawDate = get(row, 'date');
       const category = get(row, 'category');
       const hoursRaw = get(row, 'hours');
-      const hours = safeNum(hoursRaw);
-
-      if (!date || !category || !hoursRaw) {
+      if (!hoursRaw) {
         skipped.push(row);
         continue;
       }
-      entries.push({ name, abbr, date, category, hours });
+      const hours = safeNum(hoursRaw);
+      const date = extractDate(rawDate) || '';
+
+      if (isBonusWord(category) || isBonusWord(rawDate)) {
+        bonuses.push({ kind: 'bonus', name, abbr, date, hours, label: category });
+        continue;
+      }
+
+      if (!date || !category) {
+        skipped.push(row);
+        continue;
+      }
+      entries.push({ kind: 'shift', name, abbr, date, category, hours });
     }
 
     headersApi.logResolution(source, resolution);
-    log.debug('oncall', `تعديلات المناوبات: ${entries.length} صف`);
-    if (skipped.length) log.warn('oncall', 'تعديلات مناوبات غير مقروءة تم تجاهلها:', skipped);
+    log.debug('oncall', `تعديلات: ${entries.length} صف مناوبة، ${bonuses.length} صف بونص`);
+    if (skipped.length) log.warn('oncall', 'صفوف تعديل غير مقروءة تم تجاهلها:', skipped);
 
-    return { entries, issues: resolution.issues, skipped };
+    return { entries, bonuses, issues: resolution.issues, skipped };
   }
 
   AUH.parse.oncall = parseOncall;
@@ -5280,6 +5645,7 @@ FILE: js/data/repository.js
     { schemaKey: 'links', datasetKey: 'links' },
     { schemaKey: 'qa', datasetKey: 'qa' },
     { schemaKey: 'lectures', datasetKey: 'lectures' },
+    { schemaKey: 'holidays', datasetKey: 'holidays' },
     { schemaKey: 'oncallRules', datasetKey: 'rules' }
   ];
 
@@ -5347,6 +5713,7 @@ FILE: js/data/repository.js
     const links = source.links ? AUH.parse.links(source.links) : prev.links || { list: [] };
     const qa = source.qa ? AUH.parse.qa(source.qa) : prev.qa || { list: [], categories: [] };
     const lectures = source.lectures ? AUH.parse.lectures(source.lectures) : prev.lectures || { list: [] };
+    const holidays = source.holidays ? AUH.parse.holidays(source.holidays) : prev.holidays || AUH.parse.emptyHolidays();
     const rules = source.rules ? AUH.parse.oncallRules(source.rules) : prev.rules || { annualHolidays: new Set() };
 
     const dataset = {
@@ -5358,12 +5725,13 @@ FILE: js/data/repository.js
       links,
       qa,
       lectures,
+      holidays,
       rules,
       fetchedAt: Date.now()
     };
 
     dataset.issues = []
-      .concat(residents.issues || [], oncall.issues || [], evaluation.issues || [], links.issues || [], qa.issues || [], lectures.issues || [])
+      .concat(residents.issues || [], oncall.issues || [], evaluation.issues || [], links.issues || [], qa.issues || [], lectures.issues || [], holidays.issues || [])
       .filter(Boolean);
 
     return dataset;
@@ -5543,10 +5911,19 @@ FILE: js/data/schema.js
       categoryColumns: true
     },
 
-    /** Manual corrections/additions that cannot be expressed in the on-call table. */
+    /**
+     * Hour corrections, volunteer shifts and bonus hours — everything that
+     * cannot be expressed inside the on-call table itself.
+     *
+     * A row is a BONUS when the date or the type cell says `Bonus` (or `بونص`):
+     *   • date + `Bonus` → bonus hours belonging to that month
+     *   • `Bonus` + `Bonus` → undated bonus hours (counted in the totals only)
+     * Anything else is a shift row: an hours override if the person is already
+     * on that shift, otherwise a volunteer addition.
+     */
     oncallAdjustments: {
       key: 'oncallAdjustments',
-      label: 'تعديلات المناوبات',
+      label: 'تعديل الساعات والبونص',
       spreadsheet: 'main',
       gid: '1181737768',
       format: 'csv',
@@ -5554,10 +5931,12 @@ FILE: js/data/schema.js
       columns: {
         name: { labels: ['الاسم', 'الاسم الثلاثي'], required: true, fallbackIndex: 0, type: 'text' },
         abbr: { labels: ['الاختصار'], fallbackIndex: 1, type: 'text' },
-        date: { labels: ['تاريخ المناوبة', 'التاريخ'], required: true, fallbackIndex: 2, type: 'date' },
-        category: { labels: ['نوع المناوبة', 'المناوبة'], required: true, fallbackIndex: 3, type: 'text' },
+        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'تاريخ المناوبة، أو Bonus لساعات Bonus غير مؤرخة' },
+        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'اسم فئة المناوبة، أو Bonus لإضافة ساعات Bonus (تُقبل صيغ مختلفة وأخطاء إملائية بسيطة)' },
         hours: { labels: ['عدد الساعات', 'الساعات'], required: true, fallbackIndex: 4, type: 'number' }
-      }
+      },
+      /** Words that turn a row into bonus hours instead of a shift. */
+      bonusKeywords: ['bonus', 'بونص', 'بونس', 'بونوس', 'مكافأة', 'اضافي']
     },
 
     /* ----------------------------------------------------------- evaluation */
@@ -5659,6 +6038,21 @@ FILE: js/data/schema.js
       }
     },
 
+    /* ------------------------------------------------------ official holidays */
+    holidays: {
+      key: 'holidays',
+      label: 'العطل الرسمية',
+      spreadsheet: 'main',
+      gid: '1388329552',
+      format: 'csv',
+      headerRow: 0,
+      columns: {
+        date: { labels: ['التاريخ', 'تاريخ العطلة', 'اليوم'], required: true, fallbackIndex: 0, type: 'date', note: 'يوم - شهر - سنة (يقبل - / . \\ كفواصل)' },
+        name: { labels: ['اسم العطلة', 'المناسبة', 'العطلة', 'الاسم'], required: true, fallbackIndex: 1, type: 'text' }
+      },
+      note: 'كل تاريخ هنا يُعامل كعطلة في كل الموقع: توقيت ومدة المناوبة، حساب الساعات، عدّاد مناوبات العطل، وتلوين الرزنامات.'
+    },
+
     /* -------------------------------------------------- on-call rules sheet */
     oncallRules: {
       key: 'oncallRules',
@@ -5686,6 +6080,7 @@ FILE: js/data/schema.js
     'links',
     'qa',
     'lectures',
+    'holidays',
     'oncallRules'
   ];
 
@@ -5739,6 +6134,13 @@ FILE: js/domain/doctor-stats.js
         night: 0,
         hoursCompleted: 0,
         hoursTotal: 0,
+        // Shift hours on their own, so the card can show "منها بونص".
+        hoursShiftsCompleted: 0,
+        hoursShiftsTotal: 0,
+        bonusHours: 0,
+        bonusCompleted: 0,
+        bonusByMonth: {},
+        bonusEntries: [],
         firstOncall: '',
         lastOncall: '',
         groupDetails: { wards: {}, icu: {}, emergency: {}, misc: {}, other: {} },
@@ -5774,7 +6176,11 @@ FILE: js/domain/doctor-stats.js
     if (isNight) entry.night++;
 
     entry.hoursTotal += hours;
-    if (isCompleted) entry.hoursCompleted += hours;
+    entry.hoursShiftsTotal += hours;
+    if (isCompleted) {
+      entry.hoursCompleted += hours;
+      entry.hoursShiftsCompleted += hours;
+    }
 
     if (!entry.firstOncall || date < entry.firstOncall) entry.firstOncall = date;
     if (!entry.lastOncall || date > entry.lastOncall) entry.lastOncall = date;
@@ -5890,7 +6296,33 @@ FILE: js/domain/doctor-stats.js
       });
     });
 
-    // 4. Ranks by hours (worked, then planned).
+    // 4. Bonus hours: credited to the person without creating an assignment.
+    //    An undated bonus counts as already earned; a dated one follows its date.
+    (ctx.bonuses || []).forEach(bonus => {
+      const key = bonus.abbr || bonus.name;
+      let entry = statsMap.get(key);
+      if (!entry) {
+        entry = blankEntry({ name: bonus.name, abbr: bonus.abbr || '' });
+        statsMap.set(key, entry);
+      }
+
+      const hours = bonus.hours || 0;
+      const earned = !bonus.date || bonus.date <= today;
+
+      entry.bonusHours += hours;
+      entry.hoursTotal += hours;
+      if (earned) {
+        entry.bonusCompleted += hours;
+        entry.hoursCompleted += hours;
+      }
+      if (bonus.date) {
+        const month = bonus.date.slice(0, 7);
+        entry.bonusByMonth[month] = (entry.bonusByMonth[month] || 0) + hours;
+      }
+      entry.bonusEntries.push({ date: bonus.date || '', hours, label: bonus.label || 'Bonus' });
+    });
+
+    // 5. Ranks by hours (worked, then planned) — bonus included.
     const list = Array.from(statsMap.values());
     list
       .slice()
@@ -5951,15 +6383,27 @@ FILE: js/domain/oncall-adjustments.js
   }
 
   /**
-   * @param {Array} entries parsed adjustment rows
-   * @param {object} deps {residents, oncall} models
-   * @returns {{overrides: Map<string, number>, additions: Array}}
+   * @param {Array} entries parsed shift-adjustment rows
+   * @param {object} deps {residents, oncall} models, plus optional `bonuses`
+   * @returns {{overrides: Map<string, number>, additions: Array, bonuses: Array}}
    */
   function resolveAdjustments(entries, deps) {
     const overrides = new Map();
     const additions = [];
     const residents = deps.residents;
     const oncall = deps.oncall;
+
+    // Bonus rows carry hours only — they must never become an on-call assignment.
+    const bonuses = (deps.bonuses || []).map(bonus => {
+      const resident = (bonus.abbr && residents.findByNameOrAbbr(bonus.abbr)) || residents.findByNameOrAbbr(bonus.name);
+      return {
+        date: bonus.date || '',
+        hours: bonus.hours,
+        label: bonus.label || 'Bonus',
+        name: resident ? resident.name : bonus.name,
+        abbr: resident ? resident.abbr || resident.name : bonus.abbr || bonus.name
+      };
+    });
 
     (entries || []).forEach(adj => {
       const resident = (adj.abbr && residents.findByNameOrAbbr(adj.abbr)) || residents.findByNameOrAbbr(adj.name);
@@ -5973,11 +6417,14 @@ FILE: js/domain/oncall-adjustments.js
       }
     });
 
-    if (entries && entries.length) {
-      log.debug('adjustments', `${overrides.size} تعديل ساعات، ${additions.length} مناوبة إضافية/تطوعية`);
+    if ((entries && entries.length) || bonuses.length) {
+      log.debug(
+        'adjustments',
+        `${overrides.size} تعديل ساعات، ${additions.length} مناوبة إضافية/تطوعية، ${bonuses.length} بونص`
+      );
     }
 
-    return { overrides, additions };
+    return { overrides, additions, bonuses };
   }
 
   AUH.domain.adjustments = { resolveAdjustments, overrideKey, isListed };
@@ -6193,23 +6640,26 @@ FILE: js/views/capture-layouts.js
   const { getDayName } = AUH.dates;
   const AM = AUH.constants.MONTH_NAMES;
 
+  // Same identity as the site: paper, ink, one duty green, one stamp red, ochre
+  // for what was earned. Kept literal here because the export must not depend on
+  // the visitor's theme.
   const C = {
-    ink: '#12293f',
-    muted: '#5b7590',
-    line: '#dfe7ef',
-    soft: '#f4f8fb',
-    green: '#2f7d5c',
-    greenSoft: '#e8f5ee',
-    greenLine: '#8fcbad',
-    navy: '#1b3a5c',
-    gold: '#b8862b',
-    goldSoft: '#fdf4e3',
-    red: '#c0392b',
-    redSoft: '#fdeceb',
+    ink: '#15181b',
+    muted: '#59616b',
+    line: '#ddd8cd',
+    soft: '#f6f4ef',
+    green: '#14563f',
+    greenSoft: '#e4efe9',
+    greenLine: '#8fbfa9',
+    navy: '#14563f',
+    gold: '#9a6b15',
+    goldSoft: '#f6efdf',
+    red: '#a62b22',
+    redSoft: '#f7e9e7',
     white: '#ffffff'
   };
 
-  const FONT = "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif";
+  const FONT = "'IBM Plex Sans Arabic','Segoe UI',Tahoma,Arial,sans-serif";
   const CAL_HEADERS = ['اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
 
   /** `2026-08-22 07:44 PM` — shown at the top of every exported image. */
@@ -6218,6 +6668,45 @@ FILE: js/views/capture-layouts.js
     const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     return `${date} · ${time}`;
+  }
+
+  /**
+   * Duty times mix Arabic and English ("2:30 pm حتى 8:30 am", "9 صباحاً حتى 10 ليلاً"),
+   * and the bidi algorithm scrambles that inside an RTL card. Both forms are
+   * normalized to one clean, purely-LTR range so the exported image always reads
+   * left-to-right: `2:30 PM → 8:30 AM`.
+   */
+  function formatDutyTime(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+
+    const toClock = part => {
+      const s = String(part).trim();
+      const m = s.match(/(\d{1,2})(?::(\d{2}))?/);
+      if (!m) return '';
+      let hour = parseInt(m[1], 10);
+      const minutes = m[2] || '00';
+
+      const isPm = /pm|مساء|ليل|ظهر/i.test(s);
+      const isAm = /am|صباح|فجر/i.test(s);
+      if (isPm && hour < 12) hour += 12;
+      if (isAm && hour === 12) hour = 0;
+      // No marker at all: on-call duty starting at 1–11 means the afternoon.
+      if (!isPm && !isAm && hour >= 1 && hour <= 11) hour += 12;
+
+      const suffix = hour >= 12 ? 'PM' : 'AM';
+      const display = hour % 12 === 0 ? 12 : hour % 12;
+      return `${display}:${minutes} ${suffix}`;
+    };
+
+    const parts = raw.split(/حتى|الى|إلى|until|to|-|–|—/i).filter(p => /\d/.test(p));
+    if (parts.length >= 2) {
+      const from = toClock(parts[0]);
+      const to = toClock(parts[1]);
+      if (from && to) return `${from} → ${to}`;
+    }
+    const single = toClock(raw);
+    return single || raw;
   }
 
   function monthTitle(monthKey) {
@@ -6237,7 +6726,7 @@ FILE: js/views/capture-layouts.js
     return (
       `<div dir="rtl" style="width:${width}px;box-sizing:border-box;background:${C.white};font-family:${FONT};` +
       `color:${C.ink};padding:0;margin:0;border-radius:18px;overflow:hidden;border:1px solid ${C.line};">` +
-        `<div style="background:linear-gradient(135deg,${C.navy} 0%,#2b5c85 55%,${C.green} 100%);color:#fff;padding:22px 26px;">` +
+        `<div style="background:${C.green};color:#fff;padding:22px 26px;border-bottom:3px solid ${C.gold};">` +
           `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">` +
             `<div style="min-width:0;">` +
               `<div style="font-size:26px;font-weight:800;line-height:1.35;">${escapeHtml(o.title || '')}</div>` +
@@ -6308,6 +6797,8 @@ FILE: js/views/capture-layouts.js
       const onCall = items.length > 0;
       const holiday = o.isHoliday ? !!o.isHoliday(iso) : isWeekend;
 
+      const holidayName = o.holidayName ? o.holidayName(iso) : '';
+
       let background = C.white;
       let border = `1px solid ${C.line}`;
       let numberColor = isWeekend ? C.red : C.ink;
@@ -6316,9 +6807,13 @@ FILE: js/views/capture-layouts.js
         background = C.greenSoft;
         border = `2px solid ${C.green}`;
         numberColor = C.green;
+      } else if (holidayName) {
+        background = C.redSoft;
+        numberColor = C.red;
       } else if (isWeekend) {
         background = '#fdf7f7';
       }
+      if (holidayName) border = `2px solid ${C.red}`;
 
       const ring = isToday ? `box-shadow:0 0 0 3px rgba(27,58,92,.35);` : '';
       const labels = items
@@ -6331,12 +6826,15 @@ FILE: js/views/capture-layouts.js
         })
         .join('');
 
-      const holidayDot = holiday && onCall ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.red};margin-inline-start:4px;vertical-align:middle;"></span>` : '';
+      const holidayDot = holiday && onCall && !holidayName ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.red};margin-inline-start:4px;vertical-align:middle;"></span>` : '';
+      const holidayLabel = holidayName
+        ? `<div style="background:${C.red};color:#fff;border-radius:6px;padding:2px 5px;margin-top:3px;font-size:10px;font-weight:800;line-height:1.25;word-break:break-word;">★ ${escapeHtml(holidayName)}</div>`
+        : '';
 
       html += cell(
         `<div style="display:flex;align-items:center;justify-content:space-between;">` +
           `<span style="font-size:17px;font-weight:800;color:${numberColor};">${day}</span>${holidayDot}` +
-        `</div>${labels}`,
+        `</div>${holidayLabel}${labels}`,
         `min-height:86px;padding:7px 7px 8px;border-radius:11px;background:${background};border:${border};${ring}`
       );
     }
@@ -6346,7 +6844,8 @@ FILE: js/views/capture-layouts.js
     const legend =
       `<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:16px;font-size:12.5px;font-weight:700;color:${C.muted};">` +
         `<span><span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${C.greenSoft};border:2px solid ${C.green};vertical-align:-2px;"></span> يوم مناوبة</span>` +
-        `<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${C.red};vertical-align:-1px;"></span> عطلة</span>` +
+        `<span><span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${C.redSoft};border:2px solid ${C.red};vertical-align:-2px;"></span> ★ عطلة رسمية</span>` +
+        `<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${C.red};vertical-align:-1px;"></span> عطلة أسبوعية</span>` +
         `<span>✓ مناوبة تمّت</span>` +
         `<span><span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:#fff;border:1px solid ${C.line};box-shadow:0 0 0 3px rgba(27,58,92,.35);vertical-align:-2px;"></span> اليوم</span>` +
       `</div>`;
@@ -6388,13 +6887,23 @@ FILE: js/views/capture-layouts.js
 
         const badges = [];
         if (isPast) badges.push(`<span style="background:${C.greenSoft};color:${C.green};border:1px solid ${C.greenLine};border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">تمّت ✓</span>`);
-        if (holiday) badges.push(`<span style="background:${C.redSoft};color:${C.red};border:1px solid #f0b7b1;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">عطلة</span>`);
+        const holidayName = o.holidayName ? o.holidayName(item.date) : '';
+        if (holiday) badges.push(`<span style="background:${C.redSoft};color:${C.red};border:1px solid #f0b7b1;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">${holidayName ? '★ ' + escapeHtml(holidayName) : 'عطلة'}</span>`);
         if (item.schedule && item.schedule.isVolunteer) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">تطوعية</span>`);
         else if (item.schedule && item.schedule.isAdjusted) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">ساعات معدّلة</span>`);
 
-        const time = item.schedule && (item.schedule.time || item.schedule.duration)
-          ? `<div style="font-size:12.5px;font-weight:700;color:${C.muted};margin-top:3px;">` +
-            `<span dir="auto">${escapeHtml(item.schedule.time || '-')}</span> · ${escapeHtml(item.schedule.duration || '-')}</div>`
+        const clock = formatDutyTime(item.schedule && item.schedule.time);
+        const time = item.schedule && (clock || item.schedule.duration)
+          ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px;">` +
+            (clock
+              ? `<span dir="ltr" style="unicode-bidi:isolate;background:${C.soft};border:1px solid ${C.line};border-radius:7px;` +
+                `padding:2px 9px;font-size:12.5px;font-weight:800;color:${C.navy};white-space:nowrap;">🕐 ${escapeHtml(clock)}</span>`
+              : '') +
+            (item.schedule.duration
+              ? `<span style="background:${C.soft};border:1px solid ${C.line};border-radius:7px;padding:2px 9px;` +
+                `font-size:12.5px;font-weight:800;color:${C.muted};white-space:nowrap;">⏱ ${escapeHtml(item.schedule.duration)}</span>`
+              : '') +
+            `</div>`
           : '';
 
         const colleagues = o.withColleagues && item.colleagues && item.colleagues.length
@@ -6437,7 +6946,7 @@ FILE: js/views/capture-layouts.js
     );
   }
 
-  AUH.capture = { buildShell, buildCalendar, buildOncallList, buildSummary, sectionTitle, monthTitle, stamp, COLORS: C, FONT };
+  AUH.capture = { buildShell, buildCalendar, buildOncallList, buildSummary, sectionTitle, monthTitle, stamp, formatDutyTime, COLORS: C, FONT };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 ================================================================
@@ -6502,7 +7011,7 @@ FILE: js/views/doctor-stats.js
   doctorStatCardHtml(r) {
     const uid = `${(r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_')}`;
     const detached = !!r.isDetachedOrNotJoined;
-    return `<div class="doctor-stat-card${detached ? ' detached-card' : ''}"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div>${detached ? `<span class="dsc-status-badge"><i class="fas fa-user-slash"></i> ${this.escapeHtml(r.status) || 'غير ملتحق/منفك'}</span>` : ''}</div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursCompleted)}</div><div class="dsc-hours-lbl">ساعة (مناوبات تمّت)</div><div class="dsc-hours-rank">الترتيب: #${r.rankCompleted}</div></div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursTotal)}</div><div class="dsc-hours-lbl">ساعة (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini dsc-mini-done"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}<span class="dsc-done-check" title="مناوبات مكتملة"><i class="fas fa-check"></i></span></span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}${this.rotationsDetailHtml(r, uid)}</div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span class="dsc-praise-badge"><i class="fas fa-star"></i> ثناءات: ${this.formatNumDisplay(r.praiseCount)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
+    return `<div class="doctor-stat-card${detached ? ' detached-card' : ''}"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div>${detached ? `<span class="dsc-status-badge"><i class="fas fa-user-slash"></i> ${this.escapeHtml(r.status) || 'غير ملتحق/منفك'}</span>` : ''}</div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursCompleted)}</div><div class="dsc-hours-lbl">ساعة (مناوبات تمّت)</div><div class="dsc-hours-rank">الترتيب: #${r.rankCompleted}</div>${r.bonusCompleted ? `<div class="dsc-hours-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(r.bonusCompleted)} Bonus</div>` : ''}</div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursTotal)}</div><div class="dsc-hours-lbl">ساعة (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div>${r.bonusHours ? `<div class="dsc-hours-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(r.bonusHours)} Bonus</div>` : ''}</div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini dsc-mini-done"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}<span class="dsc-done-check" title="مناوبات مكتملة"><i class="fas fa-check"></i></span></span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}${this.rotationsDetailHtml(r, uid)}</div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span class="dsc-praise-badge"><i class="fas fa-star"></i> ثناءات: ${this.formatNumDisplay(r.praiseCount)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row">${r.bonusHours ? `<span class="dsc-bonus-badge"><i class="fas fa-gift"></i> ساعات Bonus: ${this.formatNumDisplay(r.bonusHours)}</span>` : ''}<span><i class="fas fa-stopwatch"></i> ساعات المناوبات: ${this.formatNumDisplay(r.hoursShiftsTotal)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
   },
 
   renderDoctorStats() {
@@ -6867,7 +7376,8 @@ FILE: js/views/exports.js
         monthKey: data.monthKey,
         oncalls: data.monthOncalls,
         today: this.today,
-        isHoliday: date => this.isHolidayDate(date)
+        isHoliday: date => this.isHolidayDate(date),
+        holidayName: date => this.getHolidayName(date)
       });
 
     const html = cap.buildShell({
@@ -6897,10 +7407,15 @@ FILE: js/views/exports.js
         monthKey: data.monthKey,
         oncalls: data.monthOncalls,
         today: this.today,
-        isHoliday: date => this.isHolidayDate(date)
+        isHoliday: date => this.isHolidayDate(date),
+        holidayName: date => this.getHolidayName(date)
       }) +
       cap.sectionTitle(`تفاصيل المناوبات (${data.monthOncalls.length})`) +
-      cap.buildOncallList(data.monthOncalls, { today: this.today, withColleagues: true });
+      cap.buildOncallList(data.monthOncalls, {
+        today: this.today,
+        withColleagues: true,
+        holidayName: date => this.getHolidayName(date)
+      });
 
     const html = cap.buildShell({
       title,
@@ -6935,33 +7450,48 @@ FILE: js/views/exports.js
       const bi = rosterOrder.has(b.abbr || b.name) ? rosterOrder.get(b.abbr || b.name) : Infinity;
       return ai - bi;
     });
-    const rows = list.map(r => ({
-      'الاسم': r.name || '',
-      'الاختصار': r.abbr || '',
-      'أيام منذ الالتحاق': r.joinDaysSince ?? '',
-      'مناوبات تراكمية': r.total || 0,
-      'مناوبات تمت': r.completed || 0,
-      'ساعات تمت': round1(r.hoursCompleted),
-      'ترتيب الساعات (تمت)': r.rankCompleted || '',
-      'ساعات تراكمية': round1(r.hoursTotal),
-      'ترتيب الساعات (تراكمية)': r.rankTotal || '',
-      'أجنحة': r.wards || 0,
-      'عنايات': r.icu || 0,
-      'اسعاف': r.emergency || 0,
-      'منوع': r.misc || 0,
-      'مناوبات عطل': r.holiday || 0,
-      'مناوبات ليلية': r.night || 0,
-      'أول مناوبة': r.firstOncall || '',
-      'آخر مناوبة': r.lastOncall || ''
-    }));
+    // One column per discovered "فرز شهر N" so the rotations a doctor already
+    // did are filterable in Excel, not buried in a single cell.
+    const shiftMonths = this.residentsModel.getShiftMonths();
+
+    const rows = list.map(r => {
+      const resident = this.residentsModel.findByNameOrAbbr(r.abbr) || this.residentsModel.findByNameOrAbbr(r.name);
+      const row = {
+        'الاسم': r.name || '',
+        'الاختصار': r.abbr || '',
+        'أيام منذ الالتحاق': r.joinDaysSince ?? '',
+        'مناوبات تراكمية': r.total || 0,
+        'مناوبات تمت': r.completed || 0,
+        'ساعات تمت': round1(r.hoursCompleted),
+        'ترتيب الساعات (تمت)': r.rankCompleted || '',
+        'ساعات تراكمية': round1(r.hoursTotal),
+        'ترتيب الساعات (تراكمية)': r.rankTotal || '',
+        'ساعات المناوبات فقط': round1(r.hoursShiftsTotal),
+        'ساعات Bonus': round1(r.bonusHours),
+        'ساعات Bonus محتسبة': round1(r.bonusCompleted),
+        'أجنحة': r.wards || 0,
+        'عنايات': r.icu || 0,
+        'اسعاف': r.emergency || 0,
+        'منوع': r.misc || 0,
+        'مناوبات عطل': r.holiday || 0,
+        'مناوبات ليلية': r.night || 0,
+        'ثناءات': r.praiseCount || 0,
+        'عدد الفروز حتى الآن': r.rotationsCount || 0,
+        'أول مناوبة': r.firstOncall || '',
+        'آخر مناوبة': r.lastOncall || ''
+      };
+
+      shiftMonths.forEach(month => {
+        row[month.label || `فرز شهر ${month.month}`] = resident ? this.residentsModel.getShift(resident, month.month) : '';
+      });
+
+      return row;
+    });
 
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [
-      { wch: 24 }, { wch: 10 }, { wch: 16 }, { wch: 15 }, { wch: 13 },
-      { wch: 11 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 9 },
-      { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 13 }, { wch: 13 },
-      { wch: 13 }, { wch: 13 }
-    ];
+    const baseWidths = [24, 10, 16, 15, 13, 11, 18, 14, 20, 18, 12, 16, 9, 9, 9, 9, 13, 13, 10, 16, 13, 13];
+    ws['!cols'] = baseWidths.concat(shiftMonths.map(() => ({ wch: 18 }))).map(w => (typeof w === 'number' ? { wch: w } : w));
+
     ws['!autofilter'] = { ref: ws['!ref'] };
 
     const wb = XLSX.utils.book_new();
@@ -6998,7 +7528,7 @@ FILE: js/views/layout.js
   <section class="tab-content" id="lectures-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> رزنامة المحاضرات والانشطة الطبية</h2><div class="search-box"><input type="text" id="lecturesSearch" placeholder="ابحث بعنوان المحاضرة أو المحتويات أو المحاضر..."><i class="fas fa-search"></i></div></div><div class="controls-row" style="margin-bottom:12px"><select class="specialty-filter" id="lecturesCategoryFilter" onchange="app.filterLecturesByCategory()"><option value="">كل التصنيفات</option></select><select class="specialty-filter" id="lecturesDeptFilter" onchange="app.filterLecturesByDept()"><option value="">كل الأقسام</option></select><select class="shift-filter" id="lecturesYearFilter" onchange="app.filterLecturesByYear()"><option value="">كل السنوات</option></select><button class="filter-btn" id="lecturesPastBtn" onclick="app.togglePastLectures()"><i class="fas fa-clock-rotate-left"></i> رؤية المحاضرات القديمة</button></div><div class="lectures-calendar-shell"><div class="lectures-calendar-head"><button class="filter-btn lectures-cal-nav" aria-label="الشهر السابق" onclick="app.changeLecturesCalendarMonth(-1)"><i class="fas fa-chevron-right"></i></button><h3 id="lecturesCalendarTitle"></h3><button class="filter-btn lectures-cal-nav" aria-label="الشهر التالي" onclick="app.changeLecturesCalendarMonth(1)"><i class="fas fa-chevron-left"></i></button></div><div id="lecturesMonthlyCalendar" class="lectures-monthly-calendar"></div></div><div id="lecturesSelectedDayBox" class="lectures-selected-day"></div><div class="lectures-section-head lectures-today-head"><h3><i class="fas fa-star"></i> محاضرات اليوم</h3></div><div id="todayLecturesHero" class="today-lectures-hero"></div><div class="lectures-section-head"><h3><i class="fas fa-calendar-plus"></i> المحاضرات القادمة</h3></div><div id="upcomingLecturesList" class="lectures-grid"></div><div id="pastLecturesWrap" style="display:none;"><div class="lectures-section-head"><h3><i class="fas fa-calendar-minus"></i> المحاضرات القديمة</h3></div><div id="pastLecturesList" class="lectures-grid"></div></div></section>
   <section class="tab-content" id="shifts-tab"><div class="section-header"><h2><i class="fas fa-clipboard-list"></i> جدول فروز <span id="shiftMonthName"></span> <span class="shift-month-wrap"><span class="shift-month-label">الشهر</span><select class="month-selector" id="shiftsMonthSelector" onchange="app.changeShiftsMonth()"></select></span></h2><div class="search-box"><input type="text" id="shiftSearch" placeholder="ابحث باسم أو فرز..."><i class="fas fa-search"></i></div></div><div class="shifts-grid" id="shiftsGrid"></div></section>
   <section class="tab-content" id="oncall-tab"><div class="section-header"><h2><i class="fas fa-calendar-check"></i> مناوبات شهر <span id="oncallMonthTitle"></span></h2></div><div class="oncall-year-filter" id="oncallYearFilter"><button type="button" class="oncall-year-btn active" data-year="y1" onclick="app.changeOncallYearFilter('y1')">السنة الأولى</button><button type="button" class="oncall-year-btn" data-year="y2" onclick="app.changeOncallYearFilter('y2')">السنة الثانية</button><button type="button" class="oncall-year-btn" data-year="y1y2" onclick="app.changeOncallYearFilter('y1y2')">الأولى + الثانية</button></div><div class="oncall-controls"><label><i class="fas fa-calendar-day"></i> اختر تاريخ:</label><input type="date" id="oncallDatePicker" onchange="app.selectDayFromCalendar()"><span class="month-stepper"><button type="button" class="cal-nav-btn" aria-label="الشهر السابق" title="الشهر السابق" onclick="app.stepOncallMonth(-1)"><i class="fas fa-chevron-right"></i></button><select class="month-selector" id="monthSelector" onchange="app.changeMonth()">${MONTH_NAMES.map((m,i)=>`<option value="${i}">${m}</option>`).join('')}</select><button type="button" class="cal-nav-btn" aria-label="الشهر التالي" title="الشهر التالي" onclick="app.stepOncallMonth(1)"><i class="fas fa-chevron-left"></i></button></span><button class="filter-btn" onclick="app.toggleOncallRawTable()"><i class="fas fa-table"></i> عرض كجدول</button></div><div id="oncallRawTableWrap" class="oncall-raw-wrap" style="display:none;"></div><div id="monthlyCalendar"></div><div id="oncallDayDisplay" style="margin-top:14px"></div></section>
-  <section class="tab-content" id="doctorstats-tab"><div class="section-header"><h2><i class="fas fa-chart-column"></i> احصائيات الأطباء <span class="count-badge" id="doctorStatsCount">0</span></h2><div class="search-box"><input type="text" id="doctorStatsSearch" placeholder="ابحث باسم الطبيب أو اختصاره..."><i class="fas fa-search"></i></div></div><div class="doctor-sort-panel"><div class="doctor-sort-control"><label for="doctorStatsSortMetric"><i class="fas fa-sort"></i> ترتيب حسب:</label><select id="doctorStatsSortMetric" onchange="app.setDoctorStatsSortMetric(this.value)"><option value="hoursCompleted">عدد الساعات (المناوبات التي تمّت)</option><option value="hoursTotal">عدد الساعات التراكمية</option><option value="total">عدد المناوبات</option><option value="praiseCount">عدد الثناءات</option><option value="emergency">عدد مناوبات الاسعاف</option><option value="holiday">عدد مناوبات العطل</option></select><button class="filter-btn" id="doctorStatsSortDirBtn" onclick="app.toggleDoctorStatsSortDir()"><i class="fas fa-arrow-down-wide-short"></i> تنازلي</button></div><button class="filter-btn excel-export-btn" onclick="app.downloadDoctorStatsExcel()"><i class="fas fa-file-excel"></i> تحميل كملف إكسل</button></div><div class="doctor-stats-grid" id="doctorStatsGrid"></div></section>
+  <section class="tab-content" id="doctorstats-tab"><div class="section-header"><h2><i class="fas fa-chart-column"></i> احصائيات الأطباء <span class="count-badge" id="doctorStatsCount">0</span></h2><div class="search-box"><input type="text" id="doctorStatsSearch" placeholder="ابحث باسم الطبيب أو اختصاره..."><i class="fas fa-search"></i></div></div><div class="doctor-sort-panel"><div class="doctor-sort-control"><label for="doctorStatsSortMetric"><i class="fas fa-sort"></i> ترتيب حسب:</label><select id="doctorStatsSortMetric" onchange="app.setDoctorStatsSortMetric(this.value)"><option value="hoursCompleted">عدد الساعات (المناوبات التي تمّت)</option><option value="hoursTotal">عدد الساعات التراكمية</option><option value="total">عدد المناوبات</option><option value="praiseCount">عدد الثناءات</option><option value="bonusHours">ساعات Bonus</option><option value="emergency">عدد مناوبات الاسعاف</option><option value="holiday">عدد مناوبات العطل</option></select><button class="filter-btn" id="doctorStatsSortDirBtn" onclick="app.toggleDoctorStatsSortDir()"><i class="fas fa-arrow-down-wide-short"></i> تنازلي</button></div><button class="filter-btn excel-export-btn" onclick="app.downloadDoctorStatsExcel()"><i class="fas fa-file-excel"></i> تحميل كملف إكسل</button></div><div class="doctor-stats-grid" id="doctorStatsGrid"></div></section>
   <section class="tab-content" id="evaluation-tab"><div class="section-header"><h2><i class="fas fa-star"></i> التقييم السنوي للمقيمين</h2><div class="search-box"><input type="text" id="evalSearch" placeholder="ابحث باسم أو اختصار..."><i class="fas fa-search"></i></div></div><div class="table-wrapper desktop-table"><table><thead id="evalHead"></thead><tbody id="evalBody"></tbody></table></div><div class="mobile-cards" id="evalCards"></div></section>
   <section class="tab-content" id="links-tab"><div class="section-header"><h2><i class="fas fa-link"></i> الروابط والقنوات الهامة</h2></div><div id="linksGrid"></div></section>
   <section class="tab-content" id="myinfo-tab"><div class="section-header"><h2><i class="fas fa-user-search"></i> معلوماتي</h2><div class="search-box"><input type="text" id="myInfoSearch" placeholder="اكتب اسمك أو اختصارك..."><i class="fas fa-search"></i></div></div><div class="myinfo-hint">قم بكتابة اسمك في مربع البحث ليظهر لك معلوماتك (الفرز - المناوبات - التقييم - الاحصائيات ...)</div><div id="searchResultsList" class="search-results-list"></div><div id="myInfoResult" class="student-result"></div></section>
@@ -7457,6 +7987,100 @@ FILE: js/views/myinfo.js
     this.showMe(this.currentMyInfo, { keepScroll: true });
   },
 
+  /**
+   * العطل الرسمية — the holidays panel under the on-call section.
+   * Shows this month's holidays first, then what is coming next, and flags the
+   * ones the resident is actually on call for (those pay holiday hours).
+   */
+  /**
+   * ساعات Bonus — hours credited from the "تعديل الساعات والبونص" sheet.
+   * Shown per month (dated bonuses) and as an undated total, with the running
+   * grand total, so the numbers in the statistics card can be traced back.
+   */
+  renderMyInfoBonus(doctorStats) {
+    const total = doctorStats?.bonusHours || 0;
+    if (!total) return '';
+
+    const entries = (doctorStats.bonusEntries || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const byMonth = Object.entries(doctorStats.bonusByMonth || {}).sort((a, b) => b[0].localeCompare(a[0]));
+    const undated = entries.filter(b => !b.date).reduce((sum, b) => sum + b.hours, 0);
+
+    const monthLabel = key => {
+      const [year, month] = key.split('-');
+      return `${AM[Math.max(0, parseInt(month, 10) - 1)] || key} ${year}`;
+    };
+
+    const monthRows = byMonth
+      .map(
+        ([key, hours]) =>
+          `<div class="bonus-row"><span class="bonus-month">${escapeHtml(monthLabel(key))}</span>` +
+          `<span class="bonus-hours">${this.formatNumDisplay(hours)} ساعة</span></div>`
+      )
+      .join('');
+
+    const undatedRow = undated
+      ? `<div class="bonus-row"><span class="bonus-month">Bonus غير مؤرّخ</span><span class="bonus-hours">${this.formatNumDisplay(undated)} ساعة</span></div>`
+      : '';
+
+    return (
+      `<div class="collapsible-section bonus-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)">` +
+        `<span><i class="fas fa-gift"></i> ساعات Bonus (${this.formatNumDisplay(total)} ساعة)</span><i class="fas fa-chevron-down"></i></button>` +
+        `<div class="collapsible-content show">` +
+          `<div class="bonus-total"><i class="fas fa-gift"></i> إجمالي Bonus: <strong>${this.formatNumDisplay(total)}</strong> ساعة` +
+          (doctorStats.bonusCompleted !== total ? ` <span class="bonus-pending">(المحتسب حتى الآن: ${this.formatNumDisplay(doctorStats.bonusCompleted)})</span>` : '') +
+          `</div>` +
+          `<div class="bonus-list">${monthRows}${undatedRow}</div>` +
+          `<div class="holiday-note"><i class="fas fa-circle-info"></i> ساعات Bonus مضافة إلى ساعاتك الإجمالية وإلى ترتيبك في الإحصائيات.</div>` +
+        `</div></div>`
+    );
+  },
+
+  renderMyInfoHolidays(monthOncalls) {
+    // Shown only when the selected month actually contains an official holiday —
+    // an empty "no holidays this month" panel on every card is just noise.
+    const monthHolidays = this.getHolidaysInMonth(this.myInfoMonthKey);
+    if (!monthHolidays.length) return '';
+    const upcoming = this.holidaysModel.upcoming(this.today, 3).filter(h => !monthHolidays.some(m => m.date === h.date));
+
+    const onCallDates = new Set((monthOncalls || []).map(o => o.date));
+
+    const card = (holiday, muted) => {
+      const isPast = holiday.date < this.today;
+      const isToday = holiday.date === this.today;
+      const onCall = onCallDates.has(holiday.date);
+      const badges =
+        (isToday ? '<span class="holiday-chip today">اليوم</span>' : '') +
+        (onCall ? '<span class="holiday-chip oncall"><i class="fas fa-user-doctor"></i> لديك مناوبة</span>' : '') +
+        (isPast && !isToday ? '<span class="holiday-chip past">مضت</span>' : '');
+
+      return (
+        `<div class="holiday-item${muted ? ' upcoming' : ''}${isPast && !isToday ? ' is-past' : ''}${onCall ? ' has-oncall' : ''}">` +
+          `<div class="holiday-icon"><i class="fas fa-star"></i></div>` +
+          `<div class="holiday-body">` +
+            `<div class="holiday-name">${escapeHtml(holiday.name)}</div>` +
+            `<div class="holiday-date"><span dir="ltr">${escapeHtml(holiday.date)}</span> · ${escapeHtml(holiday.day || getDayName(holiday.date))}</div>` +
+          `</div>` +
+          `<div class="holiday-chips">${badges}</div>` +
+        `</div>`
+      );
+    };
+
+    const monthPart = `<div class="holiday-list">${monthHolidays.map(h => card(h, false)).join('')}</div>`;
+
+    const upcomingPart = upcoming.length
+      ? `<div class="holiday-subtitle"><i class="fas fa-forward"></i> العطل القادمة</div>` +
+        `<div class="holiday-list">${upcoming.map(h => card(h, true)).join('')}</div>`
+      : '';
+
+    return (
+      `<div class="collapsible-section holidays-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)">` +
+        `<span><i class="fas fa-star"></i> العطل الرسمية (${monthHolidays.length})</span><i class="fas fa-chevron-down"></i></button>` +
+        `<div class="collapsible-content show">${monthPart}${upcomingPart}` +
+        `<div class="holiday-note"><i class="fas fa-circle-info"></i> مناوبات هذه الأيام تُحسب بتوقيت ومدة العطلة تلقائياً.</div>` +
+        `</div></div>`
+    );
+  },
+
   renderMyInfoMonthCalendar(monthOncalls, monthKey) {
     const parts = String(monthKey || this.today.slice(0, 7)).split('-');
     const yr = parseInt(parts[0], 10);
@@ -7488,10 +8112,13 @@ FILE: js/views/myinfo.js
       const cats = byDate[ds] || [];
       const hasOncall = cats.length > 0;
 
+      const holidayName = this.getHolidayName(ds);
+
       let cls = 'calendar-day';
       if (isToday) cls += ' today';
       if (isPast && !isToday) cls += ' past-day';
       if (di === 5 || di === 6) cls += ' weekend';
+      if (holidayName) cls += ' official-holiday';
       if (hasOncall) cls += ' has-oncall';
 
       // Dot indicators instead of text labels
@@ -7510,8 +8137,10 @@ FILE: js/views/myinfo.js
       }
 
       const click = hasOncall ? `onclick="app.focusMyInfoOncallDate('${ds}')"` : '';
-      const datatipAttr = hasOncall ? `data-tip="${this.escapeHtml(cats.join('، '))}"` : '';
-      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click} ${datatipAttr}>${day}${dotsHtml}</div>`;
+      const tip = [holidayName, cats.join('، ')].filter(Boolean).join(' — ');
+      const datatipAttr = tip ? `data-tip="${this.escapeHtml(tip)}" title="${this.escapeHtml(tip)}"` : '';
+      const holidayMark = holidayName ? `<span class="calendar-holiday-star"><i class="fas fa-star"></i></span>` : '';
+      h += `<div class="${cls}${this.myInfoFocusedOncallDate === ds ? ' selected-day' : ''}" data-date="${ds}" ${click} ${datatipAttr}>${day}${holidayMark}${dotsHtml}</div>`;
     }
 
     h += '</div></div>';
@@ -7659,12 +8288,18 @@ FILE: js/views/myinfo.js
       this.myInfoFocusedOncallDate = monthOncalls[0]?.date || '';
     }
 
+    const bonusTotal = doctorStats?.bonusHours || 0;
+    const bonusDone = doctorStats?.bonusCompleted || 0;
+    const bonusByMonth = doctorStats?.bonusByMonth || {};
+    const bonusThisMonth = bonusByMonth[this.myInfoMonthKey] || 0;
+    const bonusUndated = (doctorStats?.bonusEntries || []).filter(b => !b.date).reduce((a, b) => a + b.hours, 0);
+
     const cumTotal = doctorStats?.total ?? allOncalls.length;
     const cumHours = doctorStats?.hoursTotal ?? 0;
     const doneTotal = doctorStats?.completed ?? allOncalls.filter(o => o.date < this.today).length;
     const doneHours = doctorStats?.hoursCompleted ?? 0;
 
-    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div>${bonusTotal ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusTotal)} ساعة Bonus</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div>${bonusDone ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusDone)} ساعة Bonus</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
       const dates = (catDates[k] || []).slice().sort();
       const detId = `miCatDates-${miUid}-${idx}`;
       return `<button type="button" class="myinfo-breakdown-item" onclick="toggleCollapsible(this)"><span>${this.escapeHtml(k)}</span><strong>${v}</strong></button><div class="collapsible-content myinfo-breakdown-detail" id="${detId}">${dates.length ? dates.map(d => `<span class="dsc-detail-chip">${d}</span>`).join('') : '<span class="dsc-detail-empty">لا توجد تواريخ</span>'}</div>`;
@@ -7712,7 +8347,11 @@ FILE: js/views/myinfo.js
         })
         .join('')}</select><button type="button" class="cal-nav-btn" aria-label="الشهر التالي" title="الشهر التالي"${nextDisabled} onclick="app.stepMyInfoMonth(1)"><i class="fas fa-chevron-left"></i></button></span><button type="button" class="download-btn download-btn-inline" onclick="app.downloadMyInfoCalendarImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة كصورة</button></div>`;
 
-      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div></div>`;
+      // Only shown when this particular month actually has bonus hours.
+      const bonusCard = bonusThisMonth
+        ? `<div class="stat-card myinfo-static-stat myinfo-bonus-box"><div class="stat-num">${this.formatNumDisplay(bonusThisMonth)}</div><div class="stat-lbl"><i class="fas fa-gift"></i> ساعات Bonus هذا الشهر</div></div>`
+        : '';
+      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div>${bonusCard}</div>`;
 
       h += this.renderMyInfoMonthBreakdown();
       h += this.renderMyInfoMonthCalendar(monthOncalls, this.myInfoMonthKey);
@@ -7734,6 +8373,9 @@ FILE: js/views/myinfo.js
     } else h += '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>';
 
     h += '</div></div>';
+
+    h += this.renderMyInfoBonus(doctorStats);
+    h += this.renderMyInfoHolidays(monthOncalls);
     h += `<button class="download-btn" onclick="app.downloadMyInfoImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة والتفاصيل كصورة</button></div>`;
 
     rd.innerHTML = h;
@@ -7800,7 +8442,7 @@ FILE: js/views/oncall.js
   'use strict';
 
   const AUH = global.AUH;
-  const { normAr, splitNames } = AUH.text;
+  const { normAr, splitNames, escapeHtml } = AUH.text;
   const { getDayName, nowStamp } = AUH.dates;
   const { mcn } = AUH.ui;
   const AM = AUH.constants.MONTH_NAMES;
@@ -7887,15 +8529,22 @@ FILE: js/views/oncall.js
       const pa = ds < this.today;
 
       const hasVolunteer = this.adjustmentAdditions.some(a => a.date === ds);
+      const holidayName = this.getHolidayName(ds);
 
       let cls = 'calendar-day';
       if (it) cls += ' today';
       if (sel) cls += ' selected-day';
       if (pa && !sel) cls += ' past-day';
       if (di === 5 || di === 6) cls += ' weekend';
+      if (holidayName) cls += ' official-holiday';
       if (hasVolunteer) cls += ' has-volunteer';
 
-      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')">${day}${hasVolunteer ? '<span class="calendar-volunteer-dot" title="مناوبة تطوعية إضافية"></span>' : ''}</div>`;
+      const holidayMark = holidayName
+        ? `<span class="calendar-holiday-star" title="${escapeHtml(holidayName)}"><i class="fas fa-star"></i></span>` +
+          `<span class="calendar-holiday-name">${escapeHtml(holidayName)}</span>`
+        : '';
+
+      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')"${holidayName ? ` title="${escapeHtml(holidayName)}"` : ''}>${day}${holidayMark}${hasVolunteer ? '<span class="calendar-volunteer-dot" title="مناوبة تطوعية إضافية"></span>' : ''}</div>`;
     }
 
     h += '</div></div>';
@@ -8151,10 +8800,11 @@ FILE: js/views/oncall.js
 
     const dn = getDayName(dstr);
     const we = this.isHolidayDate(dstr);
+    const holidayName = this.getHolidayName(dstr);
     const catCount = entries1.length + entries2.length;
     const totalDoctors = entries1.reduce((a, [, n]) => a + n.length, 0) + entries2.reduce((a, [, n]) => a + n.length, 0);
 
-    let h = `<div class="oncall-day-card" id="oncallCardContent"><div class="oncall-card-head"><h3 class="${we ? 'weekend' : ''}"><i class="fas fa-calendar-day"></i> ${dstr} - ${dn}${we ? ' <span class="day-badge weekend">عطلة</span>' : ''}</h3><div class="oncall-card-stats"><span class="oncall-stat-pill"><i class="fas fa-layer-group"></i> ${catCount} فئة</span><span class="oncall-stat-pill"><i class="fas fa-user-doctor"></i> ${totalDoctors} طبيب</span></div></div><div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div>`;
+    let h = `<div class="oncall-day-card" id="oncallCardContent"><div class="oncall-card-head"><h3 class="${we ? 'weekend' : ''}"><i class="fas fa-calendar-day"></i> ${dstr} - ${dn}${we ? ` <span class="day-badge weekend${holidayName ? ' official' : ''}">${holidayName ? '<i class="fas fa-star"></i> ' + escapeHtml(holidayName) : 'عطلة'}</span>` : ''}</h3><div class="oncall-card-stats"><span class="oncall-stat-pill"><i class="fas fa-layer-group"></i> ${catCount} فئة</span><span class="oncall-stat-pill"><i class="fas fa-user-doctor"></i> ${totalDoctors} طبيب</span></div></div><div class="capture-timestamp"><i class="fas fa-clock"></i> ${ts}</div>`;
 
     if (showBoth) {
       h += `<div class="oncall-year-section"><h4 class="oncall-year-heading"><i class="fas fa-user-graduate"></i> السنة الأولى</h4>${entries1.length ? this.oncallCategoriesSectionHtml(entries1, dstr, true) : '<p style="color:#888;">لا توجد مناوبات مسجلة.</p>'}</div>`;
@@ -8557,13 +9207,12 @@ FILE: repomix.config.json
 ================================================================
 FILE: styles.css
 ================================================================
-
-:root{--primary:#1b3a5c;--secondary:#2f7d5c;--accent:#3f9968;--danger:#c0392b;--warning:#d98c3d;--success:#2f9e5c;--dark:#132537;--white:#ffffff;--gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-500:#64748b;--gray-800:#1e293b;--bg:#f4f7f5;--card-bg:#ffffff;--text:#1e293b;--text-secondary:#64748b;--border:#e2e8f0;--shadow:0 4px 6px rgba(0,0,0,0.07);--shadow-md:0 8px 15px rgba(0,0,0,0.1);--shadow-lg:0 15px 30px rgba(0,0,0,0.12);--shadow-xl:0 25px 50px rgba(0,0,0,0.15);--glass-bg:rgba(255,255,255,0.25);--glass-border:rgba(255,255,255,0.4);--header-bg:linear-gradient(125deg,#1b3a5c 0%,#2f7d5c 55%,#d4a24c 100%);--header-text:#ffffff;--header-gold:#f5dba0;--header-image:url('bg.png');--weekend-color:#c0392b;--radius:16px;--radius-lg:20px;--radius-full:50px;--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);--transition-fast:all 0.2s ease;--display-font:'Changa','Tajawal',sans-serif}
-body.dark-mode{--primary:#6f9bc9;--secondary:#5cb894;--accent:#6fc79c;--bg:#0f172a;--card-bg:#1e293b;--text:#e2e8f0;--text-secondary:#94a3b8;--border:#334155;--shadow:0 4px 6px rgba(0,0,0,0.3);--shadow-md:0 8px 15px rgba(0,0,0,0.4);--shadow-lg:0 15px 30px rgba(0,0,0,0.5);--shadow-xl:0 25px 50px rgba(0,0,0,0.6);--glass-bg:rgba(30,41,59,0.35);--glass-border:rgba(100,116,139,0.3);--gray-50:#1e293b;--gray-100:#334155;--gray-200:#475569;--gray-800:#e2e8f0;--white:#1e293b;--weekend-color:#e8695c;--danger:#e8695c;--header-bg:linear-gradient(125deg,#0f172a 0%,#123d2c 55%,#4b2e11 100%);--header-text:#e2e8f0;--header-gold:#e8b84b;background:#0f172a}
-body.dark-mode .animated-bg{background:linear-gradient(135deg,#0f172a 0%,#1a1a2e 50%,#0f172a 100%)}
-body.dark-mode .bg-dots{background-image:radial-gradient(circle,rgba(27,58,92,0.12) 1px,transparent 1px)}
+:root{--paper:#f6f4ef;--surface:#ffffff;--surface-sunk:#efece5;--ink:#15181b;--ink-2:#59616b;--rule:#ddd8cd;--primary:#14563f;--primary-strong:#0e3f2e;--primary-soft:#e4efe9;--signal:#a62b22;--signal-soft:#f7e9e7;--ochre:#9a6b15;--ochre-soft:#f6efdf;--secondary:#14563f;--accent:#2f7d5c;--danger:#a62b22;--warning:#9a6b15;--success:#14563f;--dark:#15181b;--white:#ffffff;--gray-50:#faf9f6;--gray-100:#efece5;--gray-200:#ddd8cd;--gray-500:#59616b;--gray-800:#15181b;--bg:#f6f4ef;--card-bg:#ffffff;--text:#15181b;--text-secondary:#59616b;--border:#ddd8cd;--shadow:none;--shadow-md:0 2px 6px rgba(21,24,27,0.06);--shadow-lg:0 10px 30px rgba(21,24,27,0.12);--shadow-xl:0 20px 50px rgba(21,24,27,0.18);--glass-bg:rgba(255,255,255,0.9);--glass-border:#ddd8cd;--header-bg:#12352a;--header-text:#f6f4ef;--header-gold:#e3c47f;--header-image:url('bg.png');--weekend-color:#a62b22;--radius:12px;--radius-lg:12px;--radius-sm:8px;--radius-full:999px;--transition:all .18s ease;--transition-fast:all .14s ease;--display-font:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif}
+body.dark-mode{--paper:#0a0b0c;--surface:#131518;--surface-sunk:#1a1d21;--ink:#eae7e1;--ink-2:#99a1aa;--rule:#262a2f;--primary:#4ca987;--primary-strong:#6fc7a4;--primary-soft:#12291f;--signal:#e0655a;--signal-soft:#2a1614;--ochre:#d3a24a;--ochre-soft:#2a2114;--secondary:#4ca987;--accent:#6fc7a4;--danger:#e0655a;--warning:#d3a24a;--success:#4ca987;--dark:#eae7e1;--white:#131518;--gray-50:#131518;--gray-100:#1a1d21;--gray-200:#262a2f;--gray-500:#99a1aa;--gray-800:#eae7e1;--bg:#0a0b0c;--card-bg:#131518;--text:#eae7e1;--text-secondary:#99a1aa;--border:#262a2f;--shadow:none;--shadow-md:0 2px 6px rgba(0,0,0,0.5);--shadow-lg:0 12px 34px rgba(0,0,0,0.6);--shadow-xl:0 22px 55px rgba(0,0,0,0.7);--glass-bg:rgba(19,21,24,0.94);--glass-border:#262a2f;--header-bg:#0a0b0c;--header-text:#eae7e1;--header-gold:#d3a24a;--weekend-color:#e0655a;background:#0a0b0c}
+body.dark-mode .animated-bg{background:linear-gradient(135deg,var(--paper) 0%,var(--paper) 50%,var(--paper) 100%)}
+body.dark-mode .bg-dots{background-image:radial-gradient(circle,rgba(76,169,135,0.12) 1px,transparent 1px)}
 body.dark-mode .bg-orb{opacity:0.12}
-body.dark-mode .main-nav{background:rgba(30,41,59,0.9);border-bottom:2px solid rgba(27,58,92,0.25)}
+body.dark-mode .main-nav{background:rgba(30,41,59,0.9);border-bottom:2px solid rgba(76,169,135,0.25)}
 body.dark-mode .nav-btn{background:var(--card-bg);border-color:var(--border);color:var(--text)}
 body.dark-mode .section-header{background:var(--card-bg)}
 body.dark-mode .table-wrapper{background:var(--card-bg)}
@@ -8578,85 +9227,128 @@ body.dark-mode .calendar-day-header.weekend{background:rgba(192,57,43,0.14)}
 body.dark-mode .monthly-calendar,.dark-mode .names-dropdown-content{background:var(--card-bg);border-color:var(--border)}
 body.dark-mode .names-dropdown-content li,.dark-mode .name-tooltip{color:var(--text)}
 body.dark-mode .name-tooltip{background:var(--card-bg);border-color:var(--primary)}
-body.dark-mode .count-badge{background:rgba(27,58,92,0.2);color:#93c5fd}
-body.dark-mode .download-btn{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white}
-body.dark-mode .contacts-btn{background:linear-gradient(135deg,#2f7d5c,#1f5c42);color:white}
+body.dark-mode .count-badge{background:rgba(76,169,135,0.2);color:#93c5fd}
+body.dark-mode .download-btn{background:var(--primary);color:white}
+body.dark-mode .contacts-btn{background:var(--primary);color:white}
 body.dark-mode .select-all-btn{background:var(--gray-100);color:var(--text);border-color:var(--border)}
 body.dark-mode .header-bg-image{opacity:0.9}
-body.dark-mode .example-row{background:rgba(27,58,92,0.08)}
+body.dark-mode .example-row{background:rgba(76,169,135,0.08)}
 body.dark-mode .example-row td{color:rgba(226,232,240,0.5)}
 body.dark-mode .link-card,.dark-mode .qa-card{background:var(--card-bg);border-color:var(--border)}
-body.dark-mode .seq-badge{background:rgba(27,58,92,0.2);color:#93c5fd}
-body.dark-mode .status-joined{background:linear-gradient(135deg,#0d3b1a,#145c28);color:#6ee7b7;border:1px solid #2f9e5c}
-body.dark-mode .status-pending{background:linear-gradient(135deg,#8a1f2d,#b92d3d);color:#ffd7dc;border:1px solid #c0392b}
-body.dark-mode .status-not-joined{background:linear-gradient(135deg,#8a1f2d,#b92d3d);color:#ffd7dc;border:1px solid #c0392b}
-body.dark-mode .status-not-yet{background:linear-gradient(135deg,#5c4200,#7a5500);color:#fbbf24;border:1px solid #d98c3d}
+body.dark-mode .seq-badge{background:rgba(76,169,135,0.2);color:#93c5fd}
+body.dark-mode .status-joined{background:linear-gradient(135deg,#0d3b1a,#145c28);color:#6ee7b7;border:1px solid var(--primary)}
+body.dark-mode .status-pending{background:linear-gradient(135deg,#8a1f2d,#b92d3d);color:#ffd7dc;border:1px solid var(--signal)}
+body.dark-mode .status-not-joined{background:linear-gradient(135deg,#8a1f2d,#b92d3d);color:#ffd7dc;border:1px solid var(--signal)}
+body.dark-mode .status-not-yet{background:linear-gradient(135deg,#5c4200,#7a5500);color:#fbbf24;border:1px solid var(--ochre)}
 body.dark-mode .status-detached{background:#0b0b0b;color:#f5f5f5;border:1px solid #444}
 body.dark-mode .praise-badge{background:rgba(39,174,96,0.15);color:#6ee7b7;border:1px solid rgba(39,174,96,0.3)}
 body.dark-mode .penalty-badge{background:rgba(231,76,60,0.15);color:#ff6b6b;border:1px solid rgba(231,76,60,0.3)}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:'Tajawal',sans-serif;background:radial-gradient(circle at 12% -10%,rgba(27,58,92,0.12),transparent 36%),radial-gradient(circle at 88% 110%,rgba(63,153,104,0.12),transparent 34%),var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:var(--transition);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
-.animated-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;background:linear-gradient(135deg,#e6edf1,#eef3ea,#f6efe0,#e6edf1);background-size:400% 400%;animation:bgMove 15s ease infinite}
+body{font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;background:radial-gradient(circle at 12% -10%,rgba(27,58,92,0.12),transparent 36%),radial-gradient(circle at 88% 110%,rgba(63,153,104,0.12),transparent 34%),var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:var(--transition);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+.animated-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;background:var(--paper)}
 @keyframes bgMove{0%,100%{background-position:0% 50%}50%{background-position:100% 100%}}
-.bg-dots{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;background-image:radial-gradient(circle,rgba(27,58,92,0.06) 1px,transparent 1px);background-size:25px 25px}
-.bg-orb{position:fixed;border-radius:50%;filter:blur(100px);opacity:0.35;z-index:-1;pointer-events:none;animation:orbFloat 25s infinite ease-in-out}
-.bg-orb-1{width:350px;height:350px;background:#1b3a5c;top:-100px;right:-50px}
-.bg-orb-2{width:250px;height:250px;background:#d4a24c;bottom:-80px;left:-30px;animation-delay:-8s}
-.bg-orb-3{width:280px;height:280px;background:#2f7d5c;top:50%;left:60%;animation-delay:-16s}
+.bg-dots{display:none}
+.bg-orb{display:none}
+.bg-orb-1{width:350px;height:350px;background:var(--primary);top:-100px;right:-50px}
+.bg-orb-2{width:250px;height:250px;background:var(--ochre);bottom:-80px;left:-30px;animation-delay:-8s}
+.bg-orb-3{width:280px;height:280px;background:var(--primary);top:50%;left:60%;animation-delay:-16s}
 @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-50px,-80px) scale(1.1)}}
 .header-bg-image{pointer-events:none;user-select:none}
-.loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;background:linear-gradient(135deg,#1b3a5c,#4f9d7a,#2f7d5c);background-size:200% 200%;animation:loaderBgShift 8s ease infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:opacity 0.4s,visibility 0.4s}
+.loading-screen{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background-image:linear-gradient(180deg,rgba(6,18,14,.70) 0%,rgba(6,18,14,.88) 100%),url('bg.webp');background-size:cover,cover;background-position:center,center 45%;background-repeat:no-repeat;transition:opacity .45s ease,visibility .45s ease}
 .loading-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
 @keyframes loaderBgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-.loader-orb{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;margin-bottom:22px}
-.loader-orb-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,255,255,0.28);border-top-color:#e8b84b;animation:loaderSpin 1.4s linear infinite}
-.loader-orb-ring-2{inset:-14px;border-width:2px;border-top-color:rgba(255,255,255,0.85);animation-duration:2.2s;animation-direction:reverse}
-.loader-icon{position:relative;z-index:1;font-size:2.1em;color:#fff;filter:drop-shadow(0 2px 10px rgba(0,0,0,0.25));animation:loaderPulse 1.6s ease-in-out infinite}
+.loader-orb{position:relative;width:72px;height:72px;display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+.loader-orb-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.18);border-top-color:var(--ochre);animation:loaderSpin 1.5s linear infinite}
+.loader-orb-ring-2{inset:-11px;border-width:1px;border-top-color:rgba(255,255,255,.55);animation-duration:2.6s;animation-direction:reverse}
+.loader-icon{position:relative;z-index:1;font-size:1.65em;color:#fff;opacity:.92}
 @keyframes loaderSpin{to{transform:rotate(360deg)}}
 @keyframes loaderPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.14);opacity:0.85}}
-.progress-bar-container{width:260px;height:8px;background:rgba(255,255,255,0.22);border-radius:50px;overflow:hidden;margin:0 auto 12px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.15)}
-.progress-bar{height:100%;background:linear-gradient(90deg,#e8b84b,#f3d17e,#e8b84b);background-size:200% 100%;border-radius:50px;transition:width 0.3s;width:0%;animation:shimmer 2s infinite;box-shadow:0 0 10px rgba(232,184,75,0.55)}
+.progress-bar-container{width:min(300px,72vw);height:5px;background:rgba(255,255,255,.16);border-radius:99px;overflow:hidden;margin:0 auto}
+.progress-bar{height:100%;background:var(--ochre);border-radius:99px;transition:width .35s cubic-bezier(.4,0,.2,1);width:0%}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-.loader-percentage{font-size:2.1em;font-weight:900;color:#e8b84b;letter-spacing:1px;text-shadow:0 2px 12px rgba(232,184,75,0.35)}
-.loader-subtitle{font-size:0.9em;color:rgba(255,255,255,0.9);margin-top:2px;font-weight:600;letter-spacing:.3px}
+.loader-percentage{order:-1;font-size:3.4em;font-weight:700;color:#fff;line-height:1;letter-spacing:-2px;font-variant-numeric:tabular-nums;margin-bottom:18px;direction:ltr}
+.loader-subtitle{font-size:.95em;color:rgba(255,255,255,.82);margin-top:16px;font-weight:500}
 .download-progress-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:rgba(10,20,32,0.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;animation:dpFade .22s ease}
 .download-progress-overlay.hidden{display:none}
 @keyframes dpFade{from{opacity:0}to{opacity:1}}
-.download-progress-box{background:var(--card-bg);padding:30px 34px 26px;border-radius:22px;text-align:center;border:1px solid var(--border);box-shadow:0 24px 70px rgba(0,0,0,0.35);width:340px;max-width:100%;animation:dpPop .3s cubic-bezier(.2,.9,.3,1.2)}
+.download-progress-box{background:var(--card-bg);padding:30px 34px 26px;border-radius:var(--radius);text-align:center;border:1px solid var(--border);box-shadow:0 24px 70px rgba(0,0,0,0.35);width:340px;max-width:100%;animation:dpPop .3s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes dpPop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
-.dp-icon{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6em;color:#fff;background:linear-gradient(135deg,#1b3a5c,#2f7d5c);box-shadow:0 10px 24px rgba(47,125,92,.35);animation:dpPulse 1.8s ease-in-out infinite}
+.dp-icon{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6em;color:#fff;background:var(--primary);box-shadow:0 10px 24px rgba(47,125,92,.35);animation:dpPulse 1.8s ease-in-out infinite}
 @keyframes dpPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .dp-title{font-size:1.12em;font-weight:800;color:var(--text);margin-bottom:4px}
 .dp-sub{font-size:0.86em;color:var(--text-secondary);margin-bottom:16px;min-height:1.2em}
 .dp-bar-container{width:100%;height:10px;background:var(--gray-200);border-radius:50px;overflow:hidden;position:relative}
-.dp-bar{height:100%;background:linear-gradient(90deg,#1b3a5c,#2f7d5c,#3f9968);background-size:200% 100%;border-radius:50px;transition:width .35s cubic-bezier(.4,0,.2,1);width:0%;animation:dpShimmer 1.6s linear infinite}
+.dp-bar{height:100%;background:var(--primary);background-size:200% 100%;border-radius:50px;transition:width .35s cubic-bezier(.4,0,.2,1);width:0%;animation:dpShimmer 1.6s linear infinite}
 @keyframes dpShimmer{from{background-position:0 0}to{background-position:200% 0}}
 .dp-percent{font-size:1.9em;font-weight:900;color:var(--primary);margin-top:10px;letter-spacing:.5px;font-variant-numeric:tabular-nums}
 .dp-hint{font-size:0.76em;color:var(--text-secondary);margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);line-height:1.6}
-.main-header{background:var(--header-bg);padding:35px 20px;text-align:center;color:var(--header-text);box-shadow:0 15px 50px rgba(0,0,0,0.25);position:relative;overflow:hidden;isolation:isolate}
-.main-header::before{content:'';position:absolute;inset:0;background:linear-gradient(112deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0) 30%),repeating-linear-gradient(135deg,rgba(255,255,255,0.05) 0 2px,transparent 2px 12px);mix-blend-mode:screen;pointer-events:none;z-index:0}
-.main-header::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 18% 22%,rgba(255,255,255,0.22),transparent 42%),radial-gradient(circle at 84% 78%,rgba(255,255,255,0.14),transparent 40%);pointer-events:none;z-index:0}
-.header-bg-image{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;overflow:hidden;background:linear-gradient(135deg,rgba(27,58,92,0.35),rgba(47,125,92,0.25));transition:opacity 0.5s ease,transform 0.5s ease}
-.header-bg-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 54%;opacity:0.72;transform:scale(1.02);filter:saturate(1.08) contrast(1.03) brightness(0.96);transition:opacity 0.5s ease,filter 0.5s ease,transform 0.5s ease}
+.main-header{background:var(--header-bg);padding:clamp(34px,6vh,58px) 20px clamp(30px,5vh,46px);text-align:center;color:var(--header-text);border-bottom:1px solid var(--rule);position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:center;min-height:clamp(300px,38vh,430px)}
+.main-header::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,20,16,.52) 0%,rgba(9,20,16,.78) 100%);pointer-events:none;z-index:1}
+.main-header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--primary);pointer-events:none;z-index:3}
+.header-bg-image{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;overflow:hidden;background:#12352a;transition:opacity .5s ease}
+.main-header>.header-bg-image{z-index:0}
+.header-bg-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 48%;opacity:1;filter:grayscale(.18) contrast(1.03) saturate(1.02);transition:opacity .5s ease}
 body.dark-mode .header-bg-photo{opacity:0.78;filter:saturate(1.02) contrast(1.06) brightness(0.82)}
-.header-content{position:relative;z-index:1}
+.header-content{position:relative;z-index:2}
 .header-top-row{display:flex;justify-content:flex-end;max-width:1300px;margin:0 auto 10px;position:relative;z-index:2}
 .dark-mode-toggle{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:var(--header-text);padding:10px 18px;border-radius:var(--radius-full);cursor:pointer;font-size:18px;transition:var(--transition);backdrop-filter:blur(10px)}
 .dark-mode-toggle:hover{background:rgba(255,255,255,0.35);transform:scale(1.05) rotate(15deg)}
-.title-line1{font-family:var(--display-font);font-size:2.45em;font-weight:800;display:block;letter-spacing:.4px;text-shadow:2px 2px 8px rgba(0,0,0,0.3)}
-.title-line2{font-family:var(--display-font);font-size:1.78em;font-weight:700;display:block;margin-top:8px;color:var(--header-gold);text-shadow:0 0 30px rgba(232,184,75,0.3)}
-.hospital-name{font-size:1.3em;margin-top:15px;opacity:0.95;font-weight:500}
-.header-stats{display:flex;justify-content:center;gap:14px;margin-top:20px;flex-wrap:wrap}
-.stat-badge{background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);padding:10px 22px;border-radius:var(--radius-full);font-size:14px;border:1px solid rgba(255,255,255,0.3);transition:var(--transition)}
-.refresh-badge-btn{color:var(--header-text);font-family:'Tajawal',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.title-line1{font-family:var(--display-font);font-size:clamp(1.55em,5.6vw,2.7em);font-weight:700;display:block;letter-spacing:-.5px;line-height:1.2}
+.title-line2{font-family:var(--display-font);font-size:clamp(.95em,2.4vw,1.2em);font-weight:600;display:block;margin-top:12px;color:var(--header-gold);letter-spacing:3px}
+.hospital-name{font-size:clamp(.9em,2.2vw,1.05em);margin-top:14px;opacity:.88;font-weight:400;letter-spacing:.2px}
+.header-stats{display:flex;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap}
+.stat-badge{background:rgba(255,255,255,0.14);padding:8px 16px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;border:1px solid rgba(255,255,255,0.28);transition:var(--transition-fast);font-variant-numeric:tabular-nums}
+.refresh-badge-btn{color:var(--header-text);font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .refresh-badge-btn:hover{background:rgba(255,255,255,0.32);transform:translateY(-1px)}
 .refresh-badge-btn.refreshing i{animation:spin .8s linear infinite}
-.refresh-badge-btn.has-update{background:linear-gradient(135deg,#c0392b,#e05a4b);color:#fff;border-color:rgba(255,255,255,.55);box-shadow:0 6px 18px rgba(192,57,43,.45);animation:updatePulse 1.7s ease-in-out infinite}
-.refresh-badge-btn.has-update:hover{background:linear-gradient(135deg,#a93226,#c0392b)}
+.refresh-badge-btn.has-update{background:linear-gradient(135deg,var(--signal),#e05a4b);color:#fff;border-color:rgba(255,255,255,.55);box-shadow:0 6px 18px rgba(192,57,43,.45);animation:updatePulse 1.7s ease-in-out infinite}
+.refresh-badge-btn.has-update:hover{background:linear-gradient(135deg,#a93226,var(--signal))}
 @keyframes updatePulse{0%,100%{box-shadow:0 6px 18px rgba(192,57,43,.45)}50%{box-shadow:0 6px 26px rgba(192,57,43,.75)}}
 .update-dot{width:9px;height:9px;border-radius:50%;background:#fff;display:inline-block;flex-shrink:0;animation:updateDot 1.1s ease-in-out infinite}
 @keyframes updateDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+
+/* bonus hours (from the تعديل الساعات والبونص sheet) */
+.dsc-hours-bonus{margin-top:4px;font-size:.72em;font-weight:800;color:var(--ochre);background:rgba(212,162,76,.16);border-radius:var(--radius);padding:2px 8px;display:inline-flex;align-items:center;gap:5px}
+.dsc-bonus-badge{background:linear-gradient(135deg,rgba(212,162,76,.2),rgba(217,140,61,.16));color:var(--ochre);border:1px solid rgba(212,162,76,.5);border-radius:var(--radius);padding:3px 10px;font-weight:800}
+.myinfo-bonus-box{background:linear-gradient(135deg,rgba(212,162,76,.16),rgba(217,140,61,.12));border:2px solid rgba(212,162,76,.45)}
+.myinfo-bonus-box .cum-num,.myinfo-bonus-box .stat-num{color:var(--ochre)}
+.cum-bonus{margin-top:6px;font-size:.78em;font-weight:800;color:var(--ochre);background:rgba(212,162,76,.2);border-radius:var(--radius);padding:3px 10px;display:inline-flex;align-items:center;gap:6px}
+
+.bonus-section .collapsible-btn{border-inline-start:5px solid var(--ochre)}
+.bonus-total{padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,rgba(212,162,76,.18),rgba(217,140,61,.12));border:1px solid rgba(212,162,76,.45);font-weight:700;color:var(--text);margin-bottom:10px}
+.bonus-total strong{font-size:1.25em;color:var(--ochre)}
+.bonus-pending{font-size:.85em;color:var(--text-secondary);font-weight:600}
+.bonus-list{display:flex;flex-direction:column;gap:7px}
+.bonus-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;border-radius:11px;background:var(--gray-100);border:1px solid var(--border)}
+.bonus-month{font-weight:700;color:var(--text)}
+.bonus-hours{font-weight:800;color:var(--ochre);background:rgba(212,162,76,.18);border-radius:var(--radius);padding:3px 11px;white-space:nowrap}
+
+/* official holidays (from the العطل الرسمية sheet) */
+.calendar-day.official-holiday{background:linear-gradient(150deg,rgba(192,57,43,.14),rgba(217,140,61,.16));border:2px solid rgba(192,57,43,.55);position:relative}
+.calendar-day.official-holiday.has-oncall{background:linear-gradient(150deg,rgba(47,125,92,.18),rgba(217,140,61,.2));border-color:rgba(47,125,92,.6);box-shadow:inset 0 0 0 2px rgba(192,57,43,.35)}
+.calendar-holiday-star{position:absolute;top:3px;inset-inline-start:4px;font-size:.55em;color:var(--signal);line-height:1;pointer-events:none}
+.calendar-holiday-name{display:block;font-size:.5em;font-weight:800;color:var(--signal);line-height:1.2;margin-top:2px;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.day-badge.weekend.official{background:linear-gradient(135deg,var(--signal),var(--ochre));color:#fff;border:none}
+
+.holidays-section .collapsible-btn{border-inline-start:5px solid var(--signal)}
+.holiday-list{display:flex;flex-direction:column;gap:9px}
+.holiday-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius);background:linear-gradient(135deg,rgba(192,57,43,.08),rgba(217,140,61,.1));border:1px solid rgba(192,57,43,.28)}
+.holiday-item.upcoming{background:var(--gray-100);border-color:var(--border)}
+.holiday-item.is-past{opacity:.62}
+.holiday-item.has-oncall{border-color:rgba(47,125,92,.5);background:linear-gradient(135deg,rgba(47,125,92,.1),rgba(217,140,61,.1))}
+.holiday-icon{width:38px;height:38px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,var(--signal),var(--ochre));box-shadow:0 4px 10px rgba(192,57,43,.28)}
+.holiday-body{flex:1;min-width:0}
+.holiday-name{font-weight:800;color:var(--text);font-size:1.02em;line-height:1.4}
+.holiday-date{font-size:.84em;color:var(--text-secondary);font-weight:600;margin-top:2px}
+.holiday-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.holiday-chip{font-size:.74em;font-weight:800;padding:3px 9px;border-radius:var(--radius);white-space:nowrap}
+.holiday-chip.today{background:var(--primary);color:#fff}
+.holiday-chip.oncall{background:rgba(47,125,92,.16);color:var(--primary);border:1px solid rgba(47,125,92,.4)}
+.holiday-chip.past{background:var(--gray-200);color:var(--text-secondary)}
+.holiday-subtitle{margin:16px 0 9px;font-weight:800;color:var(--text-secondary);font-size:.9em;display:flex;align-items:center;gap:7px}
+.holiday-empty{color:var(--text-secondary);text-align:center;padding:12px;font-weight:600}
+.holiday-note{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--gray-100);color:var(--text-secondary);font-size:.82em;font-weight:600;display:flex;align-items:center;gap:8px}
 
 /* month steppers shared by the on-call and "my info" calendars */
 .month-stepper{display:inline-flex;align-items:center;gap:6px}
@@ -8666,49 +9358,49 @@ body.dark-mode .header-bg-photo{opacity:0.78;filter:saturate(1.02) contrast(1.06
 .cal-nav-btn:disabled{opacity:.35;cursor:not-allowed}
 .download-btn-inline{margin:0;padding:9px 16px;font-size:.9em;width:auto;display:inline-flex;align-items:center;gap:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.stat-badge:hover{background:rgba(255,255,255,0.35);transform:translateY(-3px)}
-.main-nav{background:linear-gradient(180deg,rgba(255,255,255,0.93),rgba(255,255,255,0.86));backdrop-filter:blur(20px);position:relative;z-index:200;box-shadow:0 5px 30px rgba(0,0,0,0.1);padding:10px;border-bottom:2px solid rgba(27,58,92,0.12)}
+.stat-badge:hover{background:rgba(255,255,255,0.24)}
+.main-nav{background:var(--surface);position:sticky;top:0;z-index:200;padding:9px 10px;border-bottom:1px solid var(--rule)}
 .nav-container{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;max-width:1200px;margin:0 auto}
-.nav-btn{padding:9px 16px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:var(--display-font);font-size:13px;font-weight:700;color:var(--text);transition:var(--transition-fast);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.nav-btn{padding:8px 14px;border:1px solid var(--rule);background:var(--surface);border-radius:var(--radius-sm);cursor:pointer;font-family:var(--display-font);font-size:13px;font-weight:600;color:var(--ink-2);transition:var(--transition-fast);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .nav-btn i{font-size:13px;width:16px;text-align:center}
-.nav-btn:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-2px)}
-.nav-btn.active{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;border-color:transparent;box-shadow:0 8px 25px rgba(27,58,92,0.4)}
+.nav-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+.nav-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:700}
 .main-content{max-width:1300px;margin:25px auto;padding:0 15px;flex:1 0 auto;width:100%}
 .tab-content{display:none;animation:fadeSlideIn 0.4s ease;content-visibility:auto;contain-intrinsic-size:700px}
 .tab-content.active{display:block}
 .tab-content.active .section-header,.tab-content.active .table-wrapper,.tab-content.active .resident-card,.tab-content.active .shift-card-full,.tab-content.active .qa-card,.tab-content.active .link-card,.tab-content.active .oncall-day-card{animation:panelEnter .34s ease both}
 @keyframes panelEnter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
-.section-header{background:var(--card-bg);padding:18px 22px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-right:5px solid #1b3a5c;background:linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.62));border:1px solid rgba(27,58,92,0.16);position:relative;overflow:hidden}
-.section-header::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1b3a5c,#4f9d7a,#3f9968)}
+.section-header{background:var(--card-bg);padding:18px 22px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-right:5px solid var(--primary);background:linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.62));border:1px solid rgba(27,58,92,0.16);position:relative;overflow:hidden}
+.section-header::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--primary)}
 .section-header h2{font-family:var(--display-font);font-size:1.35em;font-weight:700;display:flex;align-items:center;gap:10px;color:var(--text)}
-.section-header h2 i{color:var(--primary);font-size:24px;background:linear-gradient(135deg,#1b3a5c15,#2f7d5c15);padding:9px;border-radius:12px}
+.section-header h2 i{color:var(--primary);font-size:24px;background:var(--primary)15);padding:9px;border-radius:12px}
 .controls-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .search-box{position:relative;min-width:240px}
-.search-box input{width:100%;padding:11px 42px 11px 14px;border:2px solid var(--border);border-radius:var(--radius-full);font-size:13px;font-family:'Tajawal',sans-serif;background:var(--gray-100);color:var(--text);transition:var(--transition)}
+.search-box input{width:100%;padding:11px 42px 11px 14px;border:2px solid var(--border);border-radius:var(--radius-full);font-size:13px;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;background:var(--gray-100);color:var(--text);transition:var(--transition)}
 .search-box input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(27,58,92,0.15);background:var(--card-bg)}
 .search-box i{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--primary);font-size:16px;pointer-events:none}
-.filter-btn{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.filter-btn{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:12px;font-weight:700;color:var(--text);transition:var(--transition);display:flex;align-items:center;gap:5px;white-space:nowrap}
 .filter-btn .fa-file-excel{color:#1d7a4c}
 .filter-btn:has(.fa-file-excel):hover{border-color:#1d7a4c;color:#1d7a4c}
 .filter-btn:hover{border-color:var(--primary);color:var(--primary)}
-.filter-btn.active-filter{background:#1b3a5c;color:white;border-color:var(--primary)}
+.filter-btn.active-filter{background:var(--primary);color:white;border-color:var(--primary)}
 .detached-filter-btn{padding:7px 12px;font-size:11px;opacity:.9}
-.specialty-filter,.shift-filter{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:600;color:var(--text);min-width:160px;transition:var(--transition)}
+.specialty-filter,.shift-filter{padding:10px 18px;border:2px solid var(--border);background:var(--card-bg);border-radius:var(--radius-full);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:12px;font-weight:600;color:var(--text);min-width:160px;transition:var(--transition)}
 .specialty-filter:hover,.shift-filter:hover{border-color:var(--primary)}
 .contacts-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 0}
-.contacts-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:linear-gradient(135deg,#2f7d5c,#1f5c42);color:white;border:none;border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;transition:var(--transition);white-space:nowrap;box-shadow:0 5px 15px rgba(47,125,92,0.2)}
+.contacts-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--primary);color:white;border:none;border-radius:var(--radius-full);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:13px;font-weight:700;transition:var(--transition);white-space:nowrap;box-shadow:0 5px 15px rgba(47,125,92,0.2)}
 .contacts-btn:hover{transform:translateY(-3px);box-shadow:0 10px 25px rgba(47,125,92,0.4)}
 .contacts-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-.select-all-btn{padding:8px 14px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:11px;font-weight:600;color:var(--text);transition:var(--transition);white-space:nowrap}
+.select-all-btn{padding:8px 14px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius-full);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:11px;font-weight:600;color:var(--text);transition:var(--transition);white-space:nowrap}
 .select-all-btn:hover{border-color:var(--primary);color:var(--primary)}
 .contact-checkbox{width:17px;height:17px;cursor:pointer;accent-color:var(--primary)}
 .selected-count{font-size:12px;color:var(--text-secondary);font-weight:600;background:var(--gray-100);padding:5px 12px;border-radius:var(--radius-full)}
-.percentage-badge{font-size:12px;font-weight:700;background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;padding:5px 12px;border-radius:var(--radius-full)}
+.percentage-badge{font-size:12px;font-weight:700;background:var(--primary);color:white;padding:5px 12px;border-radius:var(--radius-full)}
 .desktop-table{display:block}.mobile-cards{display:none}
 .table-wrapper{background:var(--card-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);overflow-x:auto;border:1px solid var(--border);-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;min-width:850px;font-size:12px}
-thead{background:linear-gradient(135deg,#1b3a5c,#2f7d5c)}
+thead{background:var(--primary)}
 th{padding:12px 8px;text-align:center;color:white;font-weight:700;font-size:10px;white-space:nowrap}
 td{padding:10px 8px;border-bottom:1px solid var(--border);font-size:11px;text-align:center;color:var(--text)}
 td:first-child,th:first-child{text-align:right}
@@ -8718,15 +9410,15 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .seq-badge{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,rgba(27,58,92,0.15),rgba(47,125,92,0.15));color:var(--primary);border-radius:50%;font-size:12px;font-weight:700;margin-left:8px;border:1px solid rgba(27,58,92,0.2)}
 .status-badge{padding:6px 16px;border-radius:var(--radius-full);font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
 .status-joined{background:linear-gradient(135deg,#d4edda,#c3e6cb);color:#155724;border:1px solid #b1dfbb}
-.status-pending{background:linear-gradient(135deg,#ffd6db,#ffb8c1);color:#8a1f2d;border:1px solid #c0392b}
-.status-not-joined{background:linear-gradient(135deg,#ffd6db,#ffb8c1);color:#8a1f2d;border:1px solid #c0392b}
+.status-pending{background:linear-gradient(135deg,#ffd6db,#ffb8c1);color:#8a1f2d;border:1px solid var(--signal)}
+.status-not-joined{background:linear-gradient(135deg,#ffd6db,#ffb8c1);color:#8a1f2d;border:1px solid var(--signal)}
 .status-not-yet{background:linear-gradient(135deg,#fff3cd,#ffeaa7);color:#856404;border:1px solid #ffc107}
 .status-detached{background:#111;color:#fff;border:1px solid #333}
-.copy-btn{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;border:none;padding:4px 10px;border-radius:var(--radius-full);cursor:pointer;font-size:9px;margin-right:4px;font-family:'Tajawal',sans-serif}
+.copy-btn{background:var(--primary);color:white;border:none;padding:4px 10px;border-radius:var(--radius-full);cursor:pointer;font-size:9px;margin-right:4px;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif}
 .copy-btn:hover{transform:scale(1.15)}
 .copy-btn.copied{background:#28a745}
 .count-badge{background:rgba(27,58,92,0.1);color:var(--primary);padding:5px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:700;border:1px solid rgba(27,58,92,0.2)}
-.resident-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border-right:4px solid #1b3a5c;background:var(--glass-bg);border:1px solid rgba(27,58,92,0.14)}
+.resident-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border-right:4px solid var(--primary);background:var(--glass-bg);border:1px solid rgba(27,58,92,0.14)}
 .resident-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .card-name{font-size:16px;font-weight:800;color:var(--text)}.card-abbr{font-size:11px;color:var(--primary);font-weight:700;background:rgba(27,58,92,0.1);padding:4px 10px;border-radius:var(--radius-full)}
@@ -8740,9 +9432,9 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .lectures-today-head h3{font-size:1.2em;color:var(--primary)}
 .lectures-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .lecture-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:16px;border:1px solid var(--glass-border);box-shadow:var(--shadow);background:var(--glass-bg);transition:var(--transition);position:relative;overflow:hidden}
-.lecture-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1b3a5c,#4f9d7a,#3f9968)}
+.lecture-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--primary)}
 .lecture-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-.lecture-card.hero{padding:22px;border-right:5px solid #1b3a5c;box-shadow:var(--shadow-lg)}
+.lecture-card.hero{padding:22px;border-right:5px solid var(--primary);box-shadow:var(--shadow-lg)}
 .lecture-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
 .lecture-head h4{font-size:1.08em;color:var(--text);line-height:1.5}
 .lecture-tag{padding:5px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;background:rgba(27,58,92,0.12);color:var(--primary);border:1px solid rgba(27,58,92,0.22);white-space:nowrap}
@@ -8761,25 +9453,25 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .shift-stat .lbl{font-size:10px;color:var(--text-secondary);margin-top:3px}
 .name-clickable{position:relative;cursor:pointer;display:inline-block;padding:4px 10px;border-radius:8px;transition:var(--transition-fast)}
 .name-clickable:hover{background:rgba(27,58,92,0.15)}
-.name-tooltip{display:none;position:fixed;z-index:99999;background:var(--card-bg);color:var(--text);padding:14px 18px;border-radius:14px;border:2px solid #1b3a5c;box-shadow:0 15px 40px rgba(0,0,0,0.3);font-size:13px;min-width:200px;text-align:center;pointer-events:auto}
+.name-tooltip{display:none;position:fixed;z-index:99999;background:var(--card-bg);color:var(--text);padding:14px 18px;border-radius:var(--radius);border:2px solid var(--primary);box-shadow:0 15px 40px rgba(0,0,0,0.3);font-size:13px;min-width:200px;text-align:center;pointer-events:auto}
 .name-tooltip.show{display:block;animation:tooltipPop 0.2s ease}
 @keyframes tooltipPop{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
 .tt-name{font-weight:700;color:var(--primary);margin-bottom:8px;font-size:14px}
 .tt-phone{font-weight:600;margin-bottom:10px;direction:ltr;font-size:14px}
-.tt-copy-btn{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;border:none;padding:9px 20px;border-radius:var(--radius-full);cursor:pointer;font-size:12px;font-family:'Tajawal',sans-serif;width:100%;font-weight:600}
+.tt-copy-btn{background:var(--primary);color:white;border:none;padding:9px 20px;border-radius:var(--radius-full);cursor:pointer;font-size:12px;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;width:100%;font-weight:600}
 .tt-close{position:absolute;top:6px;left:10px;cursor:pointer;color:var(--text-secondary);font-size:16px}
 .tt-close:hover{color:var(--danger)}
 .names-dropdown{margin-top:12px;position:relative}
-.names-dropdown-btn{width:100%;padding:11px 14px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition);box-shadow:var(--shadow)}
+.names-dropdown-btn{width:100%;padding:11px 14px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:13px;font-weight:600;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition);box-shadow:var(--shadow)}
 .names-dropdown-btn:hover{border-color:var(--primary);background:rgba(27,58,92,0.05)}
 .names-dropdown-btn i{transition:var(--transition-fast);color:var(--primary)}
 .names-dropdown-btn.open i{transform:rotate(180deg)}
-.names-dropdown-content{display:none;position:relative;width:100%;background:var(--card-bg);border:2px solid #1b3a5c;border-radius:0 0 var(--radius) var(--radius);list-style:none;max-height:200px;overflow-y:auto;z-index:10;box-shadow:var(--shadow-lg);margin-top:-2px}
+.names-dropdown-content{display:none;position:relative;width:100%;background:var(--card-bg);border:2px solid var(--primary);border-radius:0 0 var(--radius) var(--radius);list-style:none;max-height:200px;overflow-y:auto;z-index:10;box-shadow:var(--shadow-lg);margin-top:-2px}
 .names-dropdown-content.show{display:block;animation:dropdownIn 0.3s ease}
 @keyframes dropdownIn{from{opacity:0;max-height:0}to{opacity:1;max-height:200px}}
 .names-dropdown-content li{padding:10px 14px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);cursor:pointer}
 .names-dropdown-content li:hover{background:rgba(27,58,92,0.08);padding-right:20px}
-.month-selector{padding:10px 44px 10px 18px;border:2px solid var(--border);background:linear-gradient(135deg,rgba(27,58,92,0.06),rgba(47,125,92,0.09)),var(--card-bg);background-image:linear-gradient(135deg,rgba(27,58,92,0.06),rgba(47,125,92,0.09)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'%3E%3Cpath d='M5 7l5 6 5-6' stroke='%230f6ecf' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat,no-repeat;background-position:center,left 14px center;appearance:none;-webkit-appearance:none;box-shadow:0 8px 20px rgba(27,58,92,0.12);border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;color:var(--text);min-width:180px;transition:var(--transition)}
+.month-selector{padding:10px 44px 10px 18px;border:2px solid var(--border);background:linear-gradient(135deg,rgba(27,58,92,0.06),rgba(47,125,92,0.09)),var(--card-bg);background-image:linear-gradient(135deg,rgba(27,58,92,0.06),rgba(47,125,92,0.09)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'%3E%3Cpath d='M5 7l5 6 5-6' stroke='%230f6ecf' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat,no-repeat;background-position:center,left 14px center;appearance:none;-webkit-appearance:none;box-shadow:0 8px 20px rgba(27,58,92,0.12);border-radius:var(--radius-full);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:13px;font-weight:700;color:var(--text);min-width:180px;transition:var(--transition)}
 .month-selector:hover{border-color:var(--primary);box-shadow:0 10px 24px rgba(27,58,92,0.2);transform:translateY(-1px)}
 .month-selector:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(27,58,92,0.15),0 12px 28px rgba(27,58,92,0.25)}
 #shifts-tab .section-header h2{flex-wrap:wrap;row-gap:8px;min-width:0;width:100%}
@@ -8787,15 +9479,15 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .shift-month-label{font-size:0.75em;font-weight:800;color:var(--text-secondary);white-space:nowrap}
 #shiftsMonthSelector{min-width:0;width:clamp(120px,28vw,220px)}
 .oncall-year-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.oncall-year-btn{padding:9px 16px;border-radius:var(--radius-full);border:2px solid var(--border);background:var(--card-bg);color:var(--text-secondary);font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:var(--transition-fast)}
+.oncall-year-btn{padding:9px 16px;border-radius:var(--radius-full);border:2px solid var(--border);background:var(--card-bg);color:var(--text-secondary);font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:var(--transition-fast)}
 .oncall-year-btn:hover{border-color:var(--primary);color:var(--primary)}
-.oncall-year-btn.active{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);border-color:transparent;color:#fff}
+.oncall-year-btn.active{background:var(--primary);border-color:transparent;color:#fff}
 .oncall-year-heading{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--primary);margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .oncall-year-section:first-of-type .oncall-year-heading{margin-top:0}
 .oncall-controls{background:var(--card-bg);padding:16px 20px;border-radius:var(--radius-lg);margin-bottom:14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--glass-bg);border:1px solid var(--glass-border)}
 .oncall-controls label{font-weight:700;font-size:14px;color:var(--text)}
 .oncall-controls label i{color:var(--primary);margin-left:6px}
-.oncall-controls input[type="date"]{padding:10px 14px;border:2px solid var(--border);border-radius:var(--radius);font-family:'Tajawal',sans-serif;font-size:13px;background:var(--gray-100);color:var(--text)}
+.oncall-controls input[type="date"]{padding:10px 14px;border:2px solid var(--border);border-radius:var(--radius);font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:13px;background:var(--gray-100);color:var(--text)}
 .oncall-link{display:inline-block;margin:6px 0 12px;color:var(--primary);text-decoration:underline;font-size:13px;font-weight:600;cursor:pointer}
 .oncall-link i{margin-left:6px}
 .oncall-link:hover{color:var(--secondary)}
@@ -8807,17 +9499,17 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .oncall-categories-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
 .capture-timestamp{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;background:var(--gray-100);border-radius:var(--radius-full);font-size:11px;color:var(--text-secondary);margin-bottom:12px;font-weight:600}
 .capture-timestamp i{color:var(--primary)}
-.oncall-category{margin-bottom:0;background:var(--gray-100);border-radius:var(--radius);padding:14px;border-right:4px solid #1b3a5c;height:100%}
+.oncall-category{margin-bottom:0;background:var(--gray-100);border-radius:var(--radius);padding:14px;border-right:4px solid var(--primary);height:100%}
 .oncall-category:hover{box-shadow:var(--shadow-md)}
 .oncall-category h4{color:var(--primary);font-size:1em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .oncall-category .cat-count{font-size:10px;font-weight:800;background:rgba(27,58,92,0.14);padding:3px 9px;border-radius:var(--radius-full);border:1px solid rgba(27,58,92,0.2)}
 .oncall-names-list{display:flex;flex-wrap:wrap;gap:6px}
-.oncall-name-tag{background:var(--card-bg);padding:7px 12px;border-radius:18px;font-size:12px;font-weight:600;color:var(--text);border:1px solid var(--border)}
+.oncall-name-tag{background:var(--card-bg);padding:7px 12px;border-radius:var(--radius);font-size:12px;font-weight:600;color:var(--text);border:1px solid var(--border)}
 .oncall-mini-badge{display:inline-block;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:800;margin-right:3px}
 .oncall-mini-badge.volunteer{background:rgba(212,162,76,0.18);color:#a8762e}
 .oncall-mini-badge.adjusted{background:rgba(47,125,92,0.16);color:var(--secondary)}
 .oncall-name-tag:hover{background:rgba(27,58,92,0.1);border-color:var(--primary);transform:translateY(-2px)}
-#oncallCardContent.capture-mode{max-width:840px;width:840px;padding:14px 14px 10px;margin:0 auto;border-radius:16px}
+#oncallCardContent.capture-mode{max-width:840px;width:840px;padding:14px 14px 10px;margin:0 auto;border-radius:var(--radius)}
 #oncallCardContent.capture-mode .download-btn{display:none!important}
 #oncallCardContent.capture-mode .oncall-card-head{gap:6px}
 #oncallCardContent.capture-mode .oncall-day-card h3,#oncallCardContent.capture-mode h3{font-size:1.05em;margin-bottom:8px}
@@ -8843,21 +9535,21 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .calendar-day.past-day.has-oncall{opacity:0.7;background:linear-gradient(180deg,rgba(229,231,235,0.92),rgba(209,213,219,0.94))!important;border-color:rgba(63,153,104,0.35)!important}
 .calendar-day.past-day.has-oncall .day-oncall-label{background:rgba(63,153,104,0.08);border-color:rgba(63,153,104,0.15);color:#6b7280}
 .calendar-day.past-day.has-oncall .day-num{color:#6b7280}
-.calendar-day:not(.empty):hover{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;transform:translateY(-3px);box-shadow:0 8px 16px rgba(27,58,92,0.35);z-index:2}
-.calendar-day.today{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;font-weight:900;box-shadow:0 0 0 3px rgba(27,58,92,0.3);border-color:transparent}
+.calendar-day:not(.empty):hover{background:var(--primary);color:white;transform:translateY(-3px);box-shadow:0 8px 16px rgba(27,58,92,0.35);z-index:2}
+.calendar-day.today{background:var(--primary);color:white;font-weight:900;box-shadow:0 0 0 3px rgba(27,58,92,0.3);border-color:transparent}
 .calendar-day.past-day{opacity:0.45}
 .calendar-day.empty{background:transparent;cursor:default;border-color:transparent}
 .calendar-day.empty:hover{background:transparent;transform:none;box-shadow:none}
-.calendar-volunteer-dot{position:absolute;top:4px;left:4px;width:7px;height:7px;border-radius:50%;background:#d4a24c;box-shadow:0 0 0 2px var(--gray-100)}
+.calendar-volunteer-dot{position:absolute;top:4px;left:4px;width:7px;height:7px;border-radius:50%;background:var(--ochre);box-shadow:0 0 0 2px var(--gray-100)}
 .calendar-day.today .calendar-volunteer-dot,.calendar-day:hover .calendar-volunteer-dot{box-shadow:0 0 0 2px transparent}
 .student-result{background:var(--card-bg);border-radius:var(--radius-lg);padding:22px;margin-top:14px;box-shadow:var(--shadow);display:none;background:var(--glass-bg);border:1px solid var(--glass-border)}
 .student-result.show{display:block;animation:fadeSlideIn 0.4s ease}
 .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-top:16px}
-.info-item{background:var(--gray-100);padding:16px;border-radius:var(--radius);border-right:4px solid #1b3a5c}
+.info-item{background:var(--gray-100);padding:16px;border-radius:var(--radius);border-right:4px solid var(--primary)}
 .info-item:hover{box-shadow:var(--shadow-md)}
 .info-label{font-size:11px;color:var(--text-secondary);margin-bottom:5px}
 .info-value{font-size:15px;font-weight:700;color:var(--text)}
-.stat-card{background:var(--gray-100);padding:16px 18px;border-radius:var(--radius);text-align:center;border:1px solid transparent;transition:var(--transition)}
+.stat-card{background:var(--surface);padding:15px 16px;border-radius:var(--radius-sm);text-align:center;border:1px solid var(--rule);transition:var(--transition-fast)}
 .stat-card:hover{border-color:var(--primary);box-shadow:var(--shadow-md)}
 .stat-card .stat-num{font-size:2em;font-weight:900;color:var(--primary)}
 .stat-card .stat-lbl{font-size:11px;color:var(--text-secondary);margin-top:3px}
@@ -8880,7 +9572,7 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .search-result-item:hover{border-color:var(--primary);background:rgba(27,58,92,0.05);transform:translateX(-4px)}
 .no-results{text-align:center;padding:30px;color:var(--danger);font-size:15px;font-weight:600}
 .no-results i{margin-left:6px}
-.download-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;border:none;border-radius:var(--radius-full);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;transition:var(--transition);margin-top:16px;box-shadow:0 5px 20px rgba(27,58,92,0.3)}
+.download-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--primary);color:white;border:none;border-radius:var(--radius-full);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:14px;font-weight:700;transition:var(--transition);margin-top:16px;box-shadow:0 5px 20px rgba(27,58,92,0.3)}
 .download-btn:hover{transform:translateY(-3px)}
 .oncall-export-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .oncall-export-actions .download-btn{margin-top:0}
@@ -8890,31 +9582,31 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .download-btn.loading .btn-icon{display:none}
 @keyframes btnSpin{to{transform:rotate(360deg)}}
 .collapsible-section{margin-bottom:8px;border-radius:var(--radius);border:1px solid var(--border)}
-.collapsible-btn{width:100%;padding:12px 16px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
+.collapsible-btn{width:100%;padding:12px 16px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:14px;font-weight:700;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
 .collapsible-btn:hover{border-color:var(--primary)}
 .collapsible-btn>i{transition:var(--transition-fast);color:var(--primary)}
 .collapsible-btn.open>i{transform:rotate(180deg)}
 .collapsible-btn span i{color:var(--primary);margin-left:6px;transform:none!important}
 .collapsible-content{display:none;background:var(--gray-100);padding:16px;border:2px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);margin-top:-2px}
 .collapsible-content.show{display:block;animation:fadeSlideIn 0.3s ease}
-.cumulative-box{background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;margin-bottom:14px;border-right:5px solid #1b3a5c}
-.cumulative-box .cum-num{font-size:2.5em;font-weight:900;color:var(--primary)}
-.cumulative-box .cum-lbl{font-size:13px;color:var(--text-secondary);margin-top:4px;font-weight:600}
+.cumulative-box{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:18px;text-align:center;margin-bottom:14px;border-inline-start:4px solid var(--primary)}
+.cumulative-box .cum-num{font-size:2.3em;font-weight:700;color:var(--primary);line-height:1.1;letter-spacing:-1px}
+.cumulative-box .cum-lbl{font-size:12.5px;color:var(--ink-2);margin-top:5px;font-weight:600}
 .example-row{opacity:0.5;background:rgba(27,58,92,0.05)}
 .example-row td{font-style:italic;color:var(--text-secondary)}
-.link-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;box-shadow:var(--shadow);border-right:4px solid #2f7d5c;background:var(--glass-bg);border:1px solid var(--glass-border)}
+.link-card{background:var(--card-bg);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;box-shadow:var(--shadow);border-right:4px solid var(--primary);background:var(--glass-bg);border:1px solid var(--glass-border)}
 .link-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
 .link-title{font-weight:700;color:var(--text);margin-bottom:6px;font-size:15px}
 .link-type{font-size:11px;color:var(--primary);background:rgba(27,58,92,0.1);padding:3px 10px;border-radius:var(--radius-full);display:inline-block;margin-bottom:6px}
 .link-desc{font-size:12px;color:var(--text-secondary);margin-bottom:6px}
 .link-members{font-size:11px;color:var(--text-secondary);margin-bottom:6px}
 .link-label{font-weight:700;color:var(--text);font-size:11px;margin-left:4px}
-.link-url{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:linear-gradient(135deg,#2f7d5c,#1f5c42);color:white;border-radius:var(--radius-full);text-decoration:none;font-size:12px;font-weight:600;transition:var(--transition)}
+.link-url{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:var(--primary);color:white;border-radius:var(--radius-full);text-decoration:none;font-size:12px;font-weight:600;transition:var(--transition)}
 .link-url:hover{transform:scale(1.05)}
-.back-to-top{position:fixed;bottom:25px;right:25px;z-index:999;width:44px;height:44px;background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;border:none;border-radius:50%;cursor:pointer;font-size:18px;box-shadow:0 5px 25px rgba(27,58,92,0.5);transition:var(--transition);display:none;align-items:center;justify-content:center}
+.back-to-top{position:fixed;bottom:25px;right:25px;z-index:999;width:44px;height:44px;background:var(--primary);color:white;border:none;border-radius:50%;cursor:pointer;font-size:18px;box-shadow:0 5px 25px rgba(27,58,92,0.5);transition:var(--transition);display:none;align-items:center;justify-content:center}
 .back-to-top.show{display:flex}
 .back-to-top:hover{transform:translateY(-5px)}
-.support-shortcut{position:fixed;left:20px;bottom:25px;z-index:999;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;padding:0;border:none;border-radius:50%;cursor:pointer;font-size:17px;color:white;background:linear-gradient(135deg,#3f9968,#059669);box-shadow:0 10px 24px rgba(5,150,105,0.35);transition:var(--transition-fast)}
+.support-shortcut{position:fixed;left:20px;bottom:25px;z-index:999;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;padding:0;border:none;border-radius:50%;cursor:pointer;font-size:17px;color:white;background:var(--primary);box-shadow:0 10px 24px rgba(5,150,105,0.35);transition:var(--transition-fast)}
 .support-shortcut:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(5,150,105,0.42)}
 .toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#333,#444);color:white;padding:12px 24px;border-radius:var(--radius-full);font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.4);animation:toastIn 0.3s ease,toastOut 0.3s ease 1.7s forwards}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
@@ -8925,29 +9617,29 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .qa-card:hover{box-shadow:var(--shadow-md)}
 .qa-card-header{padding:12px 16px;background:var(--gray-100);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:6px}
 .qa-card-header:hover{background:rgba(27,58,92,0.05)}
-.qa-category-tag{font-size:10px;font-weight:700;background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:white;padding:3px 10px;border-radius:var(--radius-full)}
+.qa-category-tag{font-size:10px;font-weight:700;background:var(--primary);color:white;padding:3px 10px;border-radius:var(--radius-full)}
 .qa-question-text{flex:1;font-size:13px;font-weight:600;color:var(--text);text-align:right;min-width:0;word-wrap:break-word}
 .qa-toggle-icon{color:var(--primary);font-size:15px;transition:var(--transition-fast)}
 .qa-card.open .qa-toggle-icon{transform:rotate(180deg)}
 .qa-answer{display:none;padding:16px;font-size:13px;color:var(--text);line-height:1.8;background:var(--gray-100);border-top:1px solid var(--border);white-space:pre-wrap;word-wrap:break-word;text-align:right}
 .qa-card.open .qa-answer{display:block;animation:fadeSlideIn 0.3s ease}
 .qa-category-section{margin-bottom:14px}
-.qa-category-header{width:100%;padding:12px 16px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
+.qa-category-header{width:100%;padding:12px 16px;background:var(--gray-100);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:14px;font-weight:700;color:var(--text);text-align:right;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
 .qa-category-header:hover{border-color:var(--primary)}
 .qa-category-header>i{transition:var(--transition-fast);color:var(--primary)}
 .qa-category-header.open>i{transform:rotate(180deg)}
 .qa-category-header span i{color:var(--primary);margin-left:6px}
 .qa-category-content{display:none;padding:6px 0}
 .qa-category-content.show{display:block;animation:fadeSlideIn 0.3s ease}
-.praise-badge{display:inline-flex;align-items:center;gap:3px;padding:5px 12px;background:rgba(39,174,96,0.1);color:#2f9e5c;border:1px solid rgba(39,174,96,0.3);border-radius:var(--radius-full);font-size:11px;font-weight:700;margin:2px}
+.praise-badge{display:inline-flex;align-items:center;gap:3px;padding:5px 12px;background:rgba(39,174,96,0.1);color:var(--primary);border:1px solid rgba(39,174,96,0.3);border-radius:var(--radius-full);font-size:11px;font-weight:700;margin:2px}
 .praise-badge::before{content:'\f005';font-family:'Font Awesome 6 Free';font-weight:900}
 .penalty-badge{display:inline-flex;align-items:center;gap:3px;padding:5px 12px;background:rgba(231,76,60,0.1);color:var(--danger);border:1px solid rgba(231,76,60,0.3);border-radius:var(--radius-full);font-size:11px;font-weight:700;margin:2px}
 .penalty-badge::before{content:'\f071';font-family:'Font Awesome 6 Free';font-weight:900}
-.eval-praise-cell{color:#2f9e5c;font-weight:600;background:rgba(39,174,96,0.05)}
+.eval-praise-cell{color:var(--primary);font-weight:600;background:rgba(39,174,96,0.05)}
 .eval-penalty-cell{color:var(--danger);font-weight:600;background:rgba(231,76,60,0.05)}
 .lecture-links-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .lecture-link-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--radius-full);font-size:11px;font-weight:700;text-decoration:none;background:rgba(27,58,92,0.12);color:var(--primary);border:1px solid rgba(27,58,92,0.25);transition:var(--transition-fast)}
-.lecture-link-btn:hover{background:#1b3a5c;color:#fff}
+.lecture-link-btn:hover{background:var(--primary);color:#fff}
 .lectures-calendar-shell{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
 .lectures-calendar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
 .lectures-calendar-head h3{font-family:var(--display-font);font-size:1.05em;color:var(--primary);margin:0;flex:1;text-align:center}
@@ -8958,12 +9650,12 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .lectures-monthly-calendar .calendar-day.lecture-today{box-shadow:none;background:var(--gray-100);color:var(--text)}
 .lectures-monthly-calendar .calendar-day.has-lecture{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#166534;border:1px solid #86efac;font-weight:800}
 .lectures-monthly-calendar .calendar-day.has-lecture:hover{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
-.lectures-monthly-calendar .calendar-day.selected-day{background:linear-gradient(135deg,#4f9d7a,#2f7d5c);color:#fff;border-color:var(--secondary);box-shadow:0 0 0 3px rgba(79,157,122,0.22)}
+.lectures-monthly-calendar .calendar-day.selected-day{background:linear-gradient(135deg,#4f9d7a,var(--primary));color:#fff;border-color:var(--secondary);box-shadow:0 0 0 3px rgba(79,157,122,0.22)}
 .lectures-monthly-calendar .calendar-day.selected-day.has-lecture{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-color:#15803d}
 .lecture-day-count{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:18px;padding:0 6px;border-radius:999px;background:rgba(22,101,52,0.14);font-size:9px;font-weight:800;line-height:1}
 .lectures-monthly-calendar .calendar-day.selected-day .lecture-day-count{background:rgba(255,255,255,0.25);color:#fff}
 .lectures-selected-day{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
-.calendar-day.selected-day{background:linear-gradient(135deg,#4f9d7a,#2f7d5c);color:#fff;font-weight:900;box-shadow:0 0 0 4px rgba(79,157,122,0.25)}
+.calendar-day.selected-day{background:linear-gradient(135deg,#4f9d7a,var(--primary));color:#fff;font-weight:900;box-shadow:0 0 0 4px rgba(79,157,122,0.25)}
 .calendar-day.today.selected-day{box-shadow:0 0 0 3px rgba(79,157,122,0.35),0 0 0 6px rgba(27,58,92,0.22)}
 .oncall-category.holiday{border-right-color:#e67e22;background:rgba(230,126,34,0.1)}
 .oncall-schedule-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -8976,22 +9668,22 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .oncall-raw-close-btn:hover{background:var(--danger);color:#fff}
 .oncall-raw-table-wrap{overflow:auto;max-height:68vh;max-width:100%}
 .oncall-raw-table{min-width:1200px;border-collapse:separate;border-spacing:0}
-.oncall-raw-table thead th{position:sticky;top:0;z-index:11;background:linear-gradient(135deg,#1b3a5c,#2f7d5c)}
+.oncall-raw-table thead th{position:sticky;top:0;z-index:11;background:var(--primary)}
 .oncall-raw-table th.oncall-raw-sticky-col-1,.oncall-raw-table td.oncall-raw-sticky-col-1{position:sticky;right:0;z-index:10;background:var(--card-bg);box-shadow:-1px 0 0 var(--border)}
 .oncall-raw-table th.oncall-raw-sticky-col-2,.oncall-raw-table td.oncall-raw-sticky-col-2{position:sticky;right:110px;z-index:9;background:var(--card-bg);box-shadow:-1px 0 0 var(--border)}
-.oncall-raw-table thead th.oncall-raw-sticky-col-1,.oncall-raw-table thead th.oncall-raw-sticky-col-2{z-index:13;color:#fff;background:linear-gradient(135deg,#1b3a5c,#2f7d5c)}
+.oncall-raw-table thead th.oncall-raw-sticky-col-1,.oncall-raw-table thead th.oncall-raw-sticky-col-2{z-index:13;color:#fff;background:var(--primary)}
 .oncall-info-row.holiday{border-right-color:transparent;background:var(--gray-100)}
 .myinfo-profile-head{display:flex;justify-content:center;margin-bottom:10px}
 .myinfo-heading-row{display:flex;align-items:baseline;justify-content:center;gap:10px;flex-wrap:wrap;text-align:center}
 .myinfo-heading-row h3{margin:0;color:var(--primary);font-size:1.35em;display:flex;align-items:center;gap:8px}
 .myinfo-heading-abbr{font-size:15px;font-weight:800;color:var(--text)}
 .myinfo-heading-seq{font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:.04em}
-.myinfo-top-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:10px 0 12px}
+.myinfo-top-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0;margin:12px 0 14px;background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);overflow:hidden}
 .myinfo-top-stats-3{grid-template-columns:repeat(3,1fr)}
-.cum-sub{font-size:12px;font-weight:800;color:var(--secondary);margin-top:4px}
+.cum-sub{font-size:12px;font-weight:700;color:var(--ink-2);margin-top:4px}
 .myinfo-static-stat{cursor:default;border:1px solid var(--border)}
 .myinfo-month-label{font-size:13px;font-weight:800;color:var(--text-secondary)}
-.myinfo-calendar-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 14px;padding:12px 14px;background:var(--gray-100);border:1px solid var(--border);border-radius:14px}
+.myinfo-calendar-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 14px;padding:12px 14px;background:var(--gray-100);border:1px solid var(--border);border-radius:var(--radius)}
 .myinfo-calendar-controls .month-selector{min-width:160px}
 .myinfo-oncall-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .myinfo-oncall-meta span{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;background:#eef4ff;color:var(--primary);padding:5px 10px;border-radius:var(--radius-full);border:1px solid rgba(27,58,92,0.2)}
@@ -9000,10 +9692,10 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .myinfo-monthly-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:10px 0}
 .myinfo-click-stat{cursor:pointer;border:1px solid var(--border)}
 .myinfo-click-stat.active{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,58,92,0.16)}
-.myinfo-breakdown-box{background:var(--gray-100);border:1px solid var(--border);border-right:4px solid #1b3a5c;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.myinfo-breakdown-box{background:var(--gray-100);border:1px solid var(--border);border-right:4px solid var(--primary);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px}
 .myinfo-breakdown-box h4{font-size:13px;color:var(--primary);display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .myinfo-breakdown-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
-.myinfo-breakdown-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;font-size:12px;cursor:pointer;font-family:'Tajawal',sans-serif;width:100%;text-align:right;transition:var(--transition-fast)}
+.myinfo-breakdown-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;font-size:12px;cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;width:100%;text-align:right;transition:var(--transition-fast)}
 .myinfo-breakdown-item:hover{border-color:var(--primary)}
 .myinfo-breakdown-item strong{color:var(--primary)}
 .myinfo-breakdown-detail.collapsible-content{grid-column:1/-1;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-top:-4px;flex-wrap:wrap;gap:5px}
@@ -9014,10 +9706,10 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .calendar-day-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
 .calendar-day-dot-more{font-size:7px;font-weight:800;color:#6b7280;line-height:1}
 /* Tooltip on hover for calendar days with oncall (My Info) */
-.calendar-day[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:5px 10px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);direction:rtl}
-.calendar-day[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% - 2px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1e293b;z-index:100;pointer-events:none}
-.oncall-info-row.past{background:linear-gradient(135deg,rgba(39,174,96,0.07),rgba(39,174,96,0.03));color:#2f855a;border-right-color:#2f9e5c}
-.oncall-done-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(39,174,96,0.14);color:#2f9e5c;font-size:10px;font-weight:800;margin-right:6px}
+.calendar-day[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:5px 10px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);direction:rtl}
+.calendar-day[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% - 2px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);z-index:100;pointer-events:none}
+.oncall-info-row.past{background:linear-gradient(135deg,rgba(39,174,96,0.07),rgba(39,174,96,0.03));color:#2f855a;border-right-color:var(--primary)}
+.oncall-done-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(39,174,96,0.14);color:var(--primary);font-size:10px;font-weight:800;margin-right:6px}
 .oncall-volunteer-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(212,162,76,0.16);color:#a8762e;font-size:10px;font-weight:800;margin-right:6px}
 .oncall-adjusted-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(47,125,92,0.14);color:var(--secondary);font-size:10px;font-weight:800;margin-right:6px}
 .oncall-info-row.past .oc-date,.oncall-info-row.past .cl-label,.oncall-info-row.past .cl-sep{color:#6b7280}
@@ -9025,7 +9717,7 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .oncall-holiday-badge{display:inline-flex;align-items:center;gap:4px;margin-inline-start:8px;padding:2px 8px;border-radius:999px;background:rgba(220,38,38,0.1);color:#b91c1c;font-size:10px;font-weight:800;border:1px solid rgba(220,38,38,0.18)}
 .myinfo-row-focus{animation:myInfoRowPulse 1.7s ease;border-right-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(27,58,92,0.18)!important}
 @keyframes myInfoRowPulse{0%{transform:translateY(0)}35%{transform:translateY(-2px)}100%{transform:translateY(0)}}
-.work-in-progress-panel{background:var(--glass-bg);border:1px solid var(--glass-border);border-right:5px solid #1b3a5c;border-radius:var(--radius-lg);padding:34px 18px;text-align:center;box-shadow:var(--shadow)}
+.work-in-progress-panel{background:var(--glass-bg);border:1px solid var(--glass-border);border-right:5px solid var(--primary);border-radius:var(--radius-lg);padding:34px 18px;text-align:center;box-shadow:var(--shadow)}
 .work-in-progress-panel i{font-size:30px;color:var(--primary);margin-bottom:10px}
 .work-in-progress-panel h3{font-family:var(--display-font);font-size:1.4em;color:var(--text);margin-bottom:8px}
 .work-in-progress-panel p{font-size:13px;color:var(--text-secondary);font-weight:700}
@@ -9033,38 +9725,38 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .doctor-sort-control{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .doctor-sort-control label{font-size:12px;font-weight:800;color:var(--text-secondary);display:flex;align-items:center;gap:5px;white-space:nowrap}
 .doctor-sort-control label i{color:var(--primary)}
-#doctorStatsSortMetric{padding:9px 14px;border:2px solid var(--border);border-radius:var(--radius-full);background:var(--card-bg);color:var(--text);font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:var(--transition-fast)}
+#doctorStatsSortMetric{padding:9px 14px;border:2px solid var(--border);border-radius:var(--radius-full);background:var(--card-bg);color:var(--text);font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:var(--transition-fast)}
 #doctorStatsSortMetric:hover{border-color:var(--primary)}
-#doctorStatsSortDirBtn{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:#fff;border-color:transparent}
+#doctorStatsSortDirBtn{background:var(--primary);color:#fff;border-color:transparent}
 #doctorStatsSortDirBtn:hover{opacity:.9}
 .excel-export-btn{margin-right:auto}
 .doctor-stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-.doctor-stat-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);transition:var(--transition-fast)}
+.doctor-stat-card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:16px;transition:var(--transition-fast)}
 .doctor-stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
 .doctor-stat-card.detached-card{background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.35);box-shadow:0 4px 14px rgba(192,57,43,0.08)}
-.doctor-stat-card.detached-card .dsc-hours-box.dsc-hours-primary{background:linear-gradient(135deg,#8a2f24,#c0392b)}
-.dsc-status-badge{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--radius-full);background:rgba(192,57,43,0.14);color:#c0392b;font-size:10px;font-weight:800;white-space:nowrap;border:1px solid rgba(192,57,43,0.3)}
+.doctor-stat-card.detached-card .dsc-hours-box.dsc-hours-primary{background:linear-gradient(135deg,#8a2f24,var(--signal))}
+.dsc-status-badge{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--radius-full);background:rgba(192,57,43,0.14);color:var(--signal);font-size:10px;font-weight:800;white-space:nowrap;border:1px solid rgba(192,57,43,0.3)}
 .dsc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:2px}
 .dsc-name{font-weight:800;font-size:14px;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .dsc-name i{color:var(--primary)}
 .dsc-abbr{font-weight:600;font-size:12px;color:var(--text-secondary)}
 .dsc-spec{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
 .dsc-hours-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
-.dsc-hours-box{text-align:center;padding:10px 6px;border-radius:12px;background:var(--gray-100)}
-.dsc-hours-box.dsc-hours-primary{background:linear-gradient(135deg,#1b3a5c,#2f7d5c);color:#fff}
-.dsc-hours-num{font-size:19px;font-weight:900;line-height:1.1}
-.dsc-hours-lbl{font-size:10px;font-weight:700;margin-top:2px;opacity:.9}
+.dsc-hours-box{text-align:center;padding:11px 8px;border-radius:var(--radius-sm);background:var(--surface-sunk);border:1px solid var(--rule)}
+.dsc-hours-box.dsc-hours-primary{background:var(--primary-soft);border-color:var(--primary);border-inline-start:4px solid var(--primary)}
+.dsc-hours-num{font-size:21px;font-weight:700;line-height:1.15;color:var(--primary)}
+.dsc-hours-lbl{font-size:10.5px;font-weight:600;margin-top:3px;color:var(--ink-2)}
 .dsc-hours-box:not(.dsc-hours-primary) .dsc-hours-num{color:var(--primary)}
 .dsc-hours-box:not(.dsc-hours-primary) .dsc-hours-lbl{color:var(--text-secondary)}
-.dsc-hours-rank{font-size:10px;font-weight:800;margin-top:4px;opacity:.85}
+.dsc-hours-rank{font-size:10.5px;font-weight:700;margin-top:4px;color:var(--ink-2)}
 .dsc-top-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .dsc-mini{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
 .dsc-mini-num{font-size:17px;font-weight:800;color:var(--primary);position:relative;display:inline-flex;align-items:center;gap:4px}
 .dsc-mini-lbl{font-size:10px;color:var(--text-secondary);font-weight:600}
-.dsc-mini-done .dsc-mini-num{color:#2f9e5c}
-.dsc-done-check{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#2f9e5c,#3f9968);color:#fff;font-size:8px}
+.dsc-mini-done .dsc-mini-num{color:var(--primary)}
+.dsc-done-check{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--primary);color:#fff;font-size:8px}
 .dsc-groups{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.dsc-group{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:10px;background:var(--gray-100);font-size:12px;font-weight:700;color:var(--text-secondary);border:none;cursor:pointer;font-family:'Tajawal',sans-serif;transition:var(--transition-fast);width:100%;text-align:right}
+.dsc-group{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--surface-sunk);border:1px solid var(--rule);font-size:12px;font-weight:700;color:var(--text-secondary);border:none;cursor:pointer;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;transition:var(--transition-fast);width:100%;text-align:right}
 .dsc-group:hover{background:var(--border)}
 .dsc-group i:not(.dsc-group-chevron){color:var(--secondary);width:14px;text-align:center}
 .dsc-group strong{margin-right:auto;color:var(--text);font-size:13px}
@@ -9080,7 +9772,7 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
 .dsc-bottom-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-secondary);font-weight:700;margin-top:4px}
 .dsc-bottom-row:first-of-type i{color:var(--warning)}
 .dsc-bottom-row i{margin-left:4px}
-.dsc-praise-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--radius-full);background:linear-gradient(135deg,#d4a24c,#e8b84b);color:#4a3410;font-size:11px;font-weight:800;box-shadow:0 2px 6px rgba(212,162,76,0.35)}
+.dsc-praise-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--radius-full);background:linear-gradient(135deg,var(--ochre),#e8b84b);color:#4a3410;font-size:11px;font-weight:800;box-shadow:0 2px 6px rgba(212,162,76,0.35)}
 .dsc-praise-badge i{color:#4a3410!important;margin-left:0!important}
 .myinfo-stat-card-wrap .doctor-stat-card{margin:0}
 #doctorstats-tab .desktop-table table th,
@@ -9093,22 +9785,22 @@ body.dark-mode .calendar-day.past-day.has-oncall{opacity:0.65!important;backgrou
 body.dark-mode .calendar-day.past-day.has-oncall .day-num{color:#9ca3af!important}
 body.dark-mode .calendar-day.past-day.has-oncall .day-oncall-label{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.2);color:#86efac}
 body.dark-mode .calendar-day .day-oncall-label{background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.32);color:#86efac}
-body.dark-mode .calendar-day .day-oncall-more{background:rgba(27,58,92,0.18);color:#93c5fd}
+body.dark-mode .calendar-day .day-oncall-more{background:rgba(76,169,135,0.18);color:#93c5fd}
 body.dark-mode .myinfo-hint{background:rgba(111,155,201,0.15);border-color:rgba(111,155,201,0.35);color:#93c5fd}
 body.dark-mode .oncall-schedule-meta span,body.dark-mode .myinfo-oncall-meta span{background:rgba(111,155,201,0.18);border-color:rgba(111,155,201,0.32);color:#bfdbfe}
 body.dark-mode .oncall-schedule-meta.holiday span,body.dark-mode .myinfo-oncall-meta.holiday span{background:rgba(248,113,113,0.16);border-color:rgba(248,113,113,0.32);color:#fecaca}
 body.dark-mode .lecture-link-btn{background:rgba(111,155,201,0.16);border-color:rgba(111,155,201,0.35);color:#bfdbfe}
-body.dark-mode .lecture-link-btn:hover{background:#6f9bc9;color:#0f172a}
+body.dark-mode .lecture-link-btn:hover{background:var(--primary);color:var(--paper)}
 body.dark-mode .lectures-monthly-calendar .calendar-day.lecture-today{box-shadow:none;background:var(--gray-100);color:var(--text)}
 body.dark-mode .lectures-monthly-calendar .calendar-day.has-lecture{background:linear-gradient(135deg,#14532d,#166534);color:#d1fae5;border-color:#22c55e}
 body.dark-mode .lectures-monthly-calendar .calendar-day.has-lecture:hover{background:linear-gradient(135deg,#22c55e,#16a34a);color:#052e16}
 body.dark-mode .lectures-selected-day,body.dark-mode .lectures-calendar-shell{border-color:var(--border)}
 body.dark-mode .complaint-primary{background:rgba(251,191,36,0.14);border-color:rgba(251,191,36,0.3);color:#fde68a}
 body.dark-mode .oncall-raw-table th.oncall-raw-sticky-col-1,body.dark-mode .oncall-raw-table td.oncall-raw-sticky-col-1,body.dark-mode .oncall-raw-table th.oncall-raw-sticky-col-2,body.dark-mode .oncall-raw-table td.oncall-raw-sticky-col-2{background:var(--card-bg)}
-body.dark-mode .myinfo-click-stat.active{box-shadow:0 0 0 3px rgba(111,155,201,0.28);border-color:#6f9bc9}
-body.dark-mode .myinfo-breakdown-box{border-right-color:#6f9bc9}
+body.dark-mode .myinfo-click-stat.active{box-shadow:0 0 0 3px rgba(111,155,201,0.28);border-color:var(--primary)}
+body.dark-mode .myinfo-breakdown-box{border-right-color:var(--primary)}
 body.dark-mode .myinfo-breakdown-box h4,body.dark-mode .myinfo-breakdown-item strong,.dark-mode .work-in-progress-panel i{color:#93c5fd}
-body.dark-mode .calendar-day-dot-more{color:#94a3b8}
+body.dark-mode .calendar-day-dot-more{color:var(--ink-2)}
 body.dark-mode .dsc-detail-chip{background:rgba(111,155,201,0.16);border-color:rgba(111,155,201,0.3);color:#bfdbfe}
 body.dark-mode .doctor-stat-card.detached-card{background:rgba(232,105,92,0.08);border-color:rgba(232,105,92,0.4)}
 body.dark-mode .dsc-status-badge{background:rgba(232,105,92,0.18);color:#f3a99f;border-color:rgba(232,105,92,0.4)}
@@ -9116,10 +9808,10 @@ body.dark-mode .dsc-praise-badge{background:linear-gradient(135deg,#a8762e,#c99a
 body.dark-mode .dsc-praise-badge i{color:#fff8e8!important}
 body.dark-mode .dsc-rotations-btn{background:rgba(232,184,75,0.1)}
 body.dark-mode .dsc-rotations-btn:hover{background:rgba(232,184,75,0.18)}
-body.dark-mode .calendar-day[data-tip]:hover::after{background:#e2e8f0;color:#0f172a}
-body.dark-mode .calendar-day[data-tip]:hover::before{border-top-color:#e2e8f0}
+body.dark-mode .calendar-day[data-tip]:hover::after{background:var(--ink);color:var(--paper)}
+body.dark-mode .calendar-day[data-tip]:hover::before{border-top-color:var(--ink)}
 body.dark-mode .oncall-info-row.past{background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(34,197,94,0.06))!important;color:#86efac!important;border-right-color:#22c55e}
-body.dark-mode .oncall-info-row.past .oc-date,body.dark-mode .oncall-info-row.past .cl-label,body.dark-mode .oncall-info-row.past .cl-sep{color:#94a3b8}
+body.dark-mode .oncall-info-row.past .oc-date,body.dark-mode .oncall-info-row.past .cl-label,body.dark-mode .oncall-info-row.past .cl-sep{color:var(--ink-2)}
 body.dark-mode .oncall-done-badge{background:rgba(34,197,94,0.16);color:#86efac}
 body.dark-mode .oncall-volunteer-badge{background:rgba(232,184,75,0.18);color:#f3d17e}
 body.dark-mode .oncall-adjusted-badge{background:rgba(92,184,148,0.18);color:#9fd8bd}
@@ -9131,7 +9823,7 @@ body.dark-mode .oncall-holiday-badge{background:rgba(248,113,113,0.14);border-co
 }
 @media(max-width:768px){
 .desktop-table{display:none}.mobile-cards{display:block}
-.title-line1{font-size:1.6em}.title-line2{font-size:1.2em}
+.main-header{min-height:clamp(240px,32vh,320px);padding:26px 16px 24px}
 .nav-btn{padding:7px 10px;font-size:11px}
 	.header-bg-image{top:0;left:0;right:0;bottom:0}
 	.header-bg-photo{object-position:center 48%;transform:scale(1.01)}
@@ -9179,6 +9871,64 @@ body.dark-mode .oncall-holiday-badge{background:rgba(248,113,113,0.14);border-co
 }
 @media(max-width:480px){.info-grid{grid-template-columns:1fr}.nav-btn span{font-size:9px}.calendar-day{font-size:9px;padding:5px 1px}.calendar-day-header{font-size:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}.animated-bg,.bg-orb{display:none!important}}
+
+/* one institutional family; figures line up in every table and card */
+body{font-feature-settings:'tnum' 1;font-variant-numeric:tabular-nums}
+.seq-cell,.seq-badge,.card-value,.stat-num,.cum-num,.dsc-hours-num,.dsc-mini-num,.count-badge,.calendar-day,.bonus-hours,.oncall-stat-pill,.cat-count{font-variant-numeric:tabular-nums}
+
+/* ---- dark mode: real black paper, ink-light type, hairline rules ---- */
+body.dark-mode .animated-bg{background:var(--paper)}
+body.dark-mode .main-header{background:#07110d}
+body.dark-mode .header-bg-photo{filter:grayscale(.5) brightness(.62) contrast(1.05)}
+body.dark-mode .main-header::before{background:linear-gradient(180deg,rgba(4,8,6,.62) 0%,rgba(4,8,6,.88) 100%)}
+body.dark-mode .main-nav{background:var(--surface);border-bottom-color:var(--rule)}
+body.dark-mode .stat-badge{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16)}
+body.dark-mode .section-header,body.dark-mode .table-wrapper,body.dark-mode .resident-card,
+body.dark-mode .shift-card-full,body.dark-mode .link-card,body.dark-mode .qa-card,
+body.dark-mode .doctor-stat-card,body.dark-mode .lecture-card,body.dark-mode .oncall-day-card,
+body.dark-mode .student-result,body.dark-mode .monthly-calendar{background:var(--surface);border-color:var(--rule)}
+body.dark-mode th{background:var(--surface-sunk);color:var(--ink)}
+body.dark-mode tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+body.dark-mode tbody tr:hover{background:rgba(76,169,135,.08)}
+body.dark-mode .calendar-day{background:var(--surface-sunk);border-color:var(--rule);color:var(--ink)}
+body.dark-mode .calendar-day.past-day{opacity:.45}
+body.dark-mode .calendar-day.weekend{background:rgba(224,101,90,.09)}
+body.dark-mode .calendar-day-header{background:var(--surface-sunk);color:var(--ink-2)}
+body.dark-mode .calendar-day-header.weekend{background:rgba(224,101,90,.12);color:var(--signal)}
+body.dark-mode input,body.dark-mode select,body.dark-mode textarea{background:var(--surface-sunk);color:var(--ink);border-color:var(--rule)}
+body.dark-mode .search-box input::placeholder{color:var(--ink-2)}
+body.dark-mode .toast{background:var(--surface);color:var(--ink);border:1px solid var(--rule)}
+
+/* the three key figures read as one plate: hairlines between, no boxes */
+.myinfo-top-stats .cumulative-box{margin:0;border:0;border-radius:0;border-inline-start:1px solid var(--rule);background:transparent;padding:16px 12px}
+.myinfo-top-stats .cumulative-box:first-child{border-inline-start:0}
+.myinfo-top-stats .cum-num{font-size:2em}
+@media(max-width:560px){.myinfo-top-stats-3{grid-template-columns:1fr 1fr}
+.myinfo-top-stats .cumulative-box:nth-child(3){grid-column:1/-1;border-inline-start:0;border-top:1px solid var(--rule)}}
+
+/* loading screen: the building behind a veil, the number in front of it */
+.loading-screen::before{content:'أطباء قسم الداخلية · السنة الأولى';position:absolute;top:clamp(26px,7vh,64px);left:0;right:0;font-size:.92em;font-weight:600;letter-spacing:.4px;color:rgba(255,255,255,.72)}
+.loading-screen::after{content:'مشفى حلب الجامعي';position:absolute;bottom:clamp(24px,6vh,54px);left:0;right:0;font-size:.82em;font-weight:500;color:rgba(255,255,255,.5)}
+@media (max-width:600px){.loader-percentage{font-size:2.8em}.loading-screen::before{font-size:.82em}}
+
+/* the masthead photograph gets room to breathe on every screen */
+@media (min-width:1200px){.main-header{min-height:clamp(340px,40vh,470px)}}
+@media (max-width:768px){.header-bg-photo{object-position:center 46%}}
+@media (max-height:520px) and (orientation:landscape){.main-header{min-height:220px;padding:20px 16px}}
+
+/* phones: a generous photo band, but the title stays two lines and the
+   badges stay on one row so the roster is visible without scrolling far */
+@media (max-width:768px){
+  .main-header{min-height:clamp(230px,34vh,300px);padding:22px 14px 20px}
+  .title-line2{margin-top:8px;letter-spacing:2px}
+  .hospital-name{margin-top:8px}
+  .header-stats{margin-top:14px;gap:8px}
+  .stat-badge{padding:7px 12px;font-size:12px}
+}
+@media (max-width:380px){
+  .title-line1{font-size:1.45em}
+  .stat-badge{font-size:11.5px;padding:6px 10px}
+}
 
 ================================================================
 FILE: tools/bundle-project.mjs
@@ -9453,6 +10203,7 @@ const MODULES = [
   'data/parsers/oncall.js',
   'data/parsers/evaluation.js',
   'data/parsers/lectures.js',
+  'data/parsers/holidays.js',
   'data/parsers/content.js',
   'data/repository.js',
   'domain/oncall-schedule.js',
@@ -9513,7 +10264,12 @@ for (const { datasetKey, schemaKey } of AUH.data.repository.SOURCES) {
 const dataset = AUH.data.repository.parseAll(raw);
 
 section('2. مطابقة الأعمدة مع الشيت');
-const allIssues = dataset.issues || [];
+// A source that failed to download parses as an empty model, which would look
+// like "every required column is missing". Only judge the contract for sources
+// that actually arrived.
+const failedSources = AUH.data.repository.SOURCES.filter(s => !raw[s.datasetKey]).map(s => s.schemaKey);
+if (failedSources.length) warn(`تعذر تحميل: ${failedSources.join(', ')} — تم تخطي فحص أعمدتها (غالباً مشكلة شبكة مؤقتة)`);
+const allIssues = (dataset.issues || []).filter(i => !failedSources.includes(i.source));
 const errors = allIssues.filter(i => i.level === 'error');
 const warns = allIssues.filter(i => i.level === 'warn');
 check(errors.length === 0, 'كل الأعمدة الإلزامية موجودة', `أعمدة إلزامية مفقودة: ${errors.map(e => `${e.source}.${e.field}`).join(', ')}`);
@@ -9525,6 +10281,12 @@ if (DEBUG) {
     Object.entries(dataset.residents.columnDetail).map(([field, info]) => ({ field, index: info.index, header: info.header, via: info.via }))
   );
   console.log('  أعمدة غير معروفة:', dataset.residents.unknownHeaders.map(u => u.header).join(' | ') || '—');
+}
+
+if (failedSources.length === AUH.data.repository.SOURCES.length) {
+  fail('تعذر تحميل أي مصدر — تحقق من الاتصال بالإنترنت ثم أعد المحاولة.');
+  console.log(`\n[1mالنتيجة[0m\n  أخطاء: ${failures} — تنبيهات: ${warnings}`);
+  process.exit(1);
 }
 
 section('3. لائحة المقيمين');
@@ -9604,7 +10366,7 @@ const stats = AUH.domain.doctorStats.computeDoctorStats({
   residents,
   oncall,
   evaluation,
-  ...AUH.domain.adjustments.resolveAdjustments(dataset.adjustments.entries, { residents, oncall }),
+  ...AUH.domain.adjustments.resolveAdjustments(dataset.adjustments.entries, { residents, oncall, bonuses: dataset.adjustments.bonuses }),
   annualHolidays: dataset.rules.annualHolidays,
   today: AUH.dates.todayIso(),
   currentMonth: new Date().getMonth() + 1
@@ -9650,12 +10412,59 @@ check(negative.length === 0, 'لا توجد قيم سالبة');
 const noHours = stats.filter(s => s.total > 0 && s.hoursTotal === 0);
 check(noHours.length === 0, 'كل من له مناوبات له ساعات محسوبة', `مقيمون بمناوبات وبلا ساعات: ${noHours.map(s => s.name).join(', ')}`);
 
-section('8. المحاضرات والروابط والأسئلة');
+section('8. تعديل الساعات والبونص');
+const adj = dataset.adjustments;
+ok(`صفوف تعديل ساعات/مناوبات: ${adj.entries.length} — صفوف بونص: ${(adj.bonuses || []).length}`);
+const resolvedAdj = AUH.domain.adjustments.resolveAdjustments(adj.entries, { residents, oncall, bonuses: adj.bonuses });
+ok(`منها: ${resolvedAdj.overrides.size} تعديل ساعات، ${resolvedAdj.additions.length} مناوبة تطوعية، ${resolvedAdj.bonuses.length} بونص`);
+(resolvedAdj.bonuses || []).forEach(b => ok(`بونص: ${b.name} (${b.abbr}) ${b.hours} ساعة${b.date ? ' — ' + b.date : ' — غير مؤرخ'}`));
+
+/* Bonus hours must reach the statistics even when the sheet has none yet. */
+{
+  const sample = residents.residents[0];
+  const withBonus = AUH.domain.doctorStats.computeDoctorStats({
+    residents, oncall, evaluation,
+    overrides: resolvedAdj.overrides,
+    additions: resolvedAdj.additions,
+    bonuses: [{ name: sample.name, abbr: sample.abbr, hours: 5, date: '', label: 'Bonus' }],
+    annualHolidays: new Set([...(dataset.rules.annualHolidays || []), ...dataset.holidays.dates]),
+    today: AUH.dates.todayIso(),
+    currentMonth: new Date().getMonth() + 1
+  });
+  const before = AUH.domain.doctorStats.findStatsFor(stats, sample.name, sample.abbr);
+  const after = AUH.domain.doctorStats.findStatsFor(withBonus, sample.name, sample.abbr);
+  check(
+    after.bonusHours === 5 && Math.abs(after.hoursTotal - before.hoursTotal - 5) < 0.001 && after.total === before.total,
+    'ساعات البونص تُضاف للساعات دون أن تُحسب كمناوبة',
+    `خلل في احتساب البونص: bonus=${after.bonusHours}, فرق الساعات=${after.hoursTotal - before.hoursTotal}, فرق المناوبات=${after.total - before.total}`
+  );
+}
+
+section('9. العطل الرسمية');
+const holidays = dataset.holidays;
+check(holidays.list.length > 0, `عدد العطل: ${holidays.list.length}`, 'لا توجد عطل مقروءة — تحقق من الشيت');
+holidays.list.forEach(h => ok(`${h.date} · ${h.day} — ${h.name}`));
+const badHoliday = holidays.list.filter(h => !/^\d{4}-\d{2}-\d{2}$/.test(h.date));
+check(badHoliday.length === 0, 'كل تواريخ العطل بصيغة صحيحة', `تواريخ غير صالحة: ${badHoliday.map(h => h.name).join(', ')}`);
+/* A holiday must actually change the duty schedule for that day. */
+const sampleHoliday = holidays.list[0];
+if (sampleHoliday) {
+  const merged = new Set([...(dataset.rules.annualHolidays || []), ...holidays.dates]);
+  const sched = AUH.domain.oncallSchedule.getCategorySchedule('تالت', sampleHoliday.date, merged);
+  const normal = AUH.domain.oncallSchedule.getCategorySchedule('تالت', sampleHoliday.date, new Set());
+  check(
+    !!sched && sched.isHoliday && sched.duration !== (normal && normal.duration),
+    `يوم ${sampleHoliday.date} يُحسب بتوقيت العطلة (${sched && sched.duration})`,
+    'العطلة لا تغيّر مدة المناوبة — تحقق من الربط'
+  );
+}
+
+section('10. المحاضرات والروابط والأسئلة');
 check(dataset.lectures.list.length > 0, `عدد المحاضرات/الأنشطة: ${dataset.lectures.list.length}`);
 check((dataset.lectures.skippedDates || []).length === 0, 'كل تواريخ المحاضرات مقروءة', `تواريخ غير مقروءة: ${(dataset.lectures.skippedDates || []).join(', ')}`);
 check(dataset.links.list.length > 0, `عدد الروابط: ${dataset.links.list.length}`);
 check(dataset.qa.list.length > 0, `عدد الأسئلة: ${dataset.qa.list.length} في ${dataset.qa.categories.length} تصنيف`);
-ok(`عدد العطل السنوية المقروءة: ${dataset.rules.annualHolidays.size}`);
+ok(`عدد العطل من تبويب القواعد القديم: ${dataset.rules.annualHolidays.size}`);
 
 section('النتيجة');
 console.log(`  أخطاء: ${failures} — تنبيهات: ${warnings}`);

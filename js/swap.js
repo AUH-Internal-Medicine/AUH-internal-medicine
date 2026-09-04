@@ -113,8 +113,11 @@
       .map(r => ({
         name: r.name, abbr: r.abbr || '', spec: r.spec || '', status: r.st || '',
         phone: r.phone || '',
-        // a detached / not-yet-joined resident must never be offered a duty
-        joined: r.st ? AUH.status.isJoined(r.st) : true
+        gender: r.gender || '',   // «طبيب» / «طبيبة» — decides باب eligibility
+        // Only residents actually on the job may be offered a duty. A blank
+        // status used to default to "joined", which quietly let detached and
+        // not-yet-joined names into the list.
+        joined: AUH.status.isJoined(r.st)
       }));
 
     const months = new Set();
@@ -240,57 +243,113 @@
     document.addEventListener('click', e => { if (!input.closest('.combo').contains(e.target)) close(); });
   }
 
+  /* ------------------------------------------------- duty groups & gender */
+  /**
+   * The department reads duties as four families. Ordering candidates by family
+   * is what makes a request likely to be accepted, so it is computed once here.
+   */
+  const GROUPS = {
+    'أجنحة':  ['تاني', 'ثالث', 'رابع', 'سابع', 'خارجيات'],
+    'عنايات': ['عناية قلبية', 'عناية داخلية', 'عناية مركز'],
+    'منوع':   ['ديال', 'أورام']
+  };
+
+  function dutyGroup(cat) {
+    const n = normAr(cat || '');
+    if (!n) return 'منوع';
+    if (n.includes(normAr('اسعاف'))) return 'إسعاف';      // anything containing إسعاف
+    for (const g of Object.keys(GROUPS)) {
+      if (GROUPS[g].some(x => n.includes(normAr(x)))) return g;
+    }
+    return 'منوع';
+  }
+
+  /** إسعاف باب — نهاري or ليلي — is staffed by male residents only. */
+  function isDoorDuty(cat) {
+    const n = normAr(cat || '');
+    return n.includes(normAr('اسعاف')) && n.includes(normAr('باب'));
+  }
+
+  /** The roster writes "طبيب" / "طبيبة" in the gender column. */
+  const isMale = doc => normAr((doc && doc.gender) || '') === normAr('طبيب');
+  const genderBlocked = (cat, doc) => isDoorDuty(cat) && !isMale(doc);
+
   /* ------------------------------------------------------------ swap rules */
   /**
-   * The one rule that matters: nobody may end up with two duties on the same
-   * day, or on two consecutive days. Nothing else blocks, and nothing warns —
-   * a request either passes or it does not.
+   * What one schedule looks like after a duty leaves it and another arrives.
    *
-   * `ignore` is the date the person hands over in a mutual swap; they will not
-   * have it any more, so it must not count against them.
+   * The whole rule engine, stated once: build the list the person actually ends
+   * up with — their duties MINUS the one they hand over — and judge only the
+   * duty they RECEIVE against it. Judging an incoming duty against a list that
+   * still holds the outgoing one is what used to hide valid swaps: a colleague
+   * on 5/8 looked like a ستريب against my 4/8 even though 5/8 was the very duty
+   * they were handing me.
+   *
+   * @param {Array}       list  the person's current duties
+   * @param {string|null} out   the date they give away (null for a plain cover)
+   * @param {string}      inc   the date they receive
    */
-  function evaluate(taker, date, ignore) {
-    const list = dutiesOf(taker).filter(d => d.date !== ignore);
-    const n = dayNum(date);
-
-    const same = list.find(d => d.date === date);
-    const prev = list.find(d => dayNum(d.date) === n - 1);
-    const next = list.find(d => dayNum(d.date) === n + 1);
-
-    const blocks = [];
-    if (same) blocks.push(`مناوبة في نفس اليوم (${same.cat})`);
-    if (prev) blocks.push(`مناوبة في اليوم السابق ${fmt(prev.date)}`);
-    if (next) blocks.push(`مناوبة في اليوم التالي ${fmt(next.date)}`);
-
-    // Two duties on ONE day is impossible, always. Two on consecutive days —
-    // a "ستريب" — is normally refused, but the department does allow it by
-    // exception, so it only blocks until the resident confirms permission.
+  function afterExchange(list, out, inc, allowStrip) {
+    const rest = (list || []).filter(d => !out || d.date !== out);
+    const n = dayNum(inc);
+    const same = rest.find(d => dayNum(d.date) === n);
+    const prev = rest.find(d => dayNum(d.date) === n - 1);
+    const next = rest.find(d => dayNum(d.date) === n + 1);
     const strip = !same && !!(prev || next);
-    const ok = !same && (!strip || S.stripOk);
 
-    const month = date.slice(0, 7);
     return {
-      ok, blocks, sameDay: !!same, strip,
-      stripWhy: [prev && `اليوم السابق ${fmt(prev.date)}`, next && `اليوم التالي ${fmt(next.date)}`].filter(Boolean),
-      after: list.filter(d => d.date.startsWith(month)).length + 1
+      ok: !same && (allowStrip || !strip),
+      sameDay: !!same, strip, same, prev, next,
+      blocks: [
+        same && `مناوبة في نفس اليوم (${same.cat})`,
+        prev && `مناوبة في اليوم السابق ${fmt(prev.date)}`,
+        next && `مناوبة في اليوم التالي ${fmt(next.date)}`
+      ].filter(Boolean)
     };
   }
 
+  /** Judge `date` for `taker`, ignoring the date they hand over. */
+  function evaluate(taker, date, ignore, allowStrip) {
+    const allow = allowStrip === undefined ? S.exceptional : allowStrip;
+    const r = afterExchange(dutiesOf(taker), ignore, date, allow);
+    const month = date.slice(0, 7);
+    return Object.assign({}, r, {
+      after: dutiesOf(taker).filter(d => d.date !== ignore && d.date.startsWith(month)).length + 1
+    });
+  }
+
+  /** شيل — can `to` simply take my duty? */
+  function coverFeasible(myDuty, to) {
+    if (genderBlocked(myDuty.cat, to)) return null;
+    const r = afterExchange(dutiesOf(to), null, myDuty.date, S.exceptional);
+    return r.ok ? { strip: r.strip } : null;
+  }
+
   /**
-   * A mutual swap is only real when it works in BOTH directions:
-   *   • the colleague can take my duty, after giving up the one they hand me
-   *   • I can take one of theirs, after giving up mine
-   * Returns every duty of `to` that satisfies both. Empty means this colleague
-   * must not be offered at all — however free their own day looks.
+   * تبديل — can I give `myDuty` and take `theirDuty`? Both schedules are
+   * simulated: each side loses what it hands over BEFORE the arrival is judged.
    */
+  function swapFeasible(from, myDuty, to, theirDuty) {
+    if (theirDuty.date === myDuty.date) return null;       // frees nobody's day
+    if (genderBlocked(myDuty.cat, to)) return null;        // باب: males only
+    if (genderBlocked(theirDuty.cat, from)) return null;
+
+    const theirs = afterExchange(dutiesOf(to), theirDuty.date, myDuty.date, S.exceptional);
+    if (!theirs.ok) return null;
+    const mine = afterExchange(dutiesOf(from), myDuty.date, theirDuty.date, S.exceptional);
+    if (!mine.ok) return null;
+
+    return { duty: theirDuty, strip: theirs.strip || mine.strip };
+  }
+
+  /** Every duty of `to` that can be traded for mine. */
   function feasibleSwaps(from, shift, to) {
-    // Never the same date. Trading two duties that fall on the one day changes
-    // nothing for either of us — we both still work that day — and reads as
-    // being handed back my own shift.
+    const late = shift.date < today;
     return dutiesOf(to)
-      .filter(d => d.date >= today && d.date !== shift.date)
-      .filter(d => evaluate(to, shift.date, d.date).ok)    // they take mine
-      .filter(d => evaluate(from, d.date, shift.date).ok); // I take theirs
+      .filter(d => (late ? d.date < today : d.date >= today))
+      .map(d => swapFeasible(from, shift, to, d))
+      .filter(Boolean)
+      .map(x => x.duty);
   }
 
   /** The duty list someone ends up with — what "بعد التبديل" draws. */
@@ -311,6 +370,13 @@
     const month = shift.date.slice(0, 7);
     const mutual = S.kind === 'تبديل';
     const out = [];
+    // How many colleagues are held back ONLY by a strip that survives the
+    // trade. They used to vanish with no explanation, which read as if the
+    // exchange were being ignored — so the count is surfaced under the list.
+    let stripOnly = 0;
+
+    const myGroup = dutyGroup(shift.cat);
+    const myMale = isMale(from);
 
     S.roster.forEach(doc => {
       if (from && keyOf(doc) === keyOf(from)) return;
@@ -319,21 +385,46 @@
       let options = null;
       if (mutual) {
         options = feasibleSwaps(from, shift, doc);
-        if (!options.length) return;
-      } else if (!evaluate(doc, shift.date, null).ok) {
+        if (!options.length) {
+          // would it work as an exceptional request? say so, don't hide it
+          if (!S.exceptional) {
+            const save = S.exceptional; S.exceptional = true;
+            if (feasibleSwaps(from, shift, doc).length) stripOnly++;
+            S.exceptional = save;
+          }
+          return;
+        }
+      } else if (!coverFeasible(shift, doc)) {
+        if (!S.exceptional && !genderBlocked(shift.cat, doc)) {
+          const save = S.exceptional; S.exceptional = true;
+          if (coverFeasible(shift, doc)) stripOnly++;
+          S.exceptional = save;
+        }
         return;
       }
 
+      // Rank: same duty family first, then same gender. In a cover the
+      // colleague takes MY duty, so the family always matches — there the
+      // ranking is gender then load.
+      const sameGroup = mutual
+        ? options.some(o => dutyGroup(o.cat) === myGroup)
+        : true;
+      const sameGender = isMale(doc) === myMale;
+
       out.push({
         doc,
+        rank: (sameGroup ? 0 : 2) + (sameGender ? 0 : 1),
+        sameGroup, sameGender,
         monthCount: dutiesOf(doc).filter(d => d.date.startsWith(month)).length,
         options
       });
     });
 
-    // lightest month first — the fairest colleague to ask is the least loaded
-    out.sort((a, b) => a.monthCount - b.monthCount ||
+    // same family + same gender first, then the lightest month within each tier
+    out.sort((a, b) => a.rank - b.rank || a.monthCount - b.monthCount ||
       (a.doc.name || '').localeCompare(b.doc.name || '', 'ar'));
+    out.stripOnly = stripOnly;
+    out.myGroup = myGroup;
     return out;
   }
 
@@ -342,20 +433,27 @@
     if (!host) return;
     if (!S.shift) { host.innerHTML = ''; return; }
 
-    if (S.shift.date < today) {
-      host.innerHTML = '<div class="verdict no" style="margin-top:0"><h3><i class="fas fa-clock-rotate-left"></i> مناوبة مضت</h3>' +
-        '<div>لا يمكن تبديل مناوبة تاريخها في الماضي. اختر مناوبة قادمة من الرزنامة.</div></div>';
-      return;
-    }
-
     const mutual = S.kind === 'تبديل';
     const list = eligibleFor(S.shift, S.from);
+    const late = S.shift.date < today
+      ? '<div class="late-note"><i class="fas fa-clock-rotate-left"></i> <b>مناوبة مضت</b> — ' +
+        'الطلب سيُرسل موسوماً بأنه <b>طلب متأخر</b>، والخيارات المعروضة مناوبات مضت أيضاً.</div>'
+      : '';
+
+    // Colleagues kept out only by a strip are named as such, with the way in.
+    const stripNote = list.stripOnly
+      ? `<div class="elig-strip"><i class="fas fa-circle-info"></i> ` +
+        `و<b>${list.stripOnly}</b> ${mutual ? 'زميلاً يمكن التبادل معهم' : 'طبيباً يمكنهم أخذها'} ` +
+        `لولا أنّ ذلك يُنتج مناوبتين متتاليتين (ستريب) لأحد الطرفين. ` +
+        `فعّل «لديّ إذن بمناوبتين متتاليتين» أعلاه ليظهروا.</div>`
+      : '';
 
     if (!list.length) {
-      host.innerHTML = '<div class="verdict no" style="margin-top:0"><h3><i class="fas fa-user-slash"></i> لا يوجد طبيب متاح</h3>' +
+      host.innerHTML = late + '<div class="verdict no" style="margin-top:0"><h3><i class="fas fa-user-slash"></i> لا يوجد طبيب متاح</h3>' +
         `<div>${mutual
           ? 'لا يوجد زميل يستطيع أخذ هذه المناوبة ولديه في المقابل مناوبة تستطيع أنت أخذها. جرّب «شيل مناوبة» بدلاً من التبديل المتبادل.'
-          : 'كل الأطباء لديهم مناوبة في هذا اليوم أو في اليوم الذي قبله أو بعده. جرّب مناوبة أخرى.'}</div></div>`;
+          : 'كل الأطباء لديهم مناوبة في هذا اليوم أو في اليوم الذي قبله أو بعده. جرّب مناوبة أخرى.'}</div>` +
+        `${stripNote}</div>`;
       return;
     }
 
@@ -364,9 +462,11 @@
       const opts = mutual
         ? `<span class="cm-alt"><i class="fas fa-right-left"></i> <span class="num">${x.options.length}</span> مناوبة قابلة للتبادل</span>`
         : '';
+      const tags = (x.sameGroup && mutual ? '<span class="ctag grp">نفس نوع المناوبة</span>' : '');
       return `<div class="cand" data-key="${escapeHtml(keyOf(x.doc))}" tabindex="0">` +
         `<span class="cn">${escapeHtml(x.doc.name)}</span>` +
         `<span class="cm"><span class="num">${x.monthCount}</span> مناوبة هذا الشهر</span>${opts}` +
+        (tags ? `<span class="ctags">${tags}</span>` : '') +
         (phone
           ? `<span class="cand-phone"><a href="tel:${escapeHtml(phone)}" class="num" onclick="event.stopPropagation()">${escapeHtml(phone)}</a>` +
             `<button type="button" class="copy" data-phone="${escapeHtml(phone)}" title="نسخ الرقم"><i class="fas fa-copy"></i></button></span>`
@@ -374,13 +474,14 @@
         '</div>';
     };
 
-    host.innerHTML =
+    host.innerHTML = late +
       `<div class="elig-head"><i class="fas fa-user-check"></i> <b>${list.length}</b> ${mutual ? 'زميلاً يمكن التبادل معهم' : 'طبيباً يمكنهم أخذ هذه المناوبة'}` +
       `<span class="elig-note">${mutual
         ? 'يستطيعون أخذ مناوبتك، ولديهم مناوبة تستطيع أنت أخذها'
         : 'لا مناوبة لديهم في نفس اليوم ولا في اليوم السابق أو التالي'} — مرتّبون من الأخفّ عبئاً</span></div>` +
       `<div class="cands">${list.slice(0, 30).map(chip).join('')}</div>` +
-      (list.length > 30 ? `<div class="elig-note" style="margin-top:8px">…و${list.length - 30} آخرون — اكتب الاسم في المربع أعلاه.</div>` : '');
+      (list.length > 30 ? `<div class="elig-note" style="margin-top:8px">…و${list.length - 30} آخرون — اكتب الاسم في المربع أعلاه.</div>` : '') +
+      stripNote;
 
     host.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -447,8 +548,13 @@
       if (iso < today) cls.push('past');
 
       if (opts.mode === 'pick') {
-        if (mine.length && iso >= today) { cls.push('pick'); click = ` data-date="${iso}"`; }
-        else if (mine.length) { cls.push('gone'); why = 'مضت'; }
+        // Past duties are selectable too: residents often swap by agreement,
+        // work the shift, and only file the request afterwards.
+        if (mine.length) {
+          cls.push('pick');
+          click = ` data-date="${iso}"`;
+          if (iso < today) { cls.push('late'); why = 'مضت'; }
+        }
         if (iso === opts.selected) cls.push('sel');
       } else {
         const v = evaluate(opts.doctor, iso, opts.ignore);
@@ -879,7 +985,7 @@
   }
 
   function validateSend() {
-    let ok = !!(S.from && S.to && S.shift) && keyOf(S.from) !== keyOf(S.to) && S.shift.date >= today;
+    let ok = !!(S.from && S.to && S.shift) && keyOf(S.from) !== keyOf(S.to);
     if (ok) {
       const mutual = S.kind === 'تبديل';
       const give = mutual && S.back ? S.back.date : null;
@@ -897,13 +1003,30 @@
     // "شيل" still has to fill the counterpart questions — the form requires
     // them, and its own instructions say to repeat the original duty there.
     const back = S.kind === 'تبديل' && S.back ? S.back : S.shift;
+    const mutualReq = S.kind === 'تبديل';
+    const giveDate = mutualReq && S.back ? S.back.date : null;
+    const takerSide = afterExchange(dutiesOf(S.to), giveDate, S.shift.date, true);
+    const mySide = mutualReq && S.back
+      ? afterExchange(dutiesOf(S.from), S.shift.date, S.back.date, true)
+      : { strip: false, prev: null, next: null };
+
+    const stripWho = [
+      takerSide.strip && `${S.to.name}: ${[takerSide.prev && `مناوبة ${fmt(takerSide.prev.date)}`,
+        takerSide.next && `مناوبة ${fmt(takerSide.next.date)}`].filter(Boolean).join(' و')}`,
+      mySide.strip && `${S.from.name}: ${[mySide.prev && `مناوبة ${fmt(mySide.prev.date)}`,
+        mySide.next && `مناوبة ${fmt(mySide.next.date)}`].filter(Boolean).join(' و')}`
+    ].filter(Boolean);
+
     const notes = [
       $('notes').value.trim(),
       $('phone').value.trim() ? `هاتف مُقدّم الطلب: ${$('phone').value.trim()}` : '',
-      // The reviewer must be able to see, in the sheet, that a strip was
-      // deliberate and permitted — not something the checks missed.
-      S.stripOk
-        ? 'تنبيه: الطلب يتضمّن مناوبتين متتاليتين (ستريب)، وقد أقرّ مُقدّم الطلب بحصوله على إذن بذلك.'
+      // The reviewer must see in the sheet that this is an exception and what
+      // exactly makes it one — not have to work it out from the dates.
+      S.shift.date < today
+        ? `⏱ طلب متأخر — المناوبة تمّت بتاريخ ${fmt(S.shift.date)} قبل تقديم الطلب.`
+        : '',
+      stripWho.length
+        ? `⚠ طلب استثنائي — يتضمّن مناوبتين متتاليتين (ستريب): ${stripWho.join(' · ')}`
         : 'تم التحقق آلياً: لا مناوبة في نفس اليوم، ولا في اليوم السابق أو التالي.'
     ].filter(Boolean).join('\n');
 
@@ -916,6 +1039,7 @@
       // The department reads "نفس نوع المناوبة" as the same GROUP
       // (عنايات / إسعاف / أجنحة), not the exact category.
       conditions: (S.kind !== 'تبديل' || !S.back || S.back.group === S.shift.group) ? 'نعم' : 'لا',
+      exceptional: stripWho.length > 0,
       reason: $('reason').value === 'سبب آخر' && $('reasonOther').value.trim()
         ? `سبب آخر: ${$('reasonOther').value.trim()}`
         : $('reason').value,
@@ -1055,8 +1179,19 @@
     $('kind').addEventListener('click', e => {
       const b = e.target.closest('button[data-kind]');
       if (!b) return;
+      if (S.kind === b.dataset.kind) return;
       S.kind = b.dataset.kind;
+
+      // Switching the kind of request changes WHO is eligible entirely, so the
+      // chosen colleague is cleared — keeping it would leave a name selected
+      // that the new mode may not even allow. My own identity and my chosen
+      // duty are mine, and they stay.
+      S.to = null;
       S.back = null;
+      $('q2').value = '';
+      $('ab2').value = '';
+      $('ch2').innerHTML = '';
+
       $('kind').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
       refresh();
     });
@@ -1067,7 +1202,6 @@
       const date = cell.dataset.date;
       const list = dutiesOf(S.from).filter(d => d.date === date);
       if (!list.length) return;
-      if (date < today) { toast('لا يمكن تبديل مناوبة مضى تاريخها', true); return; }
       // more than one duty on the same day is possible; ask which
       S.shift = list.length === 1 ? list[0] : list[0];
       if (S.to) { const i = S.months.indexOf(date.slice(0, 7)); if (i >= 0) S.m2 = i; }
@@ -1076,7 +1210,7 @@
     });
 
     $('stripOk').addEventListener('change', e => {
-      S.stripOk = e.target.checked;
+      S.exceptional = e.target.checked;
       // the whole judgement changes, so the colleague list and the picker
       // are both rebuilt — and a choice that is no longer valid is dropped
       if (S.back && !feasibleSwaps(S.from, S.shift, S.to).some(d => d.date === S.back.date)) S.back = null;

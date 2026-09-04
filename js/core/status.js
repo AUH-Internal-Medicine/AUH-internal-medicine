@@ -15,14 +15,21 @@
   function isJoined(s) {
     const st = normAr(s || '');
     if (!st) return false;
-    // "تم الانفكاك" also contains "انفكاك" but must never read as joined.
+
+    // A negation must be read BEFORE the positive words. `normAr` drops the
+    // leading alef, so "التحق" normalises to "تحق" — which is a substring of
+    // "يلتحق". Without this guard "لم يلتحق بعد" reads as joined.
+    if (['لم يلتحق', 'لم ينضم', 'لم يباشر', 'لم يداوم', 'لم يحضر', 'لن يلتحق']
+      .some(w => st.includes(normAr(w)))) return false;
+
     if (isDetachedStatus(s)) return false;
-    // The two rosters word the same fact differently: the first year writes
-    // "تم الالتحاق", the second "قائم على رأس عمله". Both mean the resident is
-    // working, and both must show as joined.
+
+    // The rosters word the same fact differently: the first year writes
+    // "تم الالتحاق", the second "قائم على رأس عمله". Both mean working.
     return ['التحق', 'ملتحق', 'التحاق', 'على راس عمله', 'راس عمله', 'مباشر', 'يعمل']
       .some(w => st.includes(normAr(w)));
   }
+
 
   /** True for residents who left ("تم الانفكاك") — hidden from the roster by default. */
   function isDetachedStatus(s) {
