@@ -289,9 +289,23 @@
    * @param {string|null} out   the date they give away (null for a plain cover)
    * @param {string}      inc   the date they receive
    */
+  /**
+   * Two duties are the SAME duty only when the day and the category match.
+   * A resident can hold two duties on one day, so removing "everything on that
+   * date" would quietly delete a duty the exchange never touched.
+   */
+  function sameDuty(a, b) {
+    return !!a && !!b && a.date === b.date && normAr(a.cat || '') === normAr(b.cat || '');
+  }
+
   function afterExchange(list, out, inc, allowStrip) {
-    const rest = (list || []).filter(d => !out || d.date !== out);
-    const n = dayNum(inc);
+    // `out` may be a duty object or a bare date (older call sites).
+    const outDuty = typeof out === 'string' ? { date: out, cat: null } : out;
+    const rest = (list || []).filter(d => {
+      if (!outDuty) return true;
+      return outDuty.cat === null ? d.date !== outDuty.date : !sameDuty(d, outDuty);
+    });
+    const n = dayNum(typeof inc === 'string' ? inc : inc.date);
     const same = rest.find(d => dayNum(d.date) === n);
     const prev = rest.find(d => dayNum(d.date) === n - 1);
     const next = rest.find(d => dayNum(d.date) === n + 1);
@@ -321,7 +335,7 @@
   /** شيل — can `to` simply take my duty? */
   function coverFeasible(myDuty, to) {
     if (genderBlocked(myDuty.cat, to)) return null;
-    const r = afterExchange(dutiesOf(to), null, myDuty.date, S.exceptional);
+    const r = afterExchange(dutiesOf(to), null, myDuty, S.exceptional);
     return r.ok ? { strip: r.strip } : null;
   }
 
@@ -330,13 +344,17 @@
    * simulated: each side loses what it hands over BEFORE the arrival is judged.
    */
   function swapFeasible(from, myDuty, to, theirDuty) {
-    if (theirDuty.date === myDuty.date) return null;       // frees nobody's day
+    // Only the very same duty is pointless. Trading a DIFFERENT duty on the
+    // same day is a real swap — إسعاف داخلي ليلي for إسعاف داخلي نهاري on the
+    // one date leaves each of us with exactly one duty that day.
+    if (sameDuty(myDuty, theirDuty)) return null;
     if (genderBlocked(myDuty.cat, to)) return null;        // باب: males only
     if (genderBlocked(theirDuty.cat, from)) return null;
 
-    const theirs = afterExchange(dutiesOf(to), theirDuty.date, myDuty.date, S.exceptional);
+    // Judge the schedules each side ACTUALLY ends up with.
+    const theirs = afterExchange(dutiesOf(to), theirDuty, myDuty, S.exceptional);
     if (!theirs.ok) return null;
-    const mine = afterExchange(dutiesOf(from), myDuty.date, theirDuty.date, S.exceptional);
+    const mine = afterExchange(dutiesOf(from), myDuty, theirDuty, S.exceptional);
     if (!mine.ok) return null;
 
     return { duty: theirDuty, strip: theirs.strip || mine.strip };
@@ -354,7 +372,7 @@
 
   /** The duty list someone ends up with — what "بعد التبديل" draws. */
   function dutiesAfter(doc, add, remove) {
-    const list = dutiesOf(doc).filter(d => !remove || d.date !== remove.date);
+    const list = dutiesOf(doc).filter(d => !remove || !sameDuty(d, remove));
     return (add ? list.concat([add]) : list).sort((a, b) => a.date.localeCompare(b.date));
   }
 
@@ -588,9 +606,12 @@
     if (!S.to || !S.shift) { host.innerHTML = ''; return; }
 
     const mutual = S.kind === 'تبديل';
-    const give = mutual && S.back ? S.back.date : null;
-    const v = evaluate(S.to, S.shift.date, give);
-    const back = mutual && S.back ? evaluate(S.from, S.back.date, S.shift.date) : null;
+    // One source of truth: judge each side on the schedule it ends up with.
+    const give = mutual && S.back ? S.back : null;
+    const v = afterExchange(dutiesOf(S.to), give, S.shift, S.exceptional);
+    const back = mutual && S.back
+      ? afterExchange(dutiesOf(S.from), S.shift, S.back, S.exceptional)
+      : null;
 
     const head = `${escapeHtml(S.to.name)} — ${escapeHtml(S.shift.cat)} يوم ` +
       `${getDayName(S.shift.date)} <span class="num">${fmt(S.shift.date)}</span>`;
@@ -740,13 +761,18 @@
       cell: (iso, mine) => {
         if (!mine.length) return {};
         if (S.back && S.back.date === iso) return { cls: 'pick swappable sel' };
+        // A day is offered when ANY duty on it can be traded — including a duty
+        // on my own date, which is a real swap (ليلي ↔ نهاري on the one day).
         if (optionDates.has(iso)) return { cls: 'pick swappable', pick: true };
-        if (iso < today) return { cls: 'gone', badge: 'مضت' };
-        if (iso === S.shift.date) return { cls: 'blocked', badge: 'مناوبتك في نفس اليوم' };
+        if (iso < today !== S.shift.date < today) {
+          return { cls: 'gone', badge: iso < today ? 'مضت' : 'قادمة' };
+        }
         // say WHY, precisely — it is the difference between "ask for permission"
         // and "this can never work"
-        const his = evaluate(S.to, S.shift.date, iso);
-        const mineSide = evaluate(S.from, iso, S.shift.date);
+        // judge with the exchange applied, exactly as feasibleSwaps does
+        const theirDuty = mine[0];
+        const his = afterExchange(dutiesOf(S.to), theirDuty, S.shift, S.exceptional);
+        const mineSide = afterExchange(dutiesOf(S.from), S.shift, theirDuty, S.exceptional);
         const why = !his.ok
           ? (his.sameDay ? 'لديه مناوبة يوم مناوبتك' : 'يسبب له ستريب')
           : (mineSide.sameDay ? 'لديك مناوبة هذا اليوم' : 'يسبب لك ستريب');
@@ -988,9 +1014,15 @@
     let ok = !!(S.from && S.to && S.shift) && keyOf(S.from) !== keyOf(S.to);
     if (ok) {
       const mutual = S.kind === 'تبديل';
-      const give = mutual && S.back ? S.back.date : null;
-      ok = evaluate(S.to, S.shift.date, give).ok;
-      if (ok && mutual) ok = !!S.back && evaluate(S.from, S.back.date, S.shift.date).ok;
+      const give = mutual && S.back ? S.back : null;
+      ok = afterExchange(dutiesOf(S.to), give, S.shift, S.exceptional).ok
+        && !genderBlocked(S.shift.cat, S.to);
+      if (ok && mutual) {
+        ok = !!S.back
+          && !sameDuty(S.shift, S.back)
+          && !genderBlocked(S.back.cat, S.from)
+          && afterExchange(dutiesOf(S.from), S.shift, S.back, S.exceptional).ok;
+      }
     }
     const reason = $('reason').value;
     const reasonGiven = !!reason && (reason !== 'سبب آخر' || $('reasonOther').value.trim().length >= 3);
@@ -1004,10 +1036,10 @@
     // them, and its own instructions say to repeat the original duty there.
     const back = S.kind === 'تبديل' && S.back ? S.back : S.shift;
     const mutualReq = S.kind === 'تبديل';
-    const giveDate = mutualReq && S.back ? S.back.date : null;
-    const takerSide = afterExchange(dutiesOf(S.to), giveDate, S.shift.date, true);
+    const giveDuty = mutualReq && S.back ? S.back : null;
+    const takerSide = afterExchange(dutiesOf(S.to), giveDuty, S.shift, true);
     const mySide = mutualReq && S.back
-      ? afterExchange(dutiesOf(S.from), S.shift.date, S.back.date, true)
+      ? afterExchange(dutiesOf(S.from), S.shift, S.back, true)
       : { strip: false, prev: null, next: null };
 
     const stripWho = [
@@ -1213,7 +1245,7 @@
       S.exceptional = e.target.checked;
       // the whole judgement changes, so the colleague list and the picker
       // are both rebuilt — and a choice that is no longer valid is dropped
-      if (S.back && !feasibleSwaps(S.from, S.shift, S.to).some(d => d.date === S.back.date)) S.back = null;
+      if (S.back && !feasibleSwaps(S.from, S.shift, S.to).some(d => sameDuty(d, S.back))) S.back = null;
       refresh();
     });
 
@@ -1233,7 +1265,10 @@
     $('cal2').addEventListener('click', e => {
       const cell = e.target.closest('.day[data-date]');
       if (!cell || S.kind !== 'تبديل') return;
-      S.back = dutiesOf(S.to).find(d => d.date === cell.dataset.date) || null;
+      // a day may carry more than one duty; take the first that is tradable
+      const opts = feasibleSwaps(S.from, S.shift, S.to)
+        .filter(d => d.date === cell.dataset.date);
+      S.back = opts[0] || dutiesOf(S.to).find(d => d.date === cell.dataset.date) || null;
       refresh();
     });
 

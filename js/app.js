@@ -189,6 +189,12 @@
         AUH.storage.set('activeTab', tabId);
         if (doScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
 
+        // كل واجهة تُرسم على سنتها هي. بلا هذا السطر تُورَّث سنة الواجهة
+        // السابقة، فيرى من اختار الثانية في اللائحة مناوباتِ الثانية أيضاً.
+        this.activeTab = tabId;
+        const want = this.yearForTab(tabId);
+        if (want !== this.year) this.applyYear(want, { silent: true });
+
         this.renderTab(tabId);
         // the switcher lives inside each tab's own header, so it is (re)drawn
         // whenever a tab is shown
@@ -555,7 +561,6 @@
       if (!bundle) return false;
 
       this.year = id;
-      AUH.storage.set('activeYear', String(id));
 
       if (id === 1) {
         // The first year keeps every derived feature (statistics, adjustments,
@@ -581,14 +586,27 @@
     }
 
 
+    /**
+     * سنة كل واجهة على حدة. الافتراضي دائماً السنة الأولى، واختيارك في واجهة
+     * لا ينتقل إلى غيرها: من يختار السنة الثانية في لائحة المقيمين ثم ينتقل
+     * إلى المناوبات يجب أن يجد المناوبات على السنة الأولى.
+     */
+    yearForTab(tabId) {
+      if (!this._tabYears) this._tabYears = {};
+      return this._tabYears[tabId || this.activeTab] || 1;
+    }
+
     setYear(id) {
       const n = Number(id);
-      if (n === this.year) return;
+      const tab = this.activeTab;
+      if (n === this.yearForTab(tab)) return;
       const info = this.yearInfo(n);
       if (!info || !info.ready) {
         AUH.ui.showToast(`بيانات ${info ? info.label : 'هذه السنة'} لم تُضف بعد`, true);
         return;
       }
+      if (!this._tabYears) this._tabYears = {};
+      this._tabYears[tab] = n;
       this.applyYear(n);
       AUH.ui.showToast(`عرض ${info.label}`);
     }
@@ -597,9 +615,10 @@
     /** The switcher markup, reused by every tab that shows year-bound data. */
     yearSwitchHtml() {
       const years = AUH.config.years || [];
+      const current = this.yearForTab(this.activeTab);
       return '<div class="year-switch" role="tablist" aria-label="اختيار السنة">' +
         years.map(y => {
-          const on = y.id === this.year;
+          const on = y.id === current;
           const cls = ['year-btn', on ? 'on' : '', y.ready ? '' : 'soon'].filter(Boolean).join(' ');
           return `<button type="button" class="${cls}" role="tab" aria-selected="${on}"` +
             `${y.ready ? '' : ' disabled'} onclick="app.setYear(${y.id})">` +
@@ -630,9 +649,9 @@
 
       // Flat aliases used throughout the views — pointed at the active year.
       this.buildYearBundles(dataset);
-      const storedYear = Number(AUH.storage.get('activeYear')) || AUH.config.defaultYear || 1;
-      const wanted = this.yearInfo(storedYear) && this.yearInfo(storedYear).ready ? storedYear : 1;
-      this.applyYear(wanted, { silent: true });
+      // الافتراضي دائماً السنة الأولى، ولكل واجهة اختيارها بعد ذلك.
+      this._tabYears = {};
+      this.applyYear(1, { silent: true });
 
       // The second-year schedule stays available under its own alias: the
       // calendar shows both years side by side on the same day.
@@ -841,9 +860,25 @@
       return toAsciiDigits(value);
     }
 
-    /** Resolves a name/abbreviation coming from any sheet to a roster record. */
-    findRbyExact(nameOrAbbr) {
-      return this.residentsModel.findByNameOrAbbr(nameOrAbbr);
+    /** لائحة سنة بعينها — لا اللائحة النشطة. */
+    rosterModelFor(yearId) {
+      const y = Number(yearId) || 1;
+      if (y === 1) return (this.dataset && this.dataset.residents) || this.residentsModel;
+      const b = (this.yearBundles || {})[y];
+      return (b && b.residentsModel) || null;
+    }
+
+    /**
+     * يحلّ اسماً/اختصاراً من أي شيت إلى مقيم — **داخل سنته وحدها**.
+     *
+     * الاختصارات تتكرر بين السنوات («احمد» في الأولى والثانية معاً)، فالبحث
+     * في اللائحة النشطة كان يعطي طبيب السنة الأولى لصفوف السنة الثانية.
+     * تمرير `yearId` صريحاً هو ما يمنع الخلط جذرياً.
+     */
+    findRbyExact(nameOrAbbr, yearId) {
+      const model = yearId ? this.rosterModelFor(yearId) : this.residentsModel;
+      if (!model) return null;
+      return model.findByNameOrAbbr(nameOrAbbr);
     }
 
     isHolidayDate(dateIso) {

@@ -243,7 +243,7 @@
     }
   },
 
-  buildOncallCategoriesForDate(dstr, oncRows, oncHeaders, applyAdjustments) {
+  buildOncallCategoriesForDate(dstr, oncRows, oncHeaders, applyAdjustments, yearId) {
     const row = (oncRows || []).find(r => r.date === dstr);
     const cats = {};
 
@@ -257,7 +257,7 @@
 
         if (!cats[cn]) cats[cn] = [];
         for (const n of names) {
-          const resident = this.findRbyExact(n);
+          const resident = this.findRbyExact(n, yearId);
           const fn = resident ? resident.name : n;
           const ph = resident ? resident.phone : '';
           const ab = resident ? resident.abbr : n;
@@ -349,7 +349,7 @@
         const cellVal = (oncRow.row[col] || '').trim();
         if (cellVal) {
           splitNames(cellVal).forEach(n => {
-            const cr = this.findRbyExact(n);
+            const cr = this.findRbyExact(n, this.yearForTab ? this.yearForTab('oncall') : 1);
             const abbr = cr ? cr.abbr || cr.name : n;
             if (abbr === excludeAbbr) return;
             if (!list.find(x => x.abbr === abbr)) list.push({ name: cr ? cr.name : n, abbr, phone: cr ? cr.phone : '' });
@@ -387,8 +387,8 @@
     const showY2 = this.oncallYearFilter === 'y2' || this.oncallYearFilter === 'y1y2';
     const showBoth = this.oncallYearFilter === 'y1y2';
 
-    const cats1 = showY1 ? this.buildOncallCategoriesForDate(dstr, this.oncRows, this.oncHeaders, true) : {};
-    const cats2 = showY2 ? this.buildOncallCategoriesForDate(dstr, this.oncRows2, this.oncHeaders2, false) : {};
+    const cats1 = showY1 ? this.buildOncallCategoriesForDate(dstr, this.oncRows, this.oncHeaders, true, this.yearForTab ? this.yearForTab('oncall') : 1) : {};
+    const cats2 = showY2 ? this.buildOncallCategoriesForDate(dstr, this.oncRows2, this.oncHeaders2, false, 2) : {};
     const entries1 = Object.entries(cats1);
     const entries2 = Object.entries(cats2);
 
