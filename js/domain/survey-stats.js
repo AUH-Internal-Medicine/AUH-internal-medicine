@@ -139,11 +139,29 @@
    * وما لم يُطابَق لا يُرمى: يُعرض كما كُتب في «فروز أخرى»، لأن دمج مسمّيين
    * مختلفين فعلاً («مشفى القلب» و«مركز قلب») قرارٌ طبّي يخصّ القسم لا الكود.
    */
+  /**
+   * مسمّيات يعرف القسم أنها فرزٌ واحد، أقرّها المالك في 2026-09-18.
+   * تُقارن بصيغة `rotationForm` (تطبيع + حذف «ال» من أوّل كل كلمة)، وتُفحص
+   * قبل أي مطابقة أخرى. هذا **قرار طبّي مكتوب**، لا تخمين من الكود.
+   */
+  const ROTATION_ALIASES = {
+    'داخليه عامه': 'generalWard',
+    'عامه': 'generalWard',
+    'جناح عامه': 'generalWard',
+    'مركز قلب': 'heartHospital',
+    'مركز': 'heartHospital',
+    'مركو': 'heartHospital'
+  };
+
   function matchRotationKey(rotationText, items) {
     const r = rotationForm(rotationText);
     if (!r) return null;
 
     const keys = items.map(item => ({ key: item.key, norm: rotationForm(item.label) })).filter(x => x.norm);
+    const known = new Set(keys.map(k => k.key));
+
+    const alias = ROTATION_ALIASES[r];
+    if (alias && known.has(alias)) return alias;
 
     for (const item of keys) if (item.norm === r) return item.key;
 
