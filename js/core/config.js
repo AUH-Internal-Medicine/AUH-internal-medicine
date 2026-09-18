@@ -59,7 +59,10 @@
       year34: '1zJ9O5jKp5YwZomLdCZMgUOV4wCaTenmVOvEfxkhFhY4',
       /** Swap-request responses (the Google Form's own sheet). Read-only, and
        *  only for the "متابعة طلبات التبديل" box in معلوماتي. */
-      swaps: '1ILIE9UFtRwo0aHufEo9edOZ-XEpMM5EFvio9aylahFU'
+      swaps: '1ILIE9UFtRwo0aHufEo9edOZ-XEpMM5EFvio9aylahFU',
+      /** استبيان المناوبات الشهري (شيت استمارة Google نفسها). للقراءة فقط،
+       *  وتستعمله صفحة «نتائج الاستبيان» العامة. */
+      survey: '1_GZlYCJRAeQlpCnsv9zzMM7HCANNVi2hFmaEM1l0kQ4'
     },
 
     /**

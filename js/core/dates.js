@@ -26,7 +26,10 @@
 
   /** gviz JSON serializes dates as `Date(2026,7,13)` (month is 0-based). */
   function parseGvizDate(value) {
-    const m = String(value || '').match(/Date\((\d+),\s*(\d+),\s*(\d+)\)/i);
+    // خلايا الوقت في شيتات استمارات Google تأتي `Date(2026,8,17,19,45,53)`
+    // — أي بساعةٍ ودقيقة وثانية بعد اليوم. تُقبل ويُؤخذ منها التاريخ وحده،
+    // وإلا عادت الخلية نصّاً خامّاً كما كان يحدث مع طابع الاستبيان الزمني.
+    const m = String(value || '').match(/Date\((\d+),\s*(\d+),\s*(\d+)(?:\s*,[\d\s,.]*)?\)/i);
     return m ? isoFromParts(m[1], parseInt(m[2], 10) + 1, m[3]) : '';
   }
 

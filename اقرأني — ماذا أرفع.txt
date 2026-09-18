@@ -1,0 +1,57 @@
+════════════════════════════════════════════════════════════════════
+  ملفّات صفحة «نتائج الاستبيان» — جاهزة للرفع إلى GitHub
+  أُعدَّت في 2026-09-18
+════════════════════════════════════════════════════════════════════
+
+من أين جاءت؟
+  من نسخة GitHub العاملة:  ~/Desktop/AUH-internal-medicine-main 2 old
+  (وهي النسخة المنشورة اليوم — لا المجلّد المرقّم الخاص بالسيرفر)
+
+كيف ترفع؟
+  افتح المستودع على github.com ← Add file ← Upload files
+  ثم اسحب **محتويات هذا المجلّد** (لا المجلّد نفسه) إلى الصفحة.
+  GitHub يحفظ ترتيب المجلّدات تلقائياً: js/core, js/data, js/domain, js/views.
+  اكتب رسالة الحفظ ثم Commit changes.
+
+  ملاحظة: مجلّد ‎.github مخفيّ في Finder.
+  أظهِر المخفيّ بالضغط:  Command + Shift + .
+  أو عدّل pages.yml من موقع GitHub مباشرةً (سطران فقط، انظر أدناه).
+
+الملفّات التسعة، وأين يذهب كلٌّ منها في المستودع:
+
+  جديدة (٦):
+    survey.html                        ←  جذر المستودع
+    survey.css                         ←  جذر المستودع
+    js/data/survey-responses.js        ←  js/data/
+    js/domain/survey-stats.js          ←  js/domain/
+    js/views/survey-ui.js              ←  js/views/
+    js/views/survey-public.js          ←  js/views/
+
+  تحلّ محلّ ملفّات موجودة (٣):
+    js/core/config.js                  ←  js/core/      (أُضيف معرّف شيت الاستبيان)
+    js/core/dates.js                   ←  js/core/      (قراءة الوقت مع التاريخ)
+    .github/workflows/pages.yml        ←  .github/workflows/  (نشر survey.html)
+
+ماذا يتغيّر في الملفّات الثلاثة المستبدَلة؟
+
+  ١) js/core/config.js — سطر بيانات واحد داخل spreadsheets:
+        survey: '1_GZlYCJRAeQlpCnsv9zzMM7HCANNVi2hFmaEM1l0kQ4'
+
+  ٢) js/core/dates.js — نمط التاريخ صار يقبل الوقت بعده:
+        قبل:  /Date\((\d+),\s*(\d+),\s*(\d+)\)/i
+        بعد:  /Date\((\d+),\s*(\d+),\s*(\d+)(?:\s*,[\d\s,.]*)?\)/i
+     (شيتات استمارات Google ترسل  Date(2026,8,17,19,45,53)  بالوقت)
+
+  ٣) .github/workflows/pages.yml — سطر نشر وسطر نسخ:
+        sed "s/__BUILD_ID__/${BUILD_ID}/g" survey.html > _site/survey.html
+        cp styles.css survey.css bg.png bg.webp bg.webp.png _site/
+
+بعد الرفع:
+  انتظر دقيقة حتى ينتهي Actions، ثم افتح:
+      <رابط موقعك>/survey.html
+
+ما لا يُرفع أبداً:
+  survey-admin.html  و  js/views/survey-admin.js
+  لوحة الإدارة تعرض الأسماء وأرقام الهواتف ونصوص الطلبات.
+  مكانها جهازك: افتحها من
+      ~/Desktop/AUH-internal-medicine-main/1-الموقع/survey-admin.html

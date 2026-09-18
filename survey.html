@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="description" content="نتائج استبيان المناوبات الشهري — أرقام مجمّعة بلا أسماء.">
+<meta name="robots" content="noindex">
+<title>نتائج استبيان المناوبات — قسم الأمراض الداخلية</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="bg.webp?v=__BUILD_ID__" fetchpriority="high">
+<link rel="stylesheet" href="survey.css?v=__BUILD_ID__">
+</head>
+<body>
+
+<header class="hero">
+  <img class="hero-bg" src="bg.webp?v=__BUILD_ID__" alt="" loading="eager" fetchpriority="high"
+       onerror="this.onerror=null;this.src='bg.png?v=__BUILD_ID__';">
+  <div class="hero-tools">
+    <button class="icon-btn" id="darkBtn" aria-label="تغيير الوضع الليلي"><i class="fas fa-moon" id="darkIcon"></i></button>
+    <a class="icon-btn" href="index.html" aria-label="العودة إلى الموقع" title="العودة إلى الموقع"><i class="fas fa-house"></i></a>
+  </div>
+  <div class="hero-kicker">استبيان المناوبات الشهري</div>
+  <h1>ماذا قال القسم هذا الشهر</h1>
+  <div class="dept">قسم الأمراض الداخلية — مشفى حلب الجامعي</div>
+  <div class="hero-meta">
+    <span class="hero-pill"><i class="fas fa-user-shield"></i> بلا أسماء — أرقام مجمّعة فقط</span>
+    <span class="hero-pill" id="lastAnswer"><i class="fas fa-clock"></i> جاري القراءة…</span>
+    <button class="hero-pill" id="refreshBtn" type="button"><i class="fas fa-rotate"></i> تحديث</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="toolbar">
+    <label for="monthPicker" style="font-size:12.6px;font-weight:700;color:var(--ink-2)">الشهر</label>
+    <select class="picker" id="monthPicker" aria-label="اختيار الشهر"></select>
+  </div>
+
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <div class="card"><div class="empty">هذه الصفحة تقرأ النتائج مباشرةً من جدول Google، ولذلك تحتاج JavaScript مفعّلاً.</div></div>
+  </noscript>
+
+  <div id="content"></div>
+</main>
+
+<footer class="foot">
+  <div class="privacy"><i class="fas fa-lock"></i> لا تُعرض في هذه الصفحة أسماء ولا أرقام هواتف ولا نصوص الطلبات.</div>
+  <div>
+    لم تشارك بعد؟
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSf038Xl0h3zLM1huX_1Y7Djq08DD39JQ9sSiF2C3IBfOGPZkQ/viewform" target="_blank" rel="noopener">عبّئ الاستبيان</a>
+    · <a href="index.html">العودة إلى موقع القسم</a>
+  </div>
+  <div style="margin-top:6px;opacity:.85">الأرقام تُقرأ لحظياً من ردود الاستمارة، وتتغيّر مع كل مشاركة جديدة.</div>
+</footer>
+
+<script src="js/core/namespace.js?v=__BUILD_ID__"></script>
+<script src="js/core/storage.js?v=__BUILD_ID__"></script>
+<script src="js/core/config.js?v=__BUILD_ID__"></script>
+<script src="js/core/logger.js?v=__BUILD_ID__"></script>
+<script src="js/core/text.js?v=__BUILD_ID__"></script>
+<script src="js/core/dates.js?v=__BUILD_ID__"></script>
+<script src="js/data/header-map.js?v=__BUILD_ID__"></script>
+<script src="js/data/gviz-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/survey-responses.js?v=__BUILD_ID__"></script>
+<script src="js/domain/survey-stats.js?v=__BUILD_ID__"></script>
+<script src="js/views/survey-ui.js?v=__BUILD_ID__"></script>
+<script src="js/views/survey-public.js?v=__BUILD_ID__"></script>
+</body>
+</html>
