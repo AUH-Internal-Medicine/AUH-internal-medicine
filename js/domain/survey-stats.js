@@ -230,7 +230,21 @@
       people: e.people,
       spellings: [...e.spellings.entries()].sort((a, b) => b[1] - a[1]),
       current: ratingOf(e.current),
-      general: ratingOf(e.general)
+      general: ratingOf(e.general),
+      /**
+       * **مؤشّر الصعوبة**: متوسّط كل من صوّت للفرز — من فيه الآن ومن مرّ
+       * عليه معاً. وهو الرقم الذي يُبنى عليه حساب عبء كل طبيب.
+       *
+       * ولماذا متوسّطٌ خام بلا تنعيم؟ قِيس ولم يلزم: التشتّت **بين** الفروز
+       * (3.82) أكبر من التشتّت **داخل** الفرز الواحد (2.45)، وأقلّ فرز له
+       * ١٦ صوتاً. ومعامل بايز التجريبية يخرج **0.64 صوت**، أي تصحيحٌ بـ١–٤٪
+       * — أقلّ من رقمٍ عشري واحد في العرض. فالتعقيد هنا يُشترى بلا ثمن يُدفع.
+       * (القياس: 2026-09-20 على ٥٠٤ أصوات.)
+       *
+       * ويبقى `current` و`general` معروضَين: فرزٌ يراه أهله ٩ ومن مرّ عليه ٥
+       * حالٌ يجب أن تُرى، والمؤشّر وحده يخفيها.
+       */
+      combined: ratingOf(e.current.concat(e.general))
     }));
 
     return {
@@ -251,6 +265,101 @@
         label: def.label,
         rating: ratingOf(rows.map(r => r.ratings[def.key]).filter(v => typeof v === 'number'))
       }));
+  }
+
+  /**
+   * عبء كل طبيب من تاريخ فروزه — والجواب عن «ليس الجميع داوم نفس عدد الأشهر».
+   *
+   * ┌ لماذا ثلاثة أرقام لا رقمٌ واحد ─────────────────────────────────────────┐
+   * │ **المجموع** يقول ما حمله فعلاً، ولا يُقارَن بين من داوم شهراً ومن داوم  │
+   * │ أربعة: طبيبٌ شهرٌ واحد في أصعب فرز مجموعه 8.6، وآخرُ أربعةَ أشهر        │
+   * │ متوسّطة مجموعه 26 — والثاني ليس أشقى، بل أطولَ خدمةً.                   │
+   * │                                                                        │
+   * │ **المتوسّط** يقول شدّة العبء لا كمّيته، ويظلم الطويل: أربعةُ أشهر       │
+   * │ بمتوسّط 7 عملٌ أثقل من شهرٍ واحد بـ8.                                  │
+   * │                                                                        │
+   * │ **والفرق عن المتوقَّع** يجمع الاثنين ويُقارَن عبر أعداد أشهر مختلفة:    │
+   * │     الفرق = المجموع − (عدد الأشهر × متوسّط القسم لكل شهر)               │
+   * │ أي: «كان يُتوقَّع أن تحمل كذا بحسب طول خدمتك؛ حملتَ كذا». موجبٌ =      │
+   * │ حمل فوق نصيبه، وسالبٌ = دونه. ووحدته «درجة-شهر» فتُجمع وتُطرح بمعنى.   │
+   * └────────────────────────────────────────────────────────────────────────┘
+   *
+   * ❗ **وجُرّب التنعيم البايزي أوّلاً ورُفض بالقياس.** التشتّت بين الأطباء
+   *   خرج **صفراً**: بعد طرح أثر الصدفة لا فرق منهجيّاً بين طبيب وآخر —
+   *   أي أن التوزيع كان عادلاً في المتوسّط، والاختلاف صدفةُ فرز. ومعامل
+   *   بايز خرج ٢٩ ألف شهر، فيسحب الجميع إلى 6.61 ويمحو الترتيب كلّه.
+   *   والسبب أن النموذج يقدّر **صفةً كامنة**، والسؤال هنا عن **ماضٍ مُنجَز**:
+   *   الشهر الصعب الذي حمله حمله فعلاً، ولا يُنعَّم.
+   *
+   * @param {Array} residents  صفوف لائحة المقيمين (لكلٍّ `shifts` شهراً بشهر)
+   * @param {Array} rows       مخرجات `rotationBreakdown().rows`
+   * @param {Array} items      تعريفات الفروز (للمطابقة)
+   */
+  function burden(residents, rows, items) {
+    const index = new Map();
+    for (const r of rows || []) {
+      if (r.combined && typeof r.combined.avg === 'number') index.set(r.key, r.combined.avg);
+    }
+
+    const unrated = new Map();
+    const docs = [];
+
+    for (const res of residents || []) {
+      const values = [];
+      const detail = [];
+      const shifts = res.shifts || {};
+      for (const month of Object.keys(shifts).sort((a, b) => a - b)) {
+        const text = String(shifts[month] || '').trim();
+        if (!text) continue;
+        const key = matchRotationKey(text, items);
+        if (key && index.has(key)) {
+          values.push(index.get(key));
+          detail.push({ month: Number(month), text, value: index.get(key) });
+        } else {
+          /* شهرٌ بفرزٍ غير مقيَّم **لا يُحتسب صفراً ولا يُحتسب شهراً**:
+           * الصفر يجعل صاحبه يبدو مرتاحاً وهو لم يُقَس، وعدُّه شهراً يخفض
+           * متوسّطه بلا سبب. يُطرح من الحساب ويُعرض عدده. */
+          unrated.set(text, (unrated.get(text) || 0) + 1);
+          detail.push({ month: Number(month), text, value: null });
+        }
+      }
+      if (!values.length) continue;
+      const sum = values.reduce((a, b) => a + b, 0);
+      docs.push({
+        name: res.name,
+        abbr: res.abbr,
+        months: values.length,
+        skipped: detail.length - values.length,
+        sum,
+        avg: sum / values.length,
+        detail
+      });
+    }
+
+    /* متوسّط القسم لكل **شهر خدمة** — لا متوسّط متوسّطات الأطباء: الأوّل
+     * يزن كل شهر مرّة، والثاني يعطي من داوم شهراً وزنَ من داوم أربعة. */
+    const totalMonths = docs.reduce((s, d) => s + d.months, 0);
+    const perMonth = totalMonths ? docs.reduce((s, d) => s + d.sum, 0) / totalMonths : 0;
+
+    for (const d of docs) {
+      d.expected = d.months * perMonth;
+      d.dev = d.sum - d.expected;
+    }
+
+    /* انحرافٌ معياري للفروق: به وحده يُعرف أي فرقٍ إشارةٌ وأيّه ضجيج. */
+    const sd = docs.length
+      ? Math.sqrt(docs.reduce((s, d) => s + d.dev * d.dev, 0) / docs.length)
+      : 0;
+
+    docs.sort((a, b) => b.dev - a.dev);
+
+    return {
+      perMonth,
+      sd,
+      doctors: docs,
+      unrated: [...unrated.entries()].map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count)
+    };
   }
 
   /**
@@ -304,6 +413,7 @@
     rotationForm,
     matchRotationKey,
     rotationBreakdown,
+    burden,
     dutyBreakdown,
     sortBreakdown,
     requests
