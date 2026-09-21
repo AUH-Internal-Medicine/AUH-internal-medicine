@@ -178,6 +178,18 @@
             `<article class="rc${dead}">` +
             '<header class="rc-head">' +
             `<h3 class="rc-name">${escapeHtml(r.label)}</h3>` +
+            /**
+             * **مؤشّر الصعوبة** بجانب اسم الفرز: متوسّط كل من صوّت له —
+             * من فيه الآن ومن مرّ عليه معاً. وهو الرقم الذي يُبنى عليه
+             * حساب عبء كل طبيب، فمكانه أوّل ما يُرى لا آخره.
+             *
+             * ومعه عدد أصواته دائماً: رقمٌ بلا عدده يُقرأ حقيقةً وهو تقدير.
+             */
+            (r.combined && r.combined.n
+              ? `<span class="rc-index" title="متوسّط ${r.combined.n} صوتاً — من يداوم فيه ومن مرّ عليه">` +
+                `<b class="num">${fmt(r.combined.avg, 1)}</b>` +
+                `<i>من ١٠ · <span class="num">${r.combined.n}</span> صوتاً</i></span>`
+              : '') +
             `<span class="rc-people" title="${escapeHtml(spellings ? 'كما كُتبت: ' + spellings : '')}">` +
             (r.people
               ? `في الفرز <b class="num">${r.people}</b>` +
