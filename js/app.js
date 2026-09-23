@@ -651,7 +651,7 @@
       this.buildYearBundles(dataset);
       // الافتراضي دائماً السنة الأولى، ولكل واجهة اختيارها بعد ذلك.
       this._tabYears = {};
-      this.applyYear(1, { silent: true });
+      this.applyYear(AUH.config.defaultYear || 1, { silent: true });
 
       // The second-year schedule stays available under its own alias: the
       // calendar shows both years side by side on the same day.

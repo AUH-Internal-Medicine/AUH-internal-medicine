@@ -9,12 +9,20 @@
  *   · **تقييم من مرّ عليه** — من كل من داوم فيه يوماً، لا من أهله اليوم.
  * وخلطهما في رقم واحد كان سيُخفي أكثر ممّا يُظهر.
  *
- * ما لا تعرضه، ولا يجوز أن تعرضه: **أي اسم، أو رقم هاتف، أو بريد، أو نصّ حرّ
- * كتبه مشارك.** السبب ليس تجميلاً: نصّ السبب في هذا الاستبيان يذكر سفراً
- * ومرضاً وظروفاً عائلية، وصاحبه يُعرَف منه ولو حُذف اسمه. النصوص كلّها
+ * ما لا تعرضه، ولا يجوز أن تعرضه: **هويّة مُجيب، أو رقم هاتف، أو بريد، أو
+ * نصّ حرّ كتبه مشارك.** السبب ليس تجميلاً: نصّ السبب في هذا الاستبيان يذكر
+ * سفراً ومرضاً وظروفاً عائلية، وصاحبه يُعرَف منه ولو حُذف اسمه. النصوص كلّها
  * للوحة الإدارة وحدها (`survey-admin.html`).
  *
- * إن أضفت قسماً هنا، اسأل أولاً: هل يمكن أن يُستدلّ منه على شخص بعينه؟
+ * ┌ لماذا يظهر قسم «حصيلة الفروز» بأسماء، والقاعدة أعلاه؟ ─────────────────┐
+ * │ لأن القاعدة تحمي **من قال ماذا**، لا الاسم في ذاته. وأسماء ذلك الجدول  │
+ * │ من لائحة المقيمين المنشورة على الموقع أصلاً بلا حساب (انظر بوّابة      │
+ * │ التبويبات في `js/views/auth-ui.js`)، ودرجاته متوسّطاتُ فرزٍ مجهولةُ    │
+ * │ المصدر. فهو يقول «هذا الفرز صعب، وفلانٌ داوم فيه» — وكلا الطرفين       │
+ * │ منشور سلفاً — ولا يقول قطّ «فلانٌ قيّمه كذا».                          │
+ * └────────────────────────────────────────────────────────────────────────┘
+ *
+ * إن أضفت قسماً هنا، اسأل أولاً: هل يمكن أن يُستدلّ منه على **رأي** شخص بعينه؟
  */
 (function (global) {
   'use strict';
@@ -24,7 +32,10 @@
   const stats = AUH.domain.surveyStats;
   const { escapeHtml } = AUH.text;
 
-  const state = { all: [], ratingDefs: [], month: '', rotSort: 'general', dutySort: 'avg' };
+  const state = {
+    all: [], ratingDefs: [], month: '', rotSort: 'general', dutySort: 'avg',
+    residents: null, rankAll: false
+  };
 
   const ROT_SORTS = [
     { key: 'general', label: 'الأصعب لمن مرّ عليه' },
@@ -113,6 +124,145 @@
     );
   }
 
+  /**
+   * حصيلة الفروز — ترتيب الأطباء.
+   *
+   * السؤال الذي يجيب عنه: من حمل فوق نصيبه ومن دونه؟ وجوابه ليس المجموع
+   * ولا المتوسّط، لأن الخدمة ليست متساوية الطول:
+   *
+   * ┌ المجموع وحده ────────────────────────────────────────────────────────┐
+   * │ يكافئ الأقدم لا الأتعب: من داوم أربعة أشهر سهلة يسبق من داوم شهراً   │
+   * │ واحداً قاسياً، وهو عكس المطلوب تماماً.                                │
+   * ├ المتوسّط وحده ───────────────────────────────────────────────────────┤
+   * │ يمحو الطول أصلاً: شهرٌ واحد بصعوبة 9 يساوي أربعة أشهر بـ9، مع أن     │
+   * │ الثاني حمل أربعة أضعاف ما حمله الأول.                                 │
+   * ├ الفرق عن المتوقَّع ← المعتمَد ────────────────────────────────────────┤
+   * │ المجموع − (عدد أشهره × متوسّط القسم لكل شهر). يعطي كل طبيب سقفاً     │
+   * │ يخصّ طول خدمته، ويقيس بُعده عنه. فمن داوم شهراً متوقَّعه ~6.6 ومن    │
+   * │ داوم أربعة متوقَّعه ~26.3، والفرق وحده قابلٌ للمقارنة بينهما.        │
+   * └──────────────────────────────────────────────────────────────────────┘
+   *
+   * والأعمدة الأربعة معروضةٌ كلّها — أشهر · مجموع · متوسّط · فرق — فالترتيب
+   * **يُراجَع** ولا يُصدَّق: رقمٌ واحد بلا ما بُني عليه يُقبل أو يُرفض بالثقة
+   * لا بالفحص. والقائمة كاملةٌ في الـDOM دائماً وإن عُرض منها ٢٥: البحث
+   * يجب أن يجد من هو في المرتبة ١٤٠، لا من هو في الصفحة الأولى فقط.
+   */
+
+  /** الكنية تُضيف معنى فقط إذا لم تكن آخر كلمة في الاسم. */
+  function showAbbr(d) {
+    if (!d.abbr) return false;
+    const last = String(d.name || '').trim().split(/\s+/).pop() || '';
+    return AUH.text.normAr(last) !== AUH.text.normAr(d.abbr);
+  }
+
+  function rankRow(d, rank, sd) {
+    /* «ليس صدفة» = يتجاوز ضعف الانحراف المعياري. ودونه ضجيجُ فرزٍ لا نمط. */
+    const strong = sd > 0 && Math.abs(d.dev) >= 2 * sd;
+    const tone = d.dev > 0 ? 'hard' : 'easy';
+    const sign = d.dev > 0 ? '+' : '';
+    const hay = AUH.text.normAr(`${d.name || ''} ${d.abbr || ''}`);
+    return (
+      `<tr class="${strong ? 'bd-strong ' : ''}bd-${tone}" data-find="${escapeHtml(hay)}">` +
+      `<td class="num">${rank}</td>` +
+      `<td>${escapeHtml(d.name)}${showAbbr(d) ? ` <span class="bd-abbr">${escapeHtml(d.abbr)}</span>` : ''}</td>` +
+      `<td class="num bd-dev">${sign}${ui.fixed(d.dev, 1)}</td>` +
+      `<td class="num">${d.months}${d.skipped ? `<i class="bd-skip" title="${d.skipped} شهراً بفرزٍ غير مقيَّم — طُرحت من الحساب">+${d.skipped}؟</i>` : ''}</td>` +
+      `<td class="num">${ui.fixed(d.sum, 1)}</td>` +
+      `<td class="num">${ui.fixed(d.avg, 2)}</td>` +
+      '</tr>'
+    );
+  }
+
+  function sectionRank(allRows) {
+    const head =
+      '<div class="sec-head"><h2><i class="fas fa-ranking-star"></i> حصيلة الفروز — ترتيب الأطباء</h2>';
+
+    /* فشل قراءة اللائحة **لا يُسقط الصفحة**: بقيّة الأقسام من الاستبيان
+     * وحده وتبقى صحيحة، ويظهر هذا القسم برسالة تقول لماذا غاب — لا فارغاً
+     * ولا بأرقام مخمَّنة. */
+    if (!state.residents) {
+      return '<section class="card">' + head + '</div>' +
+        '<div class="empty">تعذّرت قراءة لائحة المقيمين، فلا يمكن حساب الحصيلة. ' +
+        'وبقيّة أقسام الصفحة صحيحة.</div></section>';
+    }
+
+    const rot = stats.rotationBreakdown(allRows, state.ratingDefs);
+    const items = (state.ratingDefs || []).filter(d => d.group === 'rotations');
+    const b = stats.burden(state.residents, rot.rows, items);
+
+    if (!b.doctors.length) {
+      return '<section class="card">' + head + '</div>' +
+        '<div class="empty">لا فرزَ مقيَّماً بعد في لائحة المقيمين.</div></section>';
+    }
+
+    const tail = b.unrated.length
+      ? '<div class="tail"><b>أشهرٌ بفرزٍ لا تقييم له — طُرحت من الحساب ولم تُحسب صفراً:</b><br>' +
+        b.unrated.map(u => `<span class="raw">${escapeHtml(u.label)} · ${u.count}</span>`).join('') +
+        '</div>'
+      : '';
+
+    return (
+      '<section class="card">' + head +
+      `<span class="hint">${ui.fmt(b.doctors.length)} طبيباً · متوسّط القسم ` +
+      `<b class="num">${ui.fixed(b.perMonth, 2)}</b> لكل شهر</span></div>` +
+      '<p class="bd-note">الترتيب بـ<b>الفرق عن المتوقَّع</b> = المجموع − (عدد أشهره × متوسّط القسم). ' +
+      'موجبٌ يعني أنه حمل فوق نصيبه بحسب طول خدمته، وسالبٌ دونه — ' +
+      'وهو وحده يُقارَن بين من داوم شهراً ومن داوم أربعة. والفرق الذي يتجاوز ' +
+      `<b class="num">${ui.fixed(2 * b.sd, 1)}</b> ليس صدفةَ فرزٍ. ` +
+      'ودرجة كل فرز هي متوسّط تقييمات من فيه ومن مرّ عليه — لا يُعرف من قيّمه.</p>' +
+      '<div class="bd-find"><i class="fas fa-magnifying-glass"></i>' +
+      '<input type="search" id="rankFind" autocomplete="off" placeholder="ابحث عن اسمك…" ' +
+      'aria-label="ابحث عن طبيب في جدول الحصيلة"></div>' +
+      '<div class="bd-wrap"><table class="bd">' +
+      '<thead><tr><th>#</th><th>الطبيب</th><th>الفرق عن المتوقَّع</th>' +
+      '<th>أشهر</th><th>المجموع</th><th>المتوسّط</th></tr></thead>' +
+      `<tbody id="rankBody">${b.doctors.map((d, i) => rankRow(d, i + 1, b.sd)).join('')}</tbody>` +
+      '</table></div>' +
+      '<p class="bd-hint"><i class="fas fa-arrows-left-right"></i> مرّر الجدول أفقياً لرؤية المجموع والمتوسّط.</p>' +
+      `<div class="bd-more"><button type="button" id="rankMore" class="chip"></button>` +
+      '<span class="bd-count" id="rankCount"></span></div>' +
+      tail +
+      '</section>'
+    );
+  }
+
+  /**
+   * العرض والبحث يجريان على الـDOM مباشرةً بلا إعادة رسم: إعادة بناء الصفحة
+   * عند كل حرف تُفقِد حقلَ البحث تركيزه ومؤشّرَه، فيكتب المستخدم حرفاً واحداً
+   * ثم يجد لوحة المفاتيح قد أُغلقت على الهاتف.
+   */
+  function applyRankView() {
+    const body = document.getElementById('rankBody');
+    const btn = document.getElementById('rankMore');
+    const label = document.getElementById('rankCount');
+    if (!body) return;
+
+    const input = document.getElementById('rankFind');
+    const q = AUH.text.normAr(String(input ? input.value : '').trim());
+    const rows = body.children;
+    let hits = 0;
+
+    for (const tr of rows) {
+      const hit = !q || (tr.dataset.find || '').includes(q);
+      if (hit) hits++;
+      /* بحثٌ جارٍ ⇒ تُعرض كل المطابقات أياً كانت مرتبتها. ولولا ذلك لما
+       * وجد من هو في المرتبة ١٤٠ نفسَه إلا بعد أن يضغط «أظهر الكل». */
+      tr.hidden = !(hit && (q || state.rankAll || hits <= 25));
+    }
+
+    if (btn) {
+      btn.hidden = !!q || rows.length <= 25;
+      btn.textContent = state.rankAll
+        ? 'أظهر أثقل ٢٥ فقط'
+        : `أظهر الكل (${ui.fmt(rows.length)})`;
+    }
+    if (label) {
+      label.textContent = q
+        ? (hits ? `${ui.fmt(hits)} من ${ui.fmt(rows.length)}` : 'لا اسم يطابق هذا البحث')
+        : '';
+    }
+  }
+
   /* -------------------------------------------------------------------- رسم */
 
   function render() {
@@ -128,9 +278,11 @@
     host.innerHTML =
       sectionWanted(monthRows) +
       sectionRotations(all) +
+      sectionRank(all) +
       sectionDuties(all);
 
     wire();
+    applyRankView();
 
     const last = all.map(r => r.ts).filter(Boolean).sort().pop();
     const el = document.getElementById('lastAnswer');
@@ -143,6 +295,11 @@
       btn.addEventListener('click', () => { state.rotSort = btn.dataset.rotsort; render(); }));
     document.querySelectorAll('[data-dutysort]').forEach(btn =>
       btn.addEventListener('click', () => { state.dutySort = btn.dataset.dutysort; render(); }));
+
+    const find = document.getElementById('rankFind');
+    if (find) find.addEventListener('input', applyRankView);
+    const more = document.getElementById('rankMore');
+    if (more) more.addEventListener('click', () => { state.rankAll = !state.rankAll; applyRankView(); });
   }
 
   /* ------------------------------------------------------------------ تحميل */
@@ -162,6 +319,26 @@
 
     state.all = result.responses;
     state.ratingDefs = result.ratingDefs;
+
+    /**
+     * لائحة المقيمين — لحساب حصيلة كل طبيب. تُقرأ مرّةً وتُحفظ.
+     *
+     * ❗ فشلها **لا يُسقط الصفحة**: بقيّة الأقسام تُقرأ من الاستبيان وحده
+     *   وتبقى صحيحة، ويظهر قسم الحصيلة برسالة تقول لماذا غاب — لا فارغاً
+     *   ولا بأرقام مخمَّنة.
+     */
+    if (!state.residents) {
+      try {
+        const table = await AUH.data.gviz.fetchSource(AUH.data.schema.residents);
+        const parsed = table ? AUH.parse.residents(table) : null;
+        state.residents = parsed && parsed.residents && parsed.residents.length
+          ? parsed.residents
+          : null;
+      } catch (err) {
+        AUH.log.warn('survey-public', 'تعذّرت قراءة لائحة المقيمين: ' + err.message);
+        state.residents = null;
+      }
+    }
 
     if (result.issues.length) {
       ui.status(statusEl, 'warn', 'تبدّل سؤال في الاستمارة.',

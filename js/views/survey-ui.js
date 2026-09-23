@@ -31,6 +31,16 @@
     return d ? n.toFixed(d).replace(/\.0+$/, '') : String(Math.round(n));
   }
 
+  /**
+   * كـ`fmt` لكنه **يُبقي الأصفار**: في عمودٍ من الأرقام تحت بعضها يقرأ
+   * القارئ الخانات لا القيم، فـ«6» بين «7.1» و«5.7» يبدو رقماً من فئة أخرى.
+   * ولذلك لا يصلح داخل جملة، حيث «8.0 من 10» أثقل من «8 من 10».
+   */
+  function fixed(value, digits) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
+    return Number(value).toFixed(digits === undefined ? 1 : digits);
+  }
+
   function pct(part, whole) {
     if (!whole) return 0;
     return (part / whole) * 100;
@@ -277,6 +287,7 @@
 
   AUH.views.surveyUi = {
     fmt,
+    fixed,
     pct,
     countLabel,
     monthLabel,
