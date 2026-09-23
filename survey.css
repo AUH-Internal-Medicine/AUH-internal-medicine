@@ -306,9 +306,11 @@ table.grid td.n{font-variant-numeric:tabular-nums;font-weight:700}
   .card,.req{break-inside:avoid;border-color:#ccc}
 }
 
-/* ═══════════════════════════ عبء الفروز — ترتيب الأطباء (اللوحة وحدها)
-   الأعمدة الأربعة معروضة كلّها — أشهر · مجموع · متوسّط · فرق — فالترتيب
-   يُراجَع ولا يُصدَّق: رقمٌ واحد بلا ما بُني عليه يُقبل بالثقة لا بالفحص. */
+/* ═══════════════════════════ ترتيب الأطباء
+   «حصيلة الفروز» في الصفحة العامة و«عبء الفروز» في اللوحة — جدولٌ واحد
+   بأصنافٍ واحدة. الأعمدة الأربعة معروضة كلّها — أشهر · مجموع · متوسّط ·
+   فرق — فالترتيب يُراجَع ولا يُصدَّق: رقمٌ واحد بلا ما بُني عليه يُقبل
+   بالثقة لا بالفحص. */
 .bd-note{margin:0 0 12px;font-size:12.4px;line-height:1.75;color:var(--ink-2)}
 .bd-note b{color:var(--ink);font-weight:700}
 .bd-wrap{overflow-x:auto}
@@ -319,6 +321,10 @@ table.grid td.n{font-variant-numeric:tabular-nums;font-weight:700}
 .bd tbody tr:hover{background:var(--surface-sunk)}
 .bd .num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;
   text-align:end;white-space:nowrap}
+/* ❗ `.num` العامّة تضع display:inline-block — وهو يُخرج الخليّة من الجدول،
+   فتصير أرقام الصفّ صندوقاً واحداً لا تحاذي رؤوس الأعمدة. تُعاد هنا خليّةً.
+   (كان الجدولان — العامّ واللوحة — مائلَي الأعمدة بسبب هذا وحده.) */
+.bd td.num,.bd th.num{display:table-cell}
 .bd-abbr{font-size:11px;color:var(--ink-2)}
 .bd-skip{font-style:normal;font-size:10.5px;color:var(--signal);margin-inline-start:3px}
 .bd-dev{font-weight:700}
@@ -326,6 +332,27 @@ table.grid td.n{font-variant-numeric:tabular-nums;font-weight:700}
    الصفّ الملوّن يجعل الجدول لافتةً، والرقم هو الخبر. */
 .bd-hard .bd-dev{color:var(--signal)}
 .bd-easy .bd-dev{color:var(--primary)}
-/* «ليس صدفة» — يتجاوز ضعف الانحراف المعياري. خطٌّ جانبي لا صراخ. */
-.bd-strong td:first-child{box-shadow:inset 3px 0 0 var(--ochre)}
-.bd-more{margin-top:12px}
+/* «ليس صدفة» — يتجاوز ضعف الانحراف المعياري. خطٌّ جانبي لا صراخ.
+   والإزاحة سالبة: ظلّ inset يقيس بالفيزيائي، والبداية في RTL هي اليمين. */
+.bd-strong td:first-child{box-shadow:inset -3px 0 0 var(--ochre)}
+/* الاسم لا يُكسر إلى كلمةٍ في السطر على الهاتف — الجدول يُمرَّر أفقياً
+   داخل .bd-wrap، وصفٌّ بارتفاع أربعة أسطر يُفقد الجدولَ قابليةَ المسح. */
+.bd td:nth-child(2){white-space:nowrap}
+@media(max-width:560px){.bd{font-size:12.2px}.bd th,.bd td{padding:7px 6px}}
+/* على الهاتف يبقى عمودان خارج الشاشة، ولا شريطَ تمرير مرئياً يقول ذلك. */
+.bd-hint{display:none}
+@media(max-width:560px){.bd-hint{display:block;margin:8px 0 0;font-size:11.4px;
+  color:var(--ink-2)}}
+.bd-more{margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bd-more .chip[hidden]{display:none}
+.bd-count{font-size:11.8px;color:var(--ink-2)}
+/* حقل البحث — لأن اللائحة تتجاوز المئتين، وأكثر من يفتحها يبحث عن نفسه. */
+.bd-find{position:relative;margin:0 0 12px;max-width:320px}
+.bd-find i{position:absolute;inset-inline-start:13px;top:50%;transform:translateY(-50%);
+  font-size:12px;color:var(--ink-2);pointer-events:none}
+.bd-find input{width:100%;height:40px;padding:0 14px 0 14px;padding-inline-start:34px;
+  border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);
+  color:var(--ink);font-family:inherit;font-size:13px}
+.bd-find input:focus{outline:none;border-color:var(--primary);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)}
+.bd-find input::placeholder{color:var(--ink-2)}

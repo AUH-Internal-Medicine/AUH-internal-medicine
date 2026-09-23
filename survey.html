@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="description" content="نتائج استبيان المناوبات الشهري — أرقام مجمّعة بلا أسماء.">
+<meta name="description" content="نتائج استبيان المناوبات الشهري — تقييمات مجهولة وحصيلة الفروز لكل طبيب.">
 <meta name="robots" content="noindex">
 <title>نتائج استبيان المناوبات — قسم الأمراض الداخلية</title>
 <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
@@ -28,7 +28,7 @@
   <h1>ماذا قال القسم هذا الشهر</h1>
   <div class="dept">قسم الأمراض الداخلية — مشفى حلب الجامعي</div>
   <div class="hero-meta">
-    <span class="hero-pill"><i class="fas fa-user-shield"></i> بلا أسماء — أرقام مجمّعة فقط</span>
+    <span class="hero-pill"><i class="fas fa-user-shield"></i> التقييمات مجهولة — لا يُعرف من قيّم ماذا</span>
     <span class="hero-pill" id="lastAnswer"><i class="fas fa-clock"></i> جاري القراءة…</span>
     <button class="hero-pill" id="refreshBtn" type="button"><i class="fas fa-rotate"></i> تحديث</button>
   </div>
@@ -50,7 +50,7 @@
 </main>
 
 <footer class="foot">
-  <div class="privacy"><i class="fas fa-lock"></i> لا تُعرض في هذه الصفحة أسماء ولا أرقام هواتف ولا نصوص الطلبات.</div>
+  <div class="privacy"><i class="fas fa-lock"></i> لا تُعرض هنا أرقام هواتف ولا نصوص الطلبات ولا من قيّم ماذا. وأسماء جدول الحصيلة من لائحة القسم المنشورة أصلاً، ودرجاتها متوسّطاتٌ مجهولة المصدر.</div>
   <div>
     لم تشارك بعد؟
     <a href="https://docs.google.com/forms/d/e/1FAIpQLSf038Xl0h3zLM1huX_1Y7Djq08DD39JQ9sSiF2C3IBfOGPZkQ/viewform" target="_blank" rel="noopener">عبّئ الاستبيان</a>
@@ -65,7 +65,10 @@
 <script src="js/core/logger.js?v=__BUILD_ID__"></script>
 <script src="js/core/text.js?v=__BUILD_ID__"></script>
 <script src="js/core/dates.js?v=__BUILD_ID__"></script>
+<script src="js/core/status.js?v=__BUILD_ID__"></script>
+<script src="js/data/schema.js?v=__BUILD_ID__"></script>
 <script src="js/data/header-map.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/residents.js?v=__BUILD_ID__"></script>
 <script src="js/data/gviz-client.js?v=__BUILD_ID__"></script>
 <script src="js/data/survey-responses.js?v=__BUILD_ID__"></script>
 <script src="js/domain/survey-stats.js?v=__BUILD_ID__"></script>
