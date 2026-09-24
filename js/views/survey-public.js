@@ -156,20 +156,50 @@
   }
 
   function rankRow(d, rank, sd) {
-    /* «ليس صدفة» = يتجاوز ضعف الانحراف المعياري. ودونه ضجيجُ فرزٍ لا نمط. */
+    /* «ليس صدفة» = يتجاوز ضعف الانحراف المعياري. ودونه ضجيجُ فرزٍ لا نمط.
+     * وعمود الفرق نفسه لا يُعرض هنا (حُذف بطلب المالك في 2026-09-24)، فبقي
+     * أثره في الخطّ الجانبي وحده — والتفصيل الذي يُفسّر المرتبة صار في
+     * لوحة الفروز التي تُفتح بنقر الصفّ. */
     const strong = sd > 0 && Math.abs(d.dev) >= 2 * sd;
-    const tone = d.dev > 0 ? 'hard' : 'easy';
-    const sign = d.dev > 0 ? '+' : '';
     const hay = AUH.text.normAr(`${d.name || ''} ${d.abbr || ''}`);
     return (
-      `<tr class="${strong ? 'bd-strong ' : ''}bd-${tone}" data-find="${escapeHtml(hay)}">` +
+      `<tr class="bd-row${strong ? ' bd-strong' : ''}" data-find="${escapeHtml(hay)}"` +
+      ` tabindex="0" role="button" aria-expanded="false">` +
       `<td class="num">${rank}</td>` +
-      `<td>${escapeHtml(d.name)}${showAbbr(d) ? ` <span class="bd-abbr">${escapeHtml(d.abbr)}</span>` : ''}</td>` +
-      `<td class="num bd-dev">${sign}${ui.fixed(d.dev, 1)}</td>` +
+      `<td><i class="fas fa-chevron-left bd-caret"></i> ${escapeHtml(d.name)}` +
+      `${showAbbr(d) ? ` <span class="bd-abbr">${escapeHtml(d.abbr)}</span>` : ''}</td>` +
       `<td class="num">${d.months}${d.skipped ? `<i class="bd-skip" title="${d.skipped} شهراً بفرزٍ غير مقيَّم — طُرحت من الحساب">+${d.skipped}؟</i>` : ''}</td>` +
       `<td class="num">${ui.fixed(d.sum, 1)}</td>` +
       `<td class="num">${ui.fixed(d.avg, 2)}</td>` +
       '</tr>'
+    );
+  }
+
+  /**
+   * صفّ التفصيل — فروز الطبيب شهراً شهراً ودرجة كلٍّ منها.
+   *
+   * يُبنى مع الجدول لا عند النقر: البناء المؤجَّل يحتاج إلى حفظ نتيجة
+   * `burden()` في الحالة ثم مطابقة الصفّ بفهرسه، وهو ربطٌ ينكسر مع أي
+   * إعادة ترتيب. والحجم هنا لا يُبرّره: خمسة أسطر لكل طبيب.
+   *
+   * والشهر الذي لا تقييم لفرزه يُعرض **مذكوراً بلا درجة** لا محذوفاً: أن
+   * ترى أنك داومت «غير محدد» في أيلول هو نصف الجواب عن مرتبتك.
+   */
+  function detailRow(d) {
+    const months = AUH.constants.MONTH_NAMES;
+    const items = (d.detail || []).map(x => {
+      const label = months[x.month - 1] || `شهر ${x.month}`;
+      const score = x.value === null
+        ? '<i class="bd-none">لا تقييم له</i>'
+        : `<b class="num">${ui.fixed(x.value, 1)}</b>`;
+      return `<span class="bd-hist-item${x.value === null ? ' is-none' : ''}">` +
+        `<em>${escapeHtml(label)}</em>${escapeHtml(x.text)}${score}</span>`;
+    }).join('');
+
+    return (
+      '<tr class="bd-detail" hidden><td colspan="5">' +
+      `<div class="bd-hist">${items || '<span class="bd-hist-item">لا فرزَ مسجَّلاً.</span>'}</div>` +
+      '</td></tr>'
     );
   }
 
@@ -205,18 +235,19 @@
       '<section class="card">' + head +
       `<span class="hint">${ui.fmt(b.doctors.length)} طبيباً · متوسّط القسم ` +
       `<b class="num">${ui.fixed(b.perMonth, 2)}</b> لكل شهر</span></div>` +
-      '<p class="bd-note">الترتيب بـ<b>الفرق عن المتوقَّع</b> = المجموع − (عدد أشهره × متوسّط القسم). ' +
-      'موجبٌ يعني أنه حمل فوق نصيبه بحسب طول خدمته، وسالبٌ دونه — ' +
-      'وهو وحده يُقارَن بين من داوم شهراً ومن داوم أربعة. والفرق الذي يتجاوز ' +
-      `<b class="num">${ui.fixed(2 * b.sd, 1)}</b> ليس صدفةَ فرزٍ. ` +
-      'ودرجة كل فرز هي متوسّط تقييمات من فيه ومن مرّ عليه — لا يُعرف من قيّمه.</p>' +
+      '<p class="bd-note">الترتيب بما حمله كلٌّ <b>مقارنةً بعدد أشهره</b>، لا بالمجموع ' +
+      'ولا بالمتوسّط: المجموع يُقدّم من طالت خدمته، والمتوسّط يُسوّي بين شهرٍ ' +
+      `قاسٍ وأربعةٍ مثله. ومتوسّط القسم <b class="num">${ui.fixed(b.perMonth, 2)}</b> ` +
+      'لكل شهر خدمة، ومن فوقه حمل أثقل من نصيبه. ' +
+      '<b>واضغط على أي اسم</b> لترى فروزه السابقة ودرجة كلٍّ منها. ' +
+      'ودرجة كل فرز متوسّط تقييمات من فيه ومن مرّ عليه — لا يُعرف من قيّمه.</p>' +
       '<div class="bd-find"><i class="fas fa-magnifying-glass"></i>' +
       '<input type="search" id="rankFind" autocomplete="off" placeholder="ابحث عن اسمك…" ' +
       'aria-label="ابحث عن طبيب في جدول الحصيلة"></div>' +
       '<div class="bd-wrap"><table class="bd">' +
-      '<thead><tr><th>#</th><th>الطبيب</th><th>الفرق عن المتوقَّع</th>' +
+      '<thead><tr><th>#</th><th>الطبيب</th>' +
       '<th>أشهر</th><th>المجموع</th><th>المتوسّط</th></tr></thead>' +
-      `<tbody id="rankBody">${b.doctors.map((d, i) => rankRow(d, i + 1, b.sd)).join('')}</tbody>` +
+      `<tbody id="rankBody">${b.doctors.map((d, i) => rankRow(d, i + 1, b.sd) + detailRow(d)).join('')}</tbody>` +
       '</table></div>' +
       '<p class="bd-hint"><i class="fas fa-arrows-left-right"></i> مرّر الجدول أفقياً لرؤية المجموع والمتوسّط.</p>' +
       `<div class="bd-more"><button type="button" id="rankMore" class="chip"></button>` +
@@ -239,7 +270,9 @@
 
     const input = document.getElementById('rankFind');
     const q = AUH.text.normAr(String(input ? input.value : '').trim());
-    const rows = body.children;
+    /* كل طبيب صفّان: صفُّه وصفُّ تفصيله. والتفصيل تابعٌ لا يُعدّ ولا يُصفّى
+     * وحده — لو عومل صفّاً مستقلاً لحُسب في العدّ ولظهر بلا صاحبه. */
+    const rows = [...body.children].filter(tr => tr.classList.contains('bd-row'));
     let hits = 0;
 
     for (const tr of rows) {
@@ -247,7 +280,12 @@
       if (hit) hits++;
       /* بحثٌ جارٍ ⇒ تُعرض كل المطابقات أياً كانت مرتبتها. ولولا ذلك لما
        * وجد من هو في المرتبة ١٤٠ نفسَه إلا بعد أن يضغط «أظهر الكل». */
-      tr.hidden = !(hit && (q || state.rankAll || hits <= 25));
+      const visible = hit && (q || state.rankAll || hits <= 25);
+      tr.hidden = !visible;
+      const det = tr.nextElementSibling;
+      if (det && det.classList.contains('bd-detail')) {
+        det.hidden = !visible || tr.getAttribute('aria-expanded') !== 'true';
+      }
     }
 
     if (btn) {
@@ -261,6 +299,15 @@
         ? (hits ? `${ui.fmt(hits)} من ${ui.fmt(rows.length)}` : 'لا اسم يطابق هذا البحث')
         : '';
     }
+  }
+
+  /** فتح صفّ أو إغلاقه. مفوَّضٌ على الجسم، فلا ٢٠٨ مستمعاً ولا ربطَ بعد كل رسم. */
+  function toggleRank(tr) {
+    if (!tr || !tr.classList.contains('bd-row')) return;
+    const open = tr.getAttribute('aria-expanded') === 'true';
+    tr.setAttribute('aria-expanded', open ? 'false' : 'true');
+    const det = tr.nextElementSibling;
+    if (det && det.classList.contains('bd-detail')) det.hidden = open;
   }
 
   /* -------------------------------------------------------------------- رسم */
@@ -300,6 +347,20 @@
     if (find) find.addEventListener('input', applyRankView);
     const more = document.getElementById('rankMore');
     if (more) more.addEventListener('click', () => { state.rankAll = !state.rankAll; applyRankView(); });
+
+    const rankBody = document.getElementById('rankBody');
+    if (rankBody) {
+      rankBody.addEventListener('click', e => toggleRank(e.target.closest('tr.bd-row')));
+      /* الصفّ `role="button"`، ومن تعهّد بذلك لزمه المفتاحان اللذان يفتحان زرّاً.
+       * والمسافة تُمنع من تمرير الصفحة تحت الإصبع. */
+      rankBody.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const tr = e.target.closest('tr.bd-row');
+        if (!tr) return;
+        e.preventDefault();
+        toggleRank(tr);
+      });
+    }
   }
 
   /* ------------------------------------------------------------------ تحميل */
