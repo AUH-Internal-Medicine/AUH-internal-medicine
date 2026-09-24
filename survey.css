@@ -330,8 +330,9 @@ table.grid td.n{font-variant-numeric:tabular-nums;font-weight:700}
 .bd-dev{font-weight:700}
 /* الاتجاه بلونٍ خفيف على الرقم وحده — لا أرضية ملوّنة للصفّ:
    الصفّ الملوّن يجعل الجدول لافتةً، والرقم هو الخبر. */
-.bd-hard .bd-dev{color:var(--signal)}
-.bd-easy .bd-dev{color:var(--primary)}
+.bd-hard .bd-dev,.bd-hard .bd-avg,b.bd-hard,.bd-hs.bd-hard{color:var(--signal)}
+.bd-easy .bd-dev,.bd-easy .bd-avg,b.bd-easy,.bd-hs.bd-easy{color:var(--primary)}
+.bd-avg{font-weight:700;font-size:13.4px}
 /* «ليس صدفة» — يتجاوز ضعف الانحراف المعياري. خطٌّ جانبي لا صراخ.
    والإزاحة سالبة: ظلّ inset يقيس بالفيزيائي، والبداية في RTL هي اليمين. */
 .bd-strong td:first-child{box-shadow:inset -3px 0 0 var(--ochre)}
@@ -342,7 +343,46 @@ table.grid td.n{font-variant-numeric:tabular-nums;font-weight:700}
 /* على الهاتف يبقى عمودان خارج الشاشة، ولا شريطَ تمرير مرئياً يقول ذلك. */
 .bd-hint{display:none}
 @media(max-width:560px){.bd-hint{display:block;margin:8px 0 0;font-size:11.4px;
-  color:var(--ink-2)}}
+  color:var(--ink-2)}
+/* ❗ لوحة الفروز تعيش داخل خليّةٍ عرضها عرضُ الجدول (377px)، والمرئي منه
+   301px — فلو تركت على عرضها لخرج عمود الصعوبة عن الشاشة، وهو الخبر كلّه.
+   تُقاس بـvw لا بالنسبة المئوية: النسبة تعود إلى الجدول لا إلى الشاشة. */
+.bd-hist{width:min(100%,calc(100vw - 112px));max-width:none;
+  margin-inline-start:10px;gap:0 12px;padding:4px 10px 8px;font-size:12px}
+.bd-hm{font-size:11px}}
+/* ── صفّ الطبيب يُفتح على فروزه ───────────────────────────────────────── */
+.bd-row{cursor:pointer}
+.bd-row:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.bd-caret{font-size:9.5px;color:var(--ink-2);margin-inline-end:5px;
+  transition:transform .15s ease;display:inline-block}
+.bd-row[aria-expanded="true"] .bd-caret{transform:rotate(-90deg);color:var(--primary)}
+.bd-row[aria-expanded="true"]{background:var(--surface-sunk)}
+.bd-detail>td{padding:0 8px 12px;background:var(--surface-sunk)}
+/* شبكةٌ من ثلاثة أعمدة لا رقاقاتٍ ملتفّة: الرقاقات كانت تُجاور ثلاثة أطوالٍ
+   مختلفة في كل واحدة، فتقفز العين. والشبكة تصفّ الأشهر تحت بعضها والدرجات
+   تحت بعضها — عمودان يُقرآن مسحاً واحداً. */
+.bd-hist{display:grid;grid-template-columns:auto 1fr auto;
+  gap:0 18px;max-width:390px;margin-inline-start:22px;
+  border:1px solid var(--rule);border-radius:var(--radius);
+  background:var(--surface);padding:4px 12px 8px;font-size:12.6px}
+.bd-hhead{display:contents}
+.bd-hhead span{font-size:10.2px;font-weight:700;color:var(--ink-2);
+  padding:7px 0 5px;border-bottom:1px solid var(--rule);letter-spacing:.2px}
+.bd-hhead span:last-child{text-align:end}
+.bd-hrow{display:contents}
+.bd-hrow>span{padding:6px 0;border-bottom:1px solid var(--rule-soft)}
+.bd-hrow:last-child>span{border-bottom:0}
+.bd-hm{color:var(--ink-2);font-size:11.6px;white-space:nowrap}
+.bd-hr{color:var(--ink);font-weight:600}
+.bd-hs{text-align:end;font-weight:700;font-size:13px;white-space:nowrap}
+/* الشهر بلا تقييم يبقى ظاهراً — أن ترى أنك داومت «غير محدد» نصفُ الجواب. */
+.bd-hrow.is-none>span{opacity:.72}
+.bd-none{font-weight:500;font-size:10.8px;color:var(--ink-2)}
+.bd-solo{margin-top:26px;padding-top:20px;border-top:2px solid var(--rule)}
+.bd-solo h3{margin:0 0 8px;font-size:14.6px;font-weight:700;color:var(--ink);
+  display:flex;align-items:center;gap:8px}
+.bd-solo h3 i{color:var(--ochre);font-size:13px}
+.bd-solo[hidden]{display:none}
 .bd-more{margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .bd-more .chip[hidden]{display:none}
 .bd-count{font-size:11.8px;color:var(--ink-2)}
