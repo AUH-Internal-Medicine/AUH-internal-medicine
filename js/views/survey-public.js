@@ -123,29 +123,26 @@
       '</section>'
     );
   }
-
   /**
    * حصيلة الفروز — ترتيب الأطباء.
    *
-   * السؤال الذي يجيب عنه: من حمل فوق نصيبه ومن دونه؟ وجوابه ليس المجموع
-   * ولا المتوسّط، لأن الخدمة ليست متساوية الطول:
+   * **الترتيب بالمتوسّط** — بطلب المالك في 2026-09-24. أي أن من داوم ثلاثة
+   * فروزٍ قاسية يجلس بين من داموا أربعة، لأن السؤال المطروح «كم كانت فروزه
+   * قاسية» لا «كم حمل مجموعاً».
    *
-   * ┌ المجموع وحده ────────────────────────────────────────────────────────┐
-   * │ يكافئ الأقدم لا الأتعب: من داوم أربعة أشهر سهلة يسبق من داوم شهراً   │
-   * │ واحداً قاسياً، وهو عكس المطلوب تماماً.                                │
-   * ├ المتوسّط وحده ───────────────────────────────────────────────────────┤
-   * │ يمحو الطول أصلاً: شهرٌ واحد بصعوبة 9 يساوي أربعة أشهر بـ9، مع أن     │
-   * │ الثاني حمل أربعة أضعاف ما حمله الأول.                                 │
-   * ├ الفرق عن المتوقَّع ← المعتمَد ────────────────────────────────────────┤
-   * │ المجموع − (عدد أشهره × متوسّط القسم لكل شهر). يعطي كل طبيب سقفاً     │
-   * │ يخصّ طول خدمته، ويقيس بُعده عنه. فمن داوم شهراً متوقَّعه ~6.6 ومن    │
-   * │ داوم أربعة متوقَّعه ~26.3، والفرق وحده قابلٌ للمقارنة بينهما.        │
+   * ┌ وماذا عن اختلاف عدد الأشهر؟ ─────────────────────────────────────────┐
+   * │ المتوسّط لا يتأثّر بعددها — وهذه ميزته وعيبه معاً. ميزته أن ثلاثة     │
+   * │ أشهر قاسية لا تُخصَم لأنها ليست أربعة. وعيبه أن **شهراً واحداً ليس   │
+   * │ سجلّاً**: من داوم شهراً في أصعب فرز متوسّطه 8.6 بلا أن يكون حمل ما   │
+   * │ حمله صاحب الأربعة، ووضعُه في الصدارة يُفسد اللائحة لا يُثريها.       │
+   * │ ولذلك **يُفصل أصحاب الفرز الواحد في لائحةٍ ثانية** — لا يُحذفون،     │
+   * │ فحذفُهم إخفاءٌ، ولا يُدمجون، فدمجُهم مقارنةٌ بين ما لا يُقارَن.      │
    * └──────────────────────────────────────────────────────────────────────┘
    *
-   * والأعمدة الأربعة معروضةٌ كلّها — أشهر · مجموع · متوسّط · فرق — فالترتيب
-   * **يُراجَع** ولا يُصدَّق: رقمٌ واحد بلا ما بُني عليه يُقبل أو يُرفض بالثقة
-   * لا بالفحص. والقائمة كاملةٌ في الـDOM دائماً وإن عُرض منها ٢٥: البحث
-   * يجب أن يجد من هو في المرتبة ١٤٠، لا من هو في الصفحة الأولى فقط.
+   * وعمود المتوسّط يُلاصق الاسم لأنه عمود الترتيب، والأشهر والمجموع بعده
+   * شاهدَين: رقمٌ واحد بلا ما بُني عليه يُقبل أو يُرفض بالثقة لا بالفحص.
+   * والقائمة كاملةٌ في الـDOM دائماً وإن عُرض منها ٢٥: البحث يجب أن يجد من
+   * هو في المرتبة ١٤٠، لا من هو في الصفحة الأولى فقط.
    */
 
   /** الكنية تُضيف معنى فقط إذا لم تكن آخر كلمة في الاسم. */
@@ -155,22 +152,19 @@
     return AUH.text.normAr(last) !== AUH.text.normAr(d.abbr);
   }
 
-  function rankRow(d, rank, sd) {
-    /* «ليس صدفة» = يتجاوز ضعف الانحراف المعياري. ودونه ضجيجُ فرزٍ لا نمط.
-     * وعمود الفرق نفسه لا يُعرض هنا (حُذف بطلب المالك في 2026-09-24)، فبقي
-     * أثره في الخطّ الجانبي وحده — والتفصيل الذي يُفسّر المرتبة صار في
-     * لوحة الفروز التي تُفتح بنقر الصفّ. */
-    const strong = sd > 0 && Math.abs(d.dev) >= 2 * sd;
+  function rankRow(d, rank, mean) {
+    /* لون المتوسّط يقول موقعه من القسم — وهو الحكم الذي جاء القارئ لأجله. */
+    const tone = d.avg >= mean ? 'hard' : 'easy';
     const hay = AUH.text.normAr(`${d.name || ''} ${d.abbr || ''}`);
     return (
-      `<tr class="bd-row${strong ? ' bd-strong' : ''}" data-find="${escapeHtml(hay)}"` +
+      `<tr class="bd-row bd-${tone}" data-find="${escapeHtml(hay)}"` +
       ` tabindex="0" role="button" aria-expanded="false">` +
       `<td class="num">${rank}</td>` +
       `<td><i class="fas fa-chevron-left bd-caret"></i> ${escapeHtml(d.name)}` +
       `${showAbbr(d) ? ` <span class="bd-abbr">${escapeHtml(d.abbr)}</span>` : ''}</td>` +
+      `<td class="num bd-avg">${ui.fixed(d.avg, 2)}</td>` +
       `<td class="num">${d.months}${d.skipped ? `<i class="bd-skip" title="${d.skipped} شهراً بفرزٍ غير مقيَّم — طُرحت من الحساب">+${d.skipped}؟</i>` : ''}</td>` +
       `<td class="num">${ui.fixed(d.sum, 1)}</td>` +
-      `<td class="num">${ui.fixed(d.avg, 2)}</td>` +
       '</tr>'
     );
   }
@@ -178,28 +172,48 @@
   /**
    * صفّ التفصيل — فروز الطبيب شهراً شهراً ودرجة كلٍّ منها.
    *
+   * **شبكةٌ من ثلاثة أعمدة لا رقاقاتٍ متتابعة.** كانت رقاقاتٍ تلتفّ في سطر،
+   * فكان اسم الشهر واسم الفرز والدرجة تتجاور بلا محاذاة: عينُ القارئ تقفز
+   * بين ثلاثة أطوالٍ مختلفة في كل رقاقة. والشبكة تُصفّ الأشهر تحت بعضها
+   * والدرجات تحت بعضها، فتُقرأ عموداً واحداً.
+   *
    * يُبنى مع الجدول لا عند النقر: البناء المؤجَّل يحتاج إلى حفظ نتيجة
    * `burden()` في الحالة ثم مطابقة الصفّ بفهرسه، وهو ربطٌ ينكسر مع أي
    * إعادة ترتيب. والحجم هنا لا يُبرّره: خمسة أسطر لكل طبيب.
    *
    * والشهر الذي لا تقييم لفرزه يُعرض **مذكوراً بلا درجة** لا محذوفاً: أن
-   * ترى أنك داومت «غير محدد» في أيلول هو نصف الجواب عن مرتبتك.
+   * ترى أنك داومت «غير محدد» في حزيران هو نصف الجواب عن مرتبتك.
    */
-  function detailRow(d) {
+  function detailRow(d, mean) {
     const months = AUH.constants.MONTH_NAMES;
-    const items = (d.detail || []).map(x => {
+    const rows = (d.detail || []).map(x => {
       const label = months[x.month - 1] || `شهر ${x.month}`;
       const score = x.value === null
-        ? '<i class="bd-none">لا تقييم له</i>'
-        : `<b class="num">${ui.fixed(x.value, 1)}</b>`;
-      return `<span class="bd-hist-item${x.value === null ? ' is-none' : ''}">` +
-        `<em>${escapeHtml(label)}</em>${escapeHtml(x.text)}${score}</span>`;
+        ? '<span class="bd-hs bd-none">لا تقييم له</span>'
+        : `<span class="bd-hs num bd-${x.value >= mean ? 'hard' : 'easy'}">${ui.fixed(x.value, 1)}</span>`;
+      return `<div class="bd-hrow${x.value === null ? ' is-none' : ''}">` +
+        `<span class="bd-hm">${escapeHtml(label)}</span>` +
+        `<span class="bd-hr">${escapeHtml(x.text)}</span>${score}</div>`;
     }).join('');
 
     return (
       '<tr class="bd-detail" hidden><td colspan="5">' +
-      `<div class="bd-hist">${items || '<span class="bd-hist-item">لا فرزَ مسجَّلاً.</span>'}</div>` +
-      '</td></tr>'
+      '<div class="bd-hist">' +
+      '<div class="bd-hhead"><span>الشهر</span><span>الفرز</span><span>الصعوبة</span></div>' +
+      (rows || '<div class="bd-hrow"><span class="bd-hm">—</span>' +
+               '<span class="bd-hr">لا فرزَ مسجَّلاً في اللائحة.</span></div>') +
+      '</div></td></tr>'
+    );
+  }
+
+  function rankTable(list, mean, bodyId) {
+    return (
+      '<div class="bd-wrap"><table class="bd">' +
+      '<thead><tr><th>#</th><th>الطبيب</th>' +
+      '<th>المتوسّط</th><th>أشهر</th><th>المجموع</th></tr></thead>' +
+      `<tbody id="${bodyId}">` +
+      list.map((d, i) => rankRow(d, i + 1, mean) + detailRow(d, mean)).join('') +
+      '</tbody></table></div>'
     );
   }
 
@@ -225,33 +239,48 @@
         '<div class="empty">لا فرزَ مقيَّماً بعد في لائحة المقيمين.</div></section>';
     }
 
+    /* الترتيب بالمتوسّط، ثم بعدد الأشهر عند التساوي: متوسّطان متساويان
+     * أحدهما عن أربعة أشهر والآخر عن اثنين ليسا سواءً في الثقة. */
+    const byAvg = [...b.doctors].sort((x, y) => y.avg - x.avg || y.months - x.months);
+    const main = byAvg.filter(d => d.months > 1);
+    const solo = byAvg.filter(d => d.months === 1);
+    const mean = b.perMonth;
+
     const tail = b.unrated.length
       ? '<div class="tail"><b>أشهرٌ بفرزٍ لا تقييم له — طُرحت من الحساب ولم تُحسب صفراً:</b><br>' +
         b.unrated.map(u => `<span class="raw">${escapeHtml(u.label)} · ${u.count}</span>`).join('') +
         '</div>'
       : '';
 
+    const soloBlock = solo.length
+      ? '<div class="bd-solo">' +
+        '<h3><i class="fas fa-circle-half-stroke"></i> فرزٌ واحد — لائحةٌ على حدة</h3>' +
+        `<p class="bd-note">${ui.fmt(solo.length)} طبيباً لم يُسجَّل له غير فرزٍ واحد. ` +
+        'متوسّطُ شهرٍ واحد <b>ليس سجلّاً</b>: فرزٌ قاسٍ واحد يرفعه إلى الصدارة بلا أن ' +
+        'يكون صاحبه حمل ما حمله من داوم أربعة. فلا يُحذفون — فذاك إخفاء — ولا ' +
+        'يُدمجون، فذاك مقارنةٌ بين ما لا يُقارَن.</p>' +
+        rankTable(solo, mean, 'rankSolo') +
+        '</div>'
+      : '';
+
     return (
       '<section class="card">' + head +
       `<span class="hint">${ui.fmt(b.doctors.length)} طبيباً · متوسّط القسم ` +
-      `<b class="num">${ui.fixed(b.perMonth, 2)}</b> لكل شهر</span></div>` +
-      '<p class="bd-note">الترتيب بما حمله كلٌّ <b>مقارنةً بعدد أشهره</b>، لا بالمجموع ' +
-      'ولا بالمتوسّط: المجموع يُقدّم من طالت خدمته، والمتوسّط يُسوّي بين شهرٍ ' +
-      `قاسٍ وأربعةٍ مثله. ومتوسّط القسم <b class="num">${ui.fixed(b.perMonth, 2)}</b> ` +
-      'لكل شهر خدمة، ومن فوقه حمل أثقل من نصيبه. ' +
+      `<b class="num">${ui.fixed(mean, 2)}</b> لكل شهر</span></div>` +
+      '<p class="bd-note">الترتيب بـ<b>متوسّط صعوبة فروزه</b> — لا بمجموعها. ' +
+      'فمن داوم ثلاثة فروزٍ قاسية يجلس بين من داموا أربعة، والسؤال «كم كانت ' +
+      `فروزه قاسية» لا «كم حمل مجموعاً». ومتوسّط القسم <b class="num">${ui.fixed(mean, 2)}</b>، ` +
+      'وما فوقه <b class="bd-hard">بلون الصعوبة</b> وما دونه <b class="bd-easy">بلون الراحة</b>. ' +
       '<b>واضغط على أي اسم</b> لترى فروزه السابقة ودرجة كلٍّ منها. ' +
       'ودرجة كل فرز متوسّط تقييمات من فيه ومن مرّ عليه — لا يُعرف من قيّمه.</p>' +
       '<div class="bd-find"><i class="fas fa-magnifying-glass"></i>' +
       '<input type="search" id="rankFind" autocomplete="off" placeholder="ابحث عن اسمك…" ' +
       'aria-label="ابحث عن طبيب في جدول الحصيلة"></div>' +
-      '<div class="bd-wrap"><table class="bd">' +
-      '<thead><tr><th>#</th><th>الطبيب</th>' +
-      '<th>أشهر</th><th>المجموع</th><th>المتوسّط</th></tr></thead>' +
-      `<tbody id="rankBody">${b.doctors.map((d, i) => rankRow(d, i + 1, b.sd) + detailRow(d)).join('')}</tbody>` +
-      '</table></div>' +
-      '<p class="bd-hint"><i class="fas fa-arrows-left-right"></i> مرّر الجدول أفقياً لرؤية المجموع والمتوسّط.</p>' +
-      `<div class="bd-more"><button type="button" id="rankMore" class="chip"></button>` +
+      rankTable(main, mean, 'rankBody') +
+      '<p class="bd-hint"><i class="fas fa-arrows-left-right"></i> مرّر الجدول أفقياً لرؤية بقيّة الأعمدة.</p>' +
+      '<div class="bd-more"><button type="button" id="rankMore" class="chip"></button>' +
       '<span class="bd-count" id="rankCount"></span></div>' +
+      soloBlock +
       tail +
       '</section>'
     );
@@ -261,42 +290,66 @@
    * العرض والبحث يجريان على الـDOM مباشرةً بلا إعادة رسم: إعادة بناء الصفحة
    * عند كل حرف تُفقِد حقلَ البحث تركيزه ومؤشّرَه، فيكتب المستخدم حرفاً واحداً
    * ثم يجد لوحة المفاتيح قد أُغلقت على الهاتف.
+   *
+   * واللائحتان تُصفَّيان معاً: من له فرزٌ واحد لن يجد نفسه لو صفّينا الأولى
+   * وحدها، وهو لا يعلم أنه في الثانية أصلاً.
    */
   function applyRankView() {
-    const body = document.getElementById('rankBody');
+    const main = document.getElementById('rankBody');
+    if (!main) return;
+    const solo = document.getElementById('rankSolo');
     const btn = document.getElementById('rankMore');
     const label = document.getElementById('rankCount');
-    if (!body) return;
 
     const input = document.getElementById('rankFind');
     const q = AUH.text.normAr(String(input ? input.value : '').trim());
+
     /* كل طبيب صفّان: صفُّه وصفُّ تفصيله. والتفصيل تابعٌ لا يُعدّ ولا يُصفّى
      * وحده — لو عومل صفّاً مستقلاً لحُسب في العدّ ولظهر بلا صاحبه. */
-    const rows = [...body.children].filter(tr => tr.classList.contains('bd-row'));
-    let hits = 0;
-
-    for (const tr of rows) {
-      const hit = !q || (tr.dataset.find || '').includes(q);
-      if (hit) hits++;
-      /* بحثٌ جارٍ ⇒ تُعرض كل المطابقات أياً كانت مرتبتها. ولولا ذلك لما
-       * وجد من هو في المرتبة ١٤٠ نفسَه إلا بعد أن يضغط «أظهر الكل». */
-      const visible = hit && (q || state.rankAll || hits <= 25);
+    const rowsOf = body => [...body.children].filter(tr => tr.classList.contains('bd-row'));
+    const show = (tr, visible) => {
       tr.hidden = !visible;
       const det = tr.nextElementSibling;
       if (det && det.classList.contains('bd-detail')) {
         det.hidden = !visible || tr.getAttribute('aria-expanded') !== 'true';
       }
+    };
+
+    const mainRows = rowsOf(main);
+    let hits = 0;
+    for (const tr of mainRows) {
+      const hit = !q || (tr.dataset.find || '').includes(q);
+      if (hit) hits++;
+      /* بحثٌ جارٍ ⇒ تُعرض كل المطابقات أياً كانت مرتبتها. ولولا ذلك لما
+       * وجد من هو في المرتبة ١٤٠ نفسَه إلا بعد أن يضغط «أظهر الكل». */
+      show(tr, hit && (q || state.rankAll || hits <= 25));
+    }
+
+    /* لائحة الفرز الواحد قصيرة، فتُعرض كاملةً دائماً ولا يحكمها زرّ «الكل». */
+    let soloHits = 0;
+    if (solo) {
+      for (const tr of rowsOf(solo)) {
+        const hit = !q || (tr.dataset.find || '').includes(q);
+        if (hit) soloHits++;
+        show(tr, hit);
+      }
+      const box = solo.closest('.bd-solo');
+      if (box) box.hidden = !!q && soloHits === 0;
     }
 
     if (btn) {
-      btn.hidden = !!q || rows.length <= 25;
+      btn.hidden = !!q || mainRows.length <= 25;
       btn.textContent = state.rankAll
         ? 'أظهر أثقل ٢٥ فقط'
-        : `أظهر الكل (${ui.fmt(rows.length)})`;
+        : `أظهر الكل (${ui.fmt(mainRows.length)})`;
     }
     if (label) {
+      const total = hits + soloHits;
       label.textContent = q
-        ? (hits ? `${ui.fmt(hits)} من ${ui.fmt(rows.length)}` : 'لا اسم يطابق هذا البحث')
+        ? (total
+            ? `${ui.fmt(total)} من ${ui.fmt(mainRows.length + (solo ? rowsOf(solo).length : 0))}` +
+              (soloHits ? ` · منهم ${ui.fmt(soloHits)} في لائحة الفرز الواحد` : '')
+            : 'لا اسم يطابق هذا البحث')
         : '';
     }
   }
@@ -348,12 +401,14 @@
     const more = document.getElementById('rankMore');
     if (more) more.addEventListener('click', () => { state.rankAll = !state.rankAll; applyRankView(); });
 
-    const rankBody = document.getElementById('rankBody');
-    if (rankBody) {
-      rankBody.addEventListener('click', e => toggleRank(e.target.closest('tr.bd-row')));
+    /* اللائحتان تُربطان معاً: من له فرزٌ واحد يفتح صفّه كما يفتحه غيره. */
+    for (const id of ['rankBody', 'rankSolo']) {
+      const body = document.getElementById(id);
+      if (!body) continue;
+      body.addEventListener('click', e => toggleRank(e.target.closest('tr.bd-row')));
       /* الصفّ `role="button"`، ومن تعهّد بذلك لزمه المفتاحان اللذان يفتحان زرّاً.
        * والمسافة تُمنع من تمرير الصفحة تحت الإصبع. */
-      rankBody.addEventListener('keydown', e => {
+      body.addEventListener('keydown', e => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         const tr = e.target.closest('tr.bd-row');
         if (!tr) return;
