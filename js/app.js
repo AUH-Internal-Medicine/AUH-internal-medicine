@@ -253,6 +253,9 @@
         case 'links':
           this.renderLinks();
           break;
+        case 'emergencymeds':
+          if (AUH.views.emergMeds) AUH.views.emergMeds.render();
+          break;
         case 'qa':
           this.renderQA();
           break;

@@ -40,11 +40,12 @@ node tools/generate-data-contract.mjs
 | `residents` | لائحة المقيمين | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `0` | CSV |
 | `oncall` | المناوبات (السنة الأولى) | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `238974679` | JSON |
 | `oncallYear2` | مناوبات السنة الثانية | `1dOvCHFQBYz0wFklUFicjf8iU3IscJNzUrUcSYeKMlh8` | `0` | CSV |
-| `oncallAdjustments` | تعديلات المناوبات | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1181737768` | CSV |
+| `oncallAdjustments` | تعديل الساعات والبونص | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1181737768` | CSV |
 | `evaluation` | التقييم السنوي | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `253629565` | CSV |
 | `links` | روابط هامة | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1649404909` | CSV |
 | `qa` | الأسئلة والأجوبة | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `680270268` | JSON |
 | `lectures` | رزنامة المحاضرات والأنشطة | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `393274093` | CSV |
+| `holidays` | العطل الرسمية | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1388329552` | CSV |
 | `oncallRules` | قواعد المناوبات (العطل السنوية) | `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4` | `1364488029` | CSV |
 
 ---
@@ -110,7 +111,7 @@ node tools/generate-data-contract.mjs
 
 ---
 
-## تعديلات المناوبات  `oncallAdjustments`
+## تعديل الساعات والبونص  `oncallAdjustments`
 
 - **الشيت:** `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4`
 - **GID:** `1181737768` — **الصيغة:** CSV
@@ -120,8 +121,8 @@ node tools/generate-data-contract.mjs
 |---|---|---|---|---|
 | `name` | `الاسم` · `الاسم الثلاثي` | ✅ | نص | موضع افتراضي: 0 |
 | `abbr` | `الاختصار` | — | نص | موضع افتراضي: 1 |
-| `date` | `تاريخ المناوبة` · `التاريخ` | ✅ | تاريخ | موضع افتراضي: 2 |
-| `category` | `نوع المناوبة` · `المناوبة` | ✅ | نص | موضع افتراضي: 3 |
+| `date` | `تاريخ المناوبة` · `التاريخ` | — | تاريخ | تاريخ المناوبة، أو Bonus لساعات Bonus غير مؤرخة — موضع افتراضي: 2 |
+| `category` | `نوع المناوبة` · `المناوبة` · `النوع` | ✅ | نص | اسم فئة المناوبة، أو Bonus لإضافة ساعات Bonus (تُقبل صيغ مختلفة وأخطاء إملائية بسيطة) — موضع افتراضي: 3 |
 | `hours` | `عدد الساعات` · `الساعات` | ✅ | رقم | موضع افتراضي: 4 |
 
 ---
@@ -215,6 +216,21 @@ node tools/generate-data-contract.mjs
 | `supervisor` | `المشرف` | — | نص |  |
 | `regLink` | `رابط التسجيل` | — | رابط |  |
 | `annLink` | `رابط الاعلان` · `رابط الإعلان` | — | رابط |  |
+
+---
+
+## العطل الرسمية  `holidays`
+
+- **الشيت:** `1Pb5VK1HsccaJpKXm-jersktd8yk4jf1V7o8qsDDmCI4`
+- **GID:** `1388329552` — **الصيغة:** CSV
+- **صف العناوين:** الصف 0
+
+| الحقل في الكود | أسماء العمود المقبولة | إلزامي | النوع | ملاحظات |
+|---|---|---|---|---|
+| `date` | `التاريخ` · `تاريخ العطلة` · `اليوم` | ✅ | تاريخ | يوم - شهر - سنة (يقبل - / . \ كفواصل) — موضع افتراضي: 0 |
+| `name` | `اسم العطلة` · `المناسبة` · `العطلة` · `الاسم` | ✅ | نص | موضع افتراضي: 1 |
+
+> كل تاريخ هنا يُعامل كعطلة في كل الموقع: توقيت ومدة المناوبة، حساب الساعات، عدّاد مناوبات العطل، وتلوين الرزنامات.
 
 ---
 

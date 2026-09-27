@@ -146,6 +146,9 @@
     { id: 'clinicalcases', icon: '<i class="fas fa-stethoscope"></i>', label: 'مشروع الحالات السريرية' },
     { id: 'doctorstats', icon: '<i class="fas fa-chart-column"></i>', label: 'احصائيات الأطباء' },
     { id: 'evaluation', icon: '<i class="fas fa-chart-line"></i>', label: 'التقييم السنوي' },
+    // مبادرة الأدوية الإسعافية — تُعرض عالياً لأن الحاجة إليها لحظية: زميل
+    // في الإسعاف يحتاج دواءً الآن، فيفتح الموقع ليجد رقم المناوب اليوم.
+    { id: 'emergencymeds', icon: '<i class="fas fa-kit-medical"></i>', label: 'أدوية إسعافية', highlight: true },
     { id: 'links', icon: '<i class="fas fa-link"></i>', label: 'روابط هامة' },
     { id: 'myinfo', icon: '<i class="fas fa-id-card"></i>', label: 'معلوماتي' },
     { id: 'qa', icon: '<i class="fas fa-circle-question"></i>', label: 'Q&A' }
