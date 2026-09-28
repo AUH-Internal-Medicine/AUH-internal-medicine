@@ -222,7 +222,12 @@
       const opts = options || {};
       this.activeTab = tabId;
 
-      if (!opts.force && !this._dirtyTabs.has(tabId)) return;
+      /*
+       * «أدوية إسعافية» تُرسم في كل فتح: محتواها تاريخ اليوم ومناوبو اليوم،
+       * فمنطق «هل اتّسخ التبويب؟» لا ينطبق عليه — ولأنه لم يكن في مجموعة
+       * الاتّساخ أصلاً كان لا يظهر شيءٌ عند أوّل ضغطة.
+       */
+      if (!opts.force && tabId !== 'emergencymeds' && !this._dirtyTabs.has(tabId)) return;
       this._dirtyTabs.delete(tabId);
 
       const scrollY = opts.preserveScroll ? window.scrollY : null;
