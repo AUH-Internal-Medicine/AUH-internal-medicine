@@ -18,7 +18,7 @@
  *            exactly the case where fetch silently returns nothing.
  *
  * When the app moves to a real backend, `api-client.js` provides the same
- * `fetchSource(source)` contract — see docs/BACKEND-MIGRATION.md.
+ * `fetchSource(source)` contract — see 4-التوثيق/خطة-التحويل.md.
  */
 (function (global) {
   'use strict';

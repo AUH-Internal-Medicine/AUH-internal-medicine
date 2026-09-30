@@ -89,7 +89,10 @@
       /* --- "my info" tab state --------------------------------------------- */
       this.currentMyInfo = null;
       this.currentMyInfoOncallStats = null;
-      this.myInfoMonthKey = this.today.slice(0, 7);
+      // يُختار تلقائياً أحدثُ شهرٍ في جدول المناوبات عند أوّل رسم؛
+      // و`myInfoMonthPinned` يصير true فقط إن اختار المستخدمُ شهراً بنفسه.
+      this.myInfoMonthKey = '';
+      this.myInfoMonthPinned = false;
       this.myInfoFocusedOncallDate = '';
 
       /* --- render bookkeeping ---------------------------------------------- */

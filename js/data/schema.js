@@ -14,7 +14,7 @@
  * Adding a field: add an entry to `columns` with the header labels it can have.
  * Adding a monthly column: nothing to do, `patterns` already discovers it.
  * Moving to a backend: this file becomes the mapping between API/DB fields and
- * the app's field names (see docs/BACKEND-MIGRATION.md).
+ * the app's field names (see 4-التوثيق/خطة-التحويل.md).
  *
  * Per-column options
  *   labels    — accepted header names, best first (compared Arabic-normalized).

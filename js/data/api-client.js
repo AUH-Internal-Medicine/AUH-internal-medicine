@@ -18,7 +18,7 @@
  *   a) [["ت","الاسم الثلاثي", …], ["1","رزان …", …]]        ← rows, header first
  *   b) {"headers":[…], "rows":[[…], …]}                     ← same, wrapped
  * Anything else is rejected, so a stray HTML error page can never be mistaken
- * for data. See docs/BACKEND-MIGRATION.md.
+ * for data. See 4-التوثيق/خطة-التحويل.md.
  */
 (function (global) {
   'use strict';

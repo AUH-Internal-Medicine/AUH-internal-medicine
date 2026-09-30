@@ -7,7 +7,7 @@
  * hours planned, plus praise count and rotations done so far.
  *
  * This function is PURE: it takes parsed models and returns a new array. That is
- * what makes it verifiable outside the browser (see tools/verify-data.mjs) and
+ * what makes it verifiable outside the browser (see 5-أدوات/verify-data.mjs) and
  * reusable as-is when the data starts coming from a server.
  */
 (function (global) {

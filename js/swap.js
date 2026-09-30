@@ -15,7 +15,7 @@
   'use strict';
 
   /* ------------------------------------------------------------------ config
-   * Fill these in from the Google Form (see docs/SWAP-FORM-SETUP.md):
+   * Fill these in from the Google Form (see 4-التوثيق/نظام-التبديل.md):
    *   action  — the form's /formResponse URL
    *   fields  — the entry.NNNN id of each question, in the same order below
    * Leave `action` empty and the page still works end-to-end; it just hands the
@@ -1093,7 +1093,7 @@
         (data.notes ? `ملاحظات: ${data.notes}\n` : '');
       navigator.clipboard.writeText(text)
         .then(() => toast('لم يُربط النموذج بعد — نُسخت تفاصيل الطلب، أرسلها للمسؤول.'))
-        .catch(() => toast('لم يُربط النموذج بعد. راجع docs/SWAP-FORM-SETUP.md', true));
+        .catch(() => toast('لم يُربط النموذج بعد. راجع 4-التوثيق/نظام-التبديل.md', true));
       return;
     }
 

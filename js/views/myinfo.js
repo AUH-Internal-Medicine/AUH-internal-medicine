@@ -12,124 +12,8 @@
   const { mcn, showToast } = AUH.ui;
   const AM = AUH.constants.MONTH_NAMES;
 
-  /** One request: its state, the counterpart, the dates and any note. */
-  function requestCard(req, me) {
-    const ST = AUH.data.swapRequests.STATUS;
-    const meta = {
-      [ST.approved]: { cls: 'ok', icon: 'fa-circle-check', label: 'تم' },
-      [ST.rejected]: { cls: 'no', icon: 'fa-circle-xmark', label: 'مرفوض' },
-      [ST.pending]: { cls: 'wait', icon: 'fa-hourglass-half', label: 'قيد المراجعة' }
-    }[req.status];
-
-    const mine = exactNameMatch(req.name, me.name) || exactNameMatch(req.abbr, me.abbr);
-    const other = (mine ? req.toName : req.name) || '—';
-    const mutual = (req.kind || '').indexOf('تبديل') >= 0;
-
-    // Said the way a resident would say it, from their own side:
-    //   شيل   → «شال عنك فلان» / «شلت عن فلان»
-    //   تبديل → «بدّلت مع فلان»
-    const headline = mutual
-      ? `بدّلت مع <b>${escapeHtml(other)}</b>`
-      : (mine ? `شال عنك <b>${escapeHtml(other)}</b>` : `شلت عن <b>${escapeHtml(other)}</b>`);
-
-    // What leaves, and what comes back — always from this resident's side.
-    const gave = { type: req.type, date: req.date };
-    const got = mutual && req.backDate ? { type: req.backType, date: req.backDate } : null;
-    const out = mine ? gave : got;
-    const back = mine ? got : gave;
-
-    const leg = (d, label, dir) => d && (d.type || d.date)
-      ? `<div class="sr-leg ${dir}"><span class="sr-leg-l">${label}</span>` +
-        `<span class="sr-leg-v">${escapeHtml(d.type || '—')}</span>` +
-        `<span class="sr-leg-d">${escapeHtml(d.date || '')}</span></div>`
-      : '';
-
-    const note = req.notes
-      ? `<div class="sr-note ${req.status === ST.rejected ? 'why' : ''}">` +
-        (req.status === ST.rejected ? '<b>سبب الرفض:</b> ' : '') + escapeHtml(req.notes) + '</div>'
-      : '';
-
-    return `<article class="sr ${meta.cls}">` +
-      `<header class="sr-top">` +
-        `<span class="sr-badge"><i class="fas ${meta.icon}"></i>${meta.label}</span>` +
-        `<span class="sr-with"><i class="fas fa-user-doctor"></i>${headline}</span>` +
-        `<span class="sr-kind">${mutual ? 'تبديل' : 'شيل'}</span>` +
-      `</header>` +
-      `<div class="sr-legs">${leg(out, 'أعطيت', 'out')}${leg(back, 'أخذت', 'in')}</div>` +
-      (req.reason ? `<div class="sr-reason"><i class="fas fa-quote-right"></i>${escapeHtml(req.reason)}</div>` : '') +
-      note +
-      (req.stamp ? `<footer class="sr-stamp">أُرسل ${escapeHtml(req.stamp)}</footer>` : '') +
-      '</article>';
-  }
 
   AUH.views.myInfo = {
-    /**
-     * Loads the swap-request sheet and shows this resident's own requests.
-     * Failures are reported in place — never thrown at the page.
-     */
-    /**
-     * Loads this resident's swap requests. Only the newest is shown; the rest
-     * stay behind «عرض المزيد». Failures report in place, never thrown.
-     */
-    async loadSwapRequests(force) {
-      const body = document.getElementById('swapTrackBody');
-      const me = this.currentMyInfo;
-      if (!body || !me) return;
-
-      if (force) body.innerHTML = '<div class="swap-track-loading"><i class="fas fa-spinner fa-spin"></i> جاري التحديث…</div>';
-
-      try {
-        if (force || !this._swapCache) this._swapCache = await AUH.data.swapRequests.fetchAll();
-        const cache = this._swapCache;
-        const mine = AUH.data.swapRequests.forResident(cache.list, me.name, me.abbr);
-        this._swapMine = mine;
-        this._swapOpen = false;
-
-        if (!mine.length) {
-          body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-inbox"></i>' +
-            '<span>لا توجد لك طلبات تبديل بعد.</span></div>';
-          return;
-        }
-
-        const ST = AUH.data.swapRequests.STATUS;
-        const n = st => mine.filter(r => r.status === st).length;
-        const pill = (cls, icon, count, label) => count
-          ? `<span class="sw-pill ${cls}"><i class="fas ${icon}"></i>${count} ${label}</span>` : '';
-
-        body.innerHTML =
-          `<div class="swap-track-sum">${pill('ok', 'fa-circle-check', n(ST.approved), 'تم')}` +
-          `${pill('wait', 'fa-hourglass-half', n(ST.pending), 'قيد المراجعة')}` +
-          `${pill('no', 'fa-circle-xmark', n(ST.rejected), 'مرفوض')}</div>` +
-          `<div class="sr-list" id="srList">${requestCard(mine[0], me)}</div>` +
-          (mine.length > 1
-            ? `<button type="button" class="sw-more" id="srMore" onclick="app.toggleSwapHistory()">` +
-              `<i class="fas fa-chevron-down"></i> عرض الطلبات السابقة (${mine.length - 1})</button>`
-            : '') +
-          // Only worth explaining when nothing resolved: if the sheet's status
-          // column (or its colours) answered, the box speaks for itself.
-          (mine.some(r => r.statusSource !== 'none') ? '' :
-            '<div class="swap-track-hint"><i class="fas fa-circle-info"></i> لم تُسجَّل حالة هذه الطلبات بعد. ' +
-            'تُقرأ الحالة من عمود «الحالة» في جدول الطلبات، أو من ألوان الصفوف إن نُشر الجدول على الويب.</div>');
-      } catch (err) {
-        body.innerHTML = '<div class="swap-track-empty"><i class="fas fa-triangle-exclamation"></i>' +
-          '<span>تعذّر تحميل الطلبات. تحقق من الاتصال ثم اضغط تحديث.</span></div>';
-      }
-    },
-
-    /** Expands or collapses everything older than the newest request. */
-    toggleSwapHistory() {
-      const list = document.getElementById('srList');
-      const btn = document.getElementById('srMore');
-      const mine = this._swapMine || [];
-      const me = this.currentMyInfo;
-      if (!list || !btn || !me || mine.length < 2) return;
-
-      this._swapOpen = !this._swapOpen;
-      list.innerHTML = (this._swapOpen ? mine : mine.slice(0, 1)).map(r => requestCard(r, me)).join('');
-      btn.innerHTML = this._swapOpen
-        ? '<i class="fas fa-chevron-up"></i> إخفاء الطلبات السابقة'
-        : `<i class="fas fa-chevron-down"></i> عرض الطلبات السابقة (${mine.length - 1})`;
-    },
 
   searchMe(term) {
     const t = term.toLowerCase().trim();
@@ -204,6 +88,7 @@
   setMyInfoMonth(key) {
     if (!this.currentMyInfo || !key) return;
     this.myInfoMonthKey = key;
+    this.myInfoMonthPinned = true;   // اختيارٌ صريح — لا يُبطله الانتقالُ التلقائي
     this.showMe(this.currentMyInfo, { keepScroll: true });
   },
 
@@ -474,7 +359,13 @@
     const lastOncallDate = allOncalls.length ? allOncalls[allOncalls.length - 1].date : '-';
 
     const oncallMonths = [...new Set(allOncalls.map(o => o.date.slice(0, 7)))].sort();
-    if (!oncallMonths.includes(this.myInfoMonthKey)) this.myInfoMonthKey = oncallMonths.includes(this.today.slice(0, 7)) ? this.today.slice(0, 7) : oncallMonths[0] || this.today.slice(0, 7);
+    // الشهرُ المعروض: أحدثُ شهرٍ موجودٍ في ورقة المناوبات — لا شهرُ اليوم.
+    // فحين يُضاف شهرٌ جديد إلى Sheet تنتقل البطاقةُ إليه من تلقاء نفسها.
+    // ولا يُلغى هذا إلا إن اختار المستخدمُ شهراً بنفسه (myInfoMonthPinned).
+    const newestMonth = oncallMonths[oncallMonths.length - 1] || this.today.slice(0, 7);
+    if (!this.myInfoMonthPinned || !oncallMonths.includes(this.myInfoMonthKey)) {
+      this.myInfoMonthKey = newestMonth;
+    }
 
     const monthOncalls = allOncalls.filter(o => o.date.slice(0, 7) === this.myInfoMonthKey).sort((a, b) => a.date.localeCompare(b.date));
 
@@ -598,22 +489,7 @@
     h += this.renderMyInfoHolidays(monthOncalls);
     h += `<button class="download-btn" onclick="app.downloadMyInfoImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة والتفاصيل كصورة</button>`;
 
-    // Swap request — opens the dedicated page with this doctor already filled in.
-    const who = encodeURIComponent(r.abbr || r.name);
-    h += `<a class="swap-cta" href="swap.html?from=${who}" target="_blank" rel="noopener">` +
-      `<span class="swap-cta-icon"><i class="fas fa-right-left"></i></span>` +
-      `<span class="swap-cta-text"><b>طلب تبديل أو شيل مناوبة</b>` +
-      `<span class="swap-cta-note">اختر المناوبة من رزنامتك، وسيعرض النظام من يستطيع أخذها</span></span>` +
-      `<span class="swap-cta-go"><i class="fas fa-chevron-left"></i></span></a>`;
-
-    // Request tracking — filled in asynchronously by loadSwapRequests().
-    h += `<div class="swap-track" id="swapTrack"><div class="swap-track-head">` +
-      `<h4><i class="fas fa-list-check"></i> متابعة طلبات التبديل</h4>` +
-      `<button type="button" class="swap-refresh" onclick="app.loadSwapRequests(true)" title="تحديث">` +
-      `<i class="fas fa-rotate"></i></button></div>` +
-      `<div id="swapTrackBody"><div class="swap-track-loading"><i class="fas fa-spinner fa-spin"></i> جاري تحميل طلباتك...</div></div></div></div>`;
-    // the sheet read happens once this HTML is in the DOM
-    setTimeout(() => this.loadSwapRequests(false), 0);
+    h += '</div>';   // يُغلق حاوية بطاقة «معلوماتي»
 
     rd.innerHTML = h;
     rd.classList.add('show');

@@ -3,7 +3,7 @@
  *
  * This is the file to edit when the data moves: pointing the app at a different
  * spreadsheet, or (later) at a real backend, should not require touching any
- * parser, view or statistic. See docs/BACKEND-MIGRATION.md.
+ * parser, view or statistic. See 4-التوثيق/خطة-التحويل.md.
  */
 (function (global) {
   'use strict';
@@ -22,7 +22,7 @@
      *   'auto' — use the API when `apiBaseUrl` is set, otherwise Google Sheets,
      *            and fall back to Google Sheets if the API request fails.
      *   'gviz' — always read the public Google Sheets directly (today's default).
-     *   'api'  — always read the JSON backend (see docs/BACKEND-MIGRATION.md).
+     *   'api'  — always read the JSON backend (see 4-التوثيق/خطة-التحويل.md).
      *
      * So the site keeps working with the sheets right now, and switching to a
      * server later is a one-line change: set `apiBaseUrl`.

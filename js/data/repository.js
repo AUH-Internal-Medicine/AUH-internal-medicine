@@ -10,7 +10,7 @@
  * The views and the domain layer only ever see the dataset. Swapping Google
  * Sheets for a REST/DB backend means writing one more branch in `fetchAll()`
  * (and, if the backend already returns records, one more branch in `parseAll`),
- * and nothing else in the app changes. See docs/BACKEND-MIGRATION.md.
+ * and nothing else in the app changes. See 4-التوثيق/خطة-التحويل.md.
  */
 (function (global) {
   'use strict';
