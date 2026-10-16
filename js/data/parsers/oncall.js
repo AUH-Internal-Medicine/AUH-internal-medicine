@@ -122,11 +122,80 @@
       parsed.push({ date: iso, day: canonical[0], row: canonical });
     }
 
+    const merged = mergeEmergencyCenter(headers, parsed);
+
     headersApi.logResolution(source, resolution);
     if (skipped.length) log.warn('oncall', 'صفوف بتاريخ غير مقروء تم تجاهلها:', skipped.slice(0, 10));
-    log.debug('oncall', `السنة الأولى: ${parsed.length} يوم، ${categoryCols.length} فئة`);
+    log.debug('oncall', `السنة الأولى: ${parsed.length} يوم، ${merged.headers.length - 2} فئة`);
 
-    return createModel('oncall', headers, parsed, { issues: resolution.issues, skippedDates: skipped });
+    return createModel('oncall', merged.headers, merged.rows, { issues: resolution.issues, skippedDates: skipped });
+  }
+
+  /**
+   * إسعاف المركز — دمجُ العمودين في عمودٍ واحد من تاريخ الدمج وبعده.
+   *
+   * الشيتُ يُبقي «إسعاف مركز صباحي» و«إسعاف مركز ليلي» عمودين، لكنّ المناوبةَ
+   * صارت كاملةً واحدة. فيُدمَجان **هنا، في المُحلِّل**، لا في كلّ واجهة: كلُّ ما
+   * يقرأ النموذجَ القانونيّ (الواجهات والإحصائيات و«معلوماتي» والتصدير) يرى
+   * النتيجةَ نفسَها بلا سطرٍ إضافيّ عنده.
+   *
+   * والدمجُ **لكلّ يومٍ على حدة**:
+   *   يومٌ قبل التاريخ → العمودان كما هما، والعمودُ المدموج فارغ
+   *   يومٌ من التاريخ  → العمودُ المدموج فيه الاسمان معاً، والعمودان فارغان
+   * فالخلايا الفارغة يتجاهلها كلُّ المستهلكين أصلاً، فيظهر لكلّ يومٍ شكلُه
+   * الصحيح دون أن يعرف أحدٌ منهم بالقاعدة.
+   *
+   * ولو غاب أحدُ العمودين عن الشيت لا يحدث شيء — تُعاد المدخلاتُ كما جاءت.
+   */
+  function mergeEmergencyCenter(headers, rows) {
+    const rules = AUH.domain && AUH.domain.oncallSchedule;
+    if (!rules || !rules.EMERGENCY_CENTER_PARTS) return { headers, rows };
+
+    const partCols = rules.EMERGENCY_CENTER_PARTS
+      .map(name => headers.findIndex((h, i) => i >= 2 && normAr(h || '') === normAr(name)))
+      .filter(i => i >= 0);
+    if (partCols.length < 2) return { headers, rows };
+
+    const at = Math.max.apply(null, partCols) + 1;   // بعد الليلي، مع عائلته
+    const newHeaders = headers.slice();
+    newHeaders.splice(at, 0, rules.EMERGENCY_CENTER_MERGED);
+
+    let mergedDays = 0;
+    const newRows = rows.map(r => {
+      const cells = r.row.slice();
+      let mergedCell = '';
+
+      let halves = null;
+      if (r.date >= rules.MERGE_DATE_EMERGENCY_CENTER) {
+        const names = [];
+        const parts = [];
+        partCols.forEach(c => {
+          const own = [];
+          splitNames(cells[c] || '').forEach(nm => {
+            own.push(nm);
+            if (!names.some(x => normAr(x) === normAr(nm))) names.push(nm);
+          });
+          if (own.length) parts.push({ label: headers[c], names: own });
+        });
+        if (names.length) {
+          mergedCell = names.join('\n');
+          partCols.forEach(c => { cells[c] = ''; });
+          // النصفان يُحفظان مع اليوم: المناوبةُ واحدةٌ الآن، لكنّ الشهرَ
+          // الانتقاليّ يحتاج أن يُظهر داخل البطاقة من كان نهارياً ومن ليلياً.
+          // (تُعاد الحسبةُ في كل تحليل، فلا تتعلّق بالنسخة المؤقتة.)
+          if (parts.length > 1) halves = parts;
+          mergedDays++;
+        }
+      }
+
+      cells.splice(at, 0, mergedCell);
+      const out = { date: r.date, day: r.day, row: cells };
+      if (halves) out.emergencyCenterHalves = halves;
+      return out;
+    });
+
+    log.debug('oncall', `إسعاف المركز: دُمج في ${mergedDays} يوماً من ${rules.MERGE_DATE_EMERGENCY_CENTER}`);
+    return { headers: newHeaders, rows: newRows };
   }
 
   /* ------------------------------------------------------------------ year two */

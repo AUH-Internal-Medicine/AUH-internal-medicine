@@ -31,6 +31,13 @@
     'رابع':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'تالت':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'تاني':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+    // أُعيدت تسمية عمود «تاني» في الشيت إلى «تاني رجال»، وأُضيف «تاني نساء»
+    // (2026-10). الاسمُ القديم يبقى هنا لأنّ الصفوفَ القديمة قد تُقرأ به.
+    'تاني رجال':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+    'تاني نساء':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+    // «إسعاف مركز» المدموجة لا تظهر إلا من 2026-10-06، أي بعد SWITCH_DATE،
+    // فهذا السطرُ احتياطٌ لئلّا يسقط التاريخُ القديم على ساعاتٍ إسعافية خاطئة.
+    'إسعاف مركز':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'خارجيات':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'ديال':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'أورام':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
@@ -52,11 +59,17 @@
     'رابع':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'تالت':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'تاني':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+    'تاني رجال':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+    // أُضيفت 2026-10: جناحٌ جديد، أوقاتُه ودوامُه كبقية الأجنحة.
+    'تاني نساء':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'خارجيات':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'ديال':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'أورام':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'إسعاف مركز صباحي':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
     'إسعاف مركز ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'},
+    // من 2026-10-06 اندمج صباحيُّ المركز وليليُّه في مناوبةٍ كاملة واحدة.
+    // هي الوحيدةُ في عائلة الإسعاف التي أوقاتُها وساعاتُها كالأجنحة.
+    'إسعاف مركز':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'اسعاف بارد صباحي':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
     'اسعاف بارد ليلي':{workTime:'10:00 pm حتى 8:30 am',workDuration:'10 ساعات ونصف',holidayTime:'10:00 pm حتى 9:00 am',holidayDuration:'11 ساعة'},
     'إسعاف باب نهاري':{workTime:'2:30 pm حتى 10:00 pm',workDuration:'7 ساعات ونصف',holidayTime:'9:00 am حتى 10:00 pm',holidayDuration:'13 ساعة'},
@@ -79,10 +92,15 @@
     'تالت': ['ثالث خاص + خارجيات'],
     'خارجيات': ['ثالث خاص + خارجيات'],
     'تاني': ['ثاني رجال'],
+    'تاني رجال': ['ثاني رجال'],
+    // «تاني نساء» بلا مقابلٍ في شيت السنة الثانية — يُترك بلا تخمين.
+
     'ديال': ['الديال', 'ديال'],
     'عناية قلبية': ['عناية قلبية'],
     'عناية مركز': ['عناية المركز'],
     'عناية داخلية': ['عناية داخلية'],
+    // السنةُ الثانية تكتب «اسعاف مركز» مناوبةً واحدة أصلاً، فالمدموجةُ تقابلها.
+    'إسعاف مركز': ['اسعاف مركز'],
     'إسعاف مركز صباحي': ['اسعاف مركز', 'اسعاف نهاري'],
     'إسعاف مركز ليلي': ['اسعاف مركز', 'اسعاف ليلي'],
     'اسعاف بارد صباحي': ['اسعاف بارد نهاري', 'بارد نهاري'],
@@ -90,6 +108,45 @@
     'إسعاف باب نهاري': ['اسعاف باب نهاري', 'باب نهاري'],
     'إسعاف باب ليلي': ['اسعاف باب ليلي', 'باب ليلي']
   };
+
+  /**
+   * إسعاف المركز: كان مقسوماً «صباحي / ليلي»، وصار من هذا التاريخ مناوبةً
+   * كاملةً واحدة. والشيتُ يُبقي العمودين كما هما، فالدمجُ يحدث هنا — في طبقة
+   * القواعد — مرّةً واحدةً لا في كلّ واجهة:
+   *
+   *   اليومُ قبل التاريخ  → العمودان منفصلان كما كانا، بساعاتهما القديمة
+   *   اليومُ من التاريخ   → عمودٌ واحد «إسعاف مركز» بساعات الأجنحة (18/24)
+   *
+   * المقارنةُ بتاريخ المناوبة نفسِه، لا بتاريخ اليوم — فالماضي يبقى صحيحاً.
+   */
+  const MERGE_DATE_EMERGENCY_CENTER = '2026-10-06';
+  const EMERGENCY_CENTER_PARTS = ['إسعاف مركز صباحي', 'إسعاف مركز ليلي'];
+  const EMERGENCY_CENTER_MERGED = 'إسعاف مركز';
+  /**
+   * الشهرُ الانتقاليّ: تُعرض بطاقةُ «إسعاف مركز» وحدَها، لكن **داخلها**
+   * يُعرض التقسيمُ القديم (نهاري / ليلي) ليعرف كلُّ مناوبٍ أين كان مكتوباً.
+   * هذا للشهر المذكور فقط؛ وبعده تُعرض البطاقةُ مجموعةً واحدة.
+   * ولحذفِ التقسيم لاحقاً: اجعل القيمةَ '' — لا شيءَ آخرَ يلزم.
+   */
+  const EMERGENCY_CENTER_SPLIT_MONTH = '2026-10';
+
+  /** True when this category is one of the two halves that now merge. */
+  function isEmergencyCenterPart(category) {
+    const n = normAr(category || '');
+    return EMERGENCY_CENTER_PARTS.some(p => normAr(p) === n);
+  }
+
+  /**
+   * The category name to USE for a duty on a given day: the merged name when the
+   * day is on/after the merge date and the category is one of the two halves,
+   * otherwise the category unchanged.
+   */
+  function effectiveCategory(category, dateIso) {
+    if (dateIso && dateIso >= MERGE_DATE_EMERGENCY_CENTER && isEmergencyCenterPart(category)) {
+      return EMERGENCY_CENTER_MERGED;
+    }
+    return category;
+  }
 
   /** Group labels used across the statistics UI. */
   const GROUPS = {
@@ -100,7 +157,8 @@
     other: { key: 'other', label: 'أخرى', icon: 'fa-circle-question' }
   };
 
-  const WARD_NAMES = ['تاني', 'ثاني', 'تالت', 'ثالث', 'رابع', 'خارجيات', 'سابع'];
+  const WARD_NAMES = ['تاني', 'ثاني', 'تاني رجال', 'ثاني رجال', 'تاني نساء', 'ثاني نساء',
+    'تالت', 'ثالث', 'رابع', 'خارجيات', 'سابع'];
   const MISC_NAMES = ['اورام', 'أورام', 'ديال'];
 
   /** Buckets an on-call category name into one of the four display groups. */
@@ -171,6 +229,12 @@
 
   AUH.domain.oncallSchedule = {
     SWITCH_DATE,
+    MERGE_DATE_EMERGENCY_CENTER,
+    EMERGENCY_CENTER_PARTS,
+    EMERGENCY_CENTER_MERGED,
+    EMERGENCY_CENTER_SPLIT_MONTH,
+    isEmergencyCenterPart,
+    effectiveCategory,
     ONCALL_SCHEDULE_OLD,
     ONCALL_SCHEDULE_NEW,
     YEAR2_CATEGORY_MAP,

@@ -243,6 +243,53 @@
     }
   },
 
+  /**
+   * «إسعاف مركز» في الشهر الانتقاليّ: البطاقةُ واحدة، لكن داخلها مجموعتان
+   * «نهاري» و«ليلي» كما كان الشيتُ يكتبهما — فيعرف كلُّ مناوبٍ أين اسمُه.
+   *
+   * تُعاد `null` إذا لم يكن اليومُ في ذلك الشهر، أو لم يُدمَج، أو لم يُعرف
+   * النصفان — وحينها تُرسم البطاقةُ مجموعةً واحدة كأيّ فئةٍ أخرى.
+   * وأيُّ اسمٍ لا يُطابق نصفاً (إضافةٌ تطوعية مثلاً) يُلحق بمجموعة «غير مقسوم»
+   * ولا يُحذف أبداً.
+   */
+  emergencyCenterHalves(categoryName, dstr, names) {
+    const rules = AUH.domain.oncallSchedule;
+    const month = rules.EMERGENCY_CENTER_SPLIT_MONTH;
+    if (!month || !dstr || dstr.slice(0, 7) !== month) return null;
+    if (normAr(categoryName) !== normAr(rules.EMERGENCY_CENTER_MERGED)) return null;
+
+    const row = this.getOncRow(dstr);
+    const halves = row && row.emergencyCenterHalves;
+    if (!halves || halves.length < 2) return null;
+
+    const yearId = this.yearForTab ? this.yearForTab('oncall') : 1;
+    const pool = (names || []).slice();
+    const take = raw => {
+      const r = this.findRbyExact(raw, yearId);
+      const key = r ? (r.abbr || r.name) : raw;
+      let i = pool.findIndex(x => x.abbr === key);
+      if (i < 0) i = pool.findIndex(x => normAr(x.name) === normAr(raw));
+      return i < 0 ? null : pool.splice(i, 1)[0];
+    };
+
+    const groups = halves.map(h => ({
+      label: this.shortHalfLabel(h.label),
+      items: h.names.map(take).filter(Boolean)
+    })).filter(g => g.items.length);
+
+    if (groups.length < 2) return null;
+    if (pool.length) groups.push({ label: 'غير مقسوم', items: pool });
+    return groups;
+  },
+
+  /** «إسعاف مركز صباحي» → «نهاري» · «إسعاف مركز ليلي» → «ليلي». */
+  shortHalfLabel(label) {
+    const n = normAr(label || '');
+    if (n.includes(normAr('ليلي'))) return 'ليلي';
+    if (n.includes(normAr('صباحي')) || n.includes(normAr('نهاري'))) return 'نهاري';
+    return label || '';
+  },
+
   buildOncallCategoriesForDate(dstr, oncRows, oncHeaders, applyAdjustments, yearId) {
     const row = (oncRows || []).find(r => r.date === dstr);
     const cats = {};
@@ -288,7 +335,7 @@
 
   /**
    * الإسعاف الداخلي يُقسَّم إلى فرق من ثلاثة: أول ثلاثة أسماء في خانة ذلك اليوم
-   * فرقة، والثلاثة التالون فرقة، وهكذا — بترتيب ظهورهم في الجدول الرسمي.
+   * فريق، والثلاثة التالون فريق، وهكذا — بترتيب ظهورهم في الجدول الرسمي.
    * تنطبق على السنة الأولى فقط، وعلى الإسعاف الداخلي (ليلي أو نهاري) دون غيره.
    */
   teamedCategory(categoryName, isYear1) {
@@ -319,14 +366,24 @@
         return `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}${extra}</span>`;
       };
 
-      const teamed = this.teamedCategory(cn, isYear1) && names.length > 3;
-      h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}${teamed ? ' teamed' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}`;
+      const halves = isYear1 ? this.emergencyCenterHalves(cn, dstr, names) : null;
+      const teamed = !halves && this.teamedCategory(cn, isYear1) && names.length > 3;
+      h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}${teamed ? ' teamed' : ''}${halves ? ' halved' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}`;
 
-      if (teamed) {
+      if (halves) {
+        h += '<div class="oncall-teams oncall-halves">';
+        halves.forEach(g => {
+          h += `<div class="oncall-team"><span class="team-label half">${escapeHtml(g.label)}` +
+            `<span class="half-n">${g.items.length}</span></span>` +
+            `<div class="oncall-names-list">${g.items.map(nameTag).join('')}</div></div>`;
+        });
+        h += '</div><p class="oncall-halves-note"><i class="fas fa-circle-info"></i> ' +
+          'المناوبة كاملة من ٦/١٠، والتقسيم نهاري/ليلي معروضٌ هذا الشهر كما هو في الجدول.</p>';
+      } else if (teamed) {
         const teams = this.splitIntoTeams(names, 3);
         h += '<div class="oncall-teams">';
         teams.forEach((team, i) => {
-          h += `<div class="oncall-team"><span class="team-label">فرقة ${i + 1}</span>` +
+          h += `<div class="oncall-team"><span class="team-label">فريق ${i + 1}</span>` +
             `<div class="oncall-names-list">${team.map(nameTag).join('')}</div></div>`;
         });
         h += '</div>';

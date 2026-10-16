@@ -1159,3 +1159,15 @@ body.dark-mode .nav-btn.nav-hot{background:var(--signal);border-color:var(--sign
 @media(max-width:640px){
   .em-act{flex:1;min-height:46px;font-size:13px}
 }
+
+/* ---- إسعاف المركز: بطاقةٌ واحدة، وداخلها نهاري/ليلي (الشهر الانتقالي) ---- */
+.oncall-category.halved h4{margin-bottom:9px}
+.oncall-halves .oncall-team{padding:9px 10px 10px}
+.oncall-halves .team-label.half{display:inline-flex;align-items:center;gap:6px}
+.oncall-halves .team-label.half .half-n{background:var(--surface);color:var(--primary-strong);
+  padding:0 6px;border-radius:999px;font-size:9.5px;font-weight:800;border:1px solid var(--primary);
+  font-variant-numeric:tabular-nums}
+.oncall-halves-note{margin:8px 0 0;font-size:10.5px;line-height:1.6;color:var(--text-secondary);
+  display:flex;align-items:flex-start;gap:5px}
+.oncall-halves-note i{color:var(--primary);margin-top:2px;flex:none}
+body.dark-mode .oncall-halves .team-label.half .half-n{background:rgba(255,255,255,.06)}
