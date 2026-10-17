@@ -247,7 +247,7 @@
 
   function authenticate(credentials) {
     const api = AUH.data.surveySubmit;
-    state.busy = 'جارٍ التحقّق من هويّتك…';
+    state.busy = ' ';
     state.gateError = '';
     render({ rebuild: true });
 
@@ -255,6 +255,7 @@
       state.session = {
         nonce: d.nonce, email: d.email, verified: d.verified,
         answered: !!d.answered, prev: d.prev || null,
+        boundName: d.boundName || '',
         idToken: credentials.idToken || ''
       };
       state.busy = '';
@@ -298,7 +299,15 @@
     state.answers = base;
     state.prefilledFrom = from;
 
-    // لا اسمَ محفوظ؟ نُكمل ما نَقدر عليه من اللائحة عند اختياره لاحقاً.
+    /*
+     * الاسمُ المقترنُ بالبريد في استبيان الشهر الماضي يَعلو على المسوّدة
+     * وعلى كلِّ مصدر: هو المرجعُ، والخادمُ لا يَقبل سواه على كلِّ حال. فلو
+     * تُرك ما في المسوّدةِ ظاهراً لَملأ المقيمُ النموذجَ كلَّه ثم رُفض عند
+     * الإرسال — وهو أسوأُ من أن يَجد اسمَه مُثبَّتاً من البداية.
+     */
+    const bound = state.session && state.session.boundName;
+    if (bound) state.answers.name = bound;
+
     if (state.answers.name && !state.answers.abbr) fillFromRoster(state.answers.name);
 
     /*
@@ -477,7 +486,8 @@
      */
     const sig = [
       state.step, state.busy, state.gateError, state.formError,
-      state.session ? state.session.email + '|' + state.session.verified + '|' + state.session.answered : '-',
+      state.session ? state.session.email + '|' + state.session.verified + '|' +
+                      state.session.answered + '|' + (state.session.boundName || '') : '-',
       Object.keys(state.fieldErrors).join(','),
       state.prefilledFrom,
       roster().length,
@@ -568,8 +578,7 @@
       <i class="fas fa-envelope-circle-check"></i>
       <div>
         <strong>اكتب بريدَك الإلكتروني.</strong>
-        <span>البريدُ نفسُه الذي عبّأت به استبيانَ الشهر الماضي — به يُعرَف أن
-        الجوابَ منك، وبه تُعدّل جوابَك لاحقاً.</span>
+        <span>به يُعرَف أن الجوابَ منك، وبه تُعدّل جوابَك لاحقاً.</span>
       </div>
     </div>
     <div class="sf-row sf-row-tight">
@@ -579,7 +588,6 @@
         <i class="fas fa-arrow-left"></i> متابعة
       </button>
     </div>
-    <p class="sf-note sf-dim">لم تُعبّئ استبيانَ الشهر الماضي؟ راجِع د. علي شايب ليُضيف بريدَك.</p>
     `;
 
     return `
@@ -596,6 +604,7 @@
     const s = state.session || {};
     const badge = s.verified === 'Google' ? 'موثَّق من Google'
       : s.verified === 'Google (جديد)' ? 'موثَّق من Google — بريدٌ جديد'
+      : s.verified === 'جديد' ? 'بريدٌ جديد'
       : 'مُطابَقٌ ببُرُدِ الشهر الماضي';
 
     const from = state.prefilledFrom;
@@ -655,6 +664,7 @@ ${answered}`;
     const m = monthInfo();
     const p = prevMonthInfo();
     const people = roster();
+    const bound = !!(state.session && state.session.boundName);
 
     if (!people.length) {
       return `
@@ -681,6 +691,15 @@ ${answered}`;
   <section class="sf-card">
     <div class="sf-sec"><span class="sf-num">١</span><h3>مَن أنت</h3></div>
 
+    ${bound ? `
+    <div class="sf-field" data-field="name">
+      <label>الاسم الثلاثي</label>
+      <div class="sf-locked">
+        <i class="fas fa-lock"></i>
+        <span>${esc(a.name)}</span>
+      </div>
+      <div class="sf-hint">هذا الاسم مقترن ببريدك في استبيان الشهر الماضي.</div>
+    </div>` : `
     <div class="sf-field" data-field="name">
       <label for="sfName">الاسم الثلاثي <span class="sf-req">*</span></label>
       <input class="sf-input sf-search" id="sfNameSearch" type="search" autocomplete="off"
@@ -691,7 +710,7 @@ ${answered}`;
       </select>
       <div class="sf-hint" id="sfNameHint">${people.length} اسماً في اللائحة. الاختصارُ والهاتفُ والفرزُ تُعبَّأ تلقائياً.</div>
       ${errOf('name')}
-    </div>
+    </div>`}
 
     <div class="sf-grid2">
       <div class="sf-field">
@@ -779,7 +798,6 @@ ${answered}`;
       <label for="sfProblems">الأخطاءُ أو المشاكلُ التي تُودّ الإبلاغَ عنها</label>
       <textarea class="sf-input sf-area" id="sfProblems" rows="4"
                 placeholder="مثلاً: مناوبتان في يومَين متتاليَين، مناوبةُ عطلةٍ مكرّرة، تعارضٌ مع فرزي…">${esc(a.scheduleProblems)}</textarea>
-      <div class="sf-hint">كلّما كان الوصفُ أدقَّ (التاريخ ونوعُ المناوبة) كان إصلاحُه أسرع.</div>
     </div>
 
     <div class="sf-field">
@@ -795,11 +813,6 @@ ${answered}`;
     <button class="sf-btn sf-btn-main sf-btn-big" id="sfSubmit" type="button"${state.busy ? ' disabled' : ''}>
       <i class="fas fa-paper-plane"></i> ${state.session && state.session.answered ? 'تحديثُ جوابي' : 'إرسالُ جوابي'}
     </button>
-    <div class="sf-note sf-dim">
-      <i class="fas fa-lock"></i>
-      يُسجَّل بريدُك واسمُك مع الجواب، ويَراهما بانو الجدول وحدَهم. وصفحةُ
-      «نتائج الاستبيان» العامّةُ لا تَعرض اسماً ولا هاتفاً ولا نصّاً كتبتَه.
-    </div>
   </div>
 </div>`;
   }
@@ -902,40 +915,63 @@ ${answered}`;
   function sentCard() {
     const a = state.answers;
     const m = monthInfo();
+    const p = prevMonthInfo();
     const replaced = state.saved && state.saved.replaced;
 
+    const sorted = a.days.slice().sort((x, y) => x - y);
+    const dayChips = sorted.length
+      ? sorted.map(d => {
+          const dow = new Date(m.year, m.month - 1, d).getDay();
+          return `<span class="sf-day-chip">${d} <small>${esc(DAY_NAMES[dow])}</small></span>`;
+        }).join('')
+      : '<span class="sf-sum-none">لا شيء — تستطيع المناوبة في كلّ أيام الشهر</span>';
+
+    /*
+     * بنيةٌ مستقلّةٌ لا <table>.
+     *
+     * جداولُ هذا الموقع لها `min-width:850px` وتظليلُ صفوفٍ وتوسيطُ خلايا —
+     * وهي قواعدُ عامّةٌ تَسري على أيِّ جدولٍ في الصفحة. فجدولُ التأكيد كان
+     * يَرثها فيتمدّد داخل بطاقةٍ أضيقَ منه ويتبعثر. والقائمةُ هنا تَملك
+     * تنسيقَها كاملاً، فلا تَرث ولا تُفاجئ.
+     */
+    const row = (label, value, extra) =>
+      `<div class="sf-sum-row${extra ? ' ' + extra : ''}">
+        <dt>${esc(label)}</dt>
+        <dd>${value}</dd>
+      </div>`;
+
     const rows = [
-      ['الاسم', a.name],
-      ['الاختصار', a.abbr || '—'],
-      ['فرزُ شهر ' + prevMonthInfo().month, a.rotation],
-      ['عددُ التفريغات', a.reliefCount],
-      ['صعوبةُ الفرز', a.difficulty + ' / 10'],
-      ['الأيامُ غيرُ المتاحة', a.days.length ? a.days.slice().sort((x, y) => x - y).map(d => d + '/' + m.month).join(' · ') : 'لا شيء'],
-      ['السبب', a.days.length ? a.reason : '—'],
-      ['إجازةٌ في تلك الأيام', a.days.length ? a.leave : '—'],
-      ['تقييمُ رزنامة الشهر الماضي', a.scheduleRating + ' / 10']
-    ].map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('');
+      row('الاسم', esc(a.name)),
+      a.abbr ? row('الاختصار', esc(a.abbr)) : '',
+      row('فرز شهر ' + p.month, esc(a.rotation)),
+      row('عدد التفريغات', esc(a.reliefCount)),
+      row('صعوبة الفرز', `<b>${esc(a.difficulty)}</b> <span class="sf-sum-of">/ 10</span>`),
+      row('الأيام التي لا تستطيع المناوبة فيها',
+          `<div class="sf-sum-days">${dayChips}</div>`, 'key'),
+      a.days.length ? row('السبب', esc(a.reason)) : '',
+      a.days.length ? row('إجازة في تلك الأيام', esc(a.leave)) : '',
+      row('تقييم رزنامة شهر ' + p.month,
+          `<b>${esc(a.scheduleRating)}</b> <span class="sf-sum-of">/ 10</span>`),
+      a.scheduleProblems ? row('مشاكل الرزنامة', esc(a.scheduleProblems)) : '',
+      a.notes ? row('ملاحظات', esc(a.notes)) : ''
+    ].join('');
 
     return `
 <div class="sf-wrap">
   <div class="sf-card sf-done">
-    <div class="sf-big sf-ok"><i class="fas fa-circle-check"></i></div>
-    <h3>${replaced ? 'حُدِّث جوابُك' : 'وصل جوابُك'}</h3>
-    <p class="sf-note">${replaced
-      ? 'استُبدل جوابُك السابق، وحُفظ القديمُ في الأرشيف. فلا يُقرأ لك جوابان.'
-      : 'سُجِّل جوابُك في جدولِ ردودِ الاستبيان. شكراً لك.'}</p>
-
-    <table class="sf-summary"><tbody>${rows}</tbody></table>
-
-    <div class="sf-done-actions">
-      <button class="sf-btn sf-btn-main" id="sfEdit" type="button">
-        <i class="fas fa-pen"></i> تعديلُ جوابي
-      </button>
-      <a class="sf-btn sf-btn-ghost" href="survey.html" target="_blank" rel="noopener">
-        <i class="fas fa-chart-column"></i> نتائجُ الاستبيان
-      </a>
+    <div class="sf-done-top">
+      <div class="sf-done-mark"><i class="fas fa-check"></i></div>
+      <h3>${replaced ? 'حُدِّث جوابك' : 'وصل جوابك'}</h3>
+      <p>${replaced
+        ? 'استُبدل جوابك السابق. يُقرأ الأخير وحده.'
+        : 'سُجِّل جوابك. شكراً لك.'}</p>
     </div>
-    <p class="sf-note sf-dim">تستطيع التعديلَ ما دام الاستبيانُ مفتوحاً — ويُقرأ آخرُ جوابٍ لك وحدَه.</p>
+
+    <dl class="sf-sum">${rows}</dl>
+
+    <button class="sf-btn sf-btn-main sf-btn-big" id="sfEdit" type="button">
+      <i class="fas fa-pen"></i> تعديل جوابي
+    </button>
   </div>
 </div>`;
   }

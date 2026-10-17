@@ -1244,6 +1244,11 @@ body.dark-mode .nav-btn.nav-hot.nav-hot-survey{background:var(--ochre);border-co
 select.sf-input{cursor:pointer}
 
 .sf-hint{font-size:11.5px;line-height:1.7;color:var(--text-secondary);margin-top:5px}
+/* حقلٌ مُثبَّت: يُعرض ولا يُعدَّل — الاسمُ المقترنُ بالبريد. */
+.sf-locked{display:flex;align-items:center;gap:9px;padding:11px 13px;min-height:44px;
+  border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface-sunk);color:var(--text);font-size:14px;font-weight:700}
+.sf-locked i{color:var(--text-secondary);font-size:12px;flex:none}
 .sf-err{display:flex;align-items:flex-start;gap:5px;font-size:12px;font-weight:600;
   color:var(--signal);margin-top:6px;line-height:1.65}
 .sf-note{display:flex;align-items:flex-start;gap:7px;font-size:12.5px;line-height:1.85;
@@ -1359,17 +1364,33 @@ select.sf-input{cursor:pointer}
    جعل مربّعَ تسجيلِ الدخول يُغطّي نسخةَ السيرفر كلَّها. */
 .sf-cond[hidden]{display:none}
 
-/* ── التأكيد ── */
-.sf-done{max-width:620px;margin:0 auto;text-align:center}
-.sf-done h3{font-size:18px;font-weight:700;margin:0 0 8px}
-.sf-summary{width:100%;border-collapse:collapse;margin:14px 0;text-align:start;
-  border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.sf-summary th,.sf-summary td{padding:9px 12px;font-size:12.5px;line-height:1.75;
-  border-bottom:1px solid var(--border);vertical-align:top;color:var(--text)}
-.sf-summary tr:last-child th,.sf-summary tr:last-child td{border-bottom:none}
-.sf-summary th{background:var(--surface-sunk);font-weight:700;width:38%;white-space:nowrap}
-.sf-summary td{color:var(--text-secondary)}
-.sf-done-actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-bottom:11px}
+/* ── التأكيد ──
+   قائمةُ تعريفٍ لا <table>: جداولُ الموقع لها `min-width:850px` وتظليلُ
+   صفوفٍ وتوسيطُ خلايا، وكانت تَسري على جدول التأكيد فتُمدّده خارج بطاقته. */
+.sf-done{max-width:600px;margin:0 auto}
+.sf-done-top{text-align:center;padding-bottom:16px;margin-bottom:4px;
+  border-bottom:1px solid var(--border)}
+.sf-done-mark{width:52px;height:52px;margin:0 auto 11px;border-radius:50%;
+  background:var(--primary);color:#fff;display:flex;align-items:center;
+  justify-content:center;font-size:24px}
+.sf-done h3{font-size:19px;font-weight:700;margin:0 0 6px;color:var(--text)}
+.sf-done-top p{font-size:12.5px;line-height:1.8;color:var(--text-secondary);margin:0}
+
+.sf-sum{margin:0 0 16px}
+.sf-sum-row{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;
+  padding:11px 2px;border-bottom:1px solid var(--border)}
+.sf-sum-row:last-child{border-bottom:none}
+.sf-sum-row dt{flex:0 0 42%;max-width:42%;font-size:12.5px;font-weight:700;
+  color:var(--text-secondary);margin:0;line-height:1.7}
+.sf-sum-row dd{flex:1 1 auto;min-width:0;margin:0;font-size:13.5px;
+  color:var(--text);line-height:1.8;word-break:break-word}
+.sf-sum-row dd b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.sf-sum-of{font-size:11.5px;color:var(--text-secondary);font-weight:600}
+.sf-sum-row.key{background:var(--surface-sunk);border-radius:var(--radius-sm);
+  padding:12px 13px;border-bottom:none;margin:6px 0}
+.sf-sum-row.key dt{color:var(--text)}
+.sf-sum-days{display:flex;flex-wrap:wrap;gap:6px}
+.sf-sum-none{font-size:12.5px;color:var(--text-secondary)}
 
 /* ── الهاتف ── */
 @media(max-width:640px){
@@ -1391,7 +1412,9 @@ select.sf-input{cursor:pointer}
   .sf-cal-d,.sf-cal-pad{min-height:46px}
   .sf-cal-n{font-size:14px}
   .sf-cal-w{display:none}
-  .sf-summary th{width:45%;white-space:normal}
+  .sf-sum-row{gap:3px}
+  .sf-sum-row dt{flex:0 0 100%;max-width:100%;font-size:11.5px}
+  .sf-sum-row dd{font-size:13.5px}
   .sf-chip{flex:1;justify-content:center}
 }
 @media(max-width:380px){
