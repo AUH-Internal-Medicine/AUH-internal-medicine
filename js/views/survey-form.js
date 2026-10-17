@@ -49,6 +49,7 @@
     emailTyped: '',
     prefilledFrom: '',   // server · local · draft · '' — لإخبارِ المقيمِ من أين جاء ما يراه
     serverAnswer: null,  // نسخةُ الخادم كما وصلت، ليُستعاد إليها بزرّ
+    toppedUpFor: '',     // لمن أُكملت الحقولُ من اللائحة — فلا تُكرَّر عليه
     signature: ''        // بصمةُ ما بُني، لمنعِ إعادةِ بناءٍ تَمسح ما كُتب
   };
 
@@ -181,15 +182,54 @@
   }
 
   /** يُعبّئ الاختصارَ والهاتفَ وفرزَ الشهر المُقيَّم من الشيت نفسِه. */
-  function fillFromRoster(name) {
+  /**
+   * يُعيد `true` إن وَجد المقيمَ في اللائحة فعلاً.
+   *
+   * و**لا يَطمس ما فيه قيمة** إلا بطلبٍ صريح (`force`): المقيمُ قد يُصحّح
+   * هاتفَه أو فرزَه، فلا يُعاد عليه القديمُ من الشيت كلّما أُعيد الرسم.
+   */
+  function fillFromRoster(name, opts) {
     const model = rosterModel();
-    if (!model) return;
+    if (!model) return false;
     const r = (model.residents || []).find(x => x.name === name);
-    if (!r) return;
-    state.answers.abbr = r.abbr || '';
-    state.answers.phone = r.phone || '';
+    if (!r) return false;
+
+    const force = !!(opts && opts.force);
+    const a = state.answers;
     const m = prevMonthInfo().month;
-    state.answers.rotation = (model.getShift ? model.getShift(r, m) : (r.shifts || {})[m]) || '';
+    const rot = (model.getShift ? model.getShift(r, m) : (r.shifts || {})[m]) || '';
+
+    if (force || !a.abbr) a.abbr = r.abbr || '';
+    if (force || !a.phone) a.phone = r.phone || '';
+    if (force || !a.rotation) a.rotation = rot;
+    return true;
+  }
+
+  /**
+   * يُكمل ما نَقص من اللائحة **متى وصلت**.
+   *
+   * وهذا ليس احتياطاً نظريّاً: على الهاتف تَصل لائحةُ المقيمين بعد أن يَفرغ
+   * المقيمُ من كتابة بريده، فيُبنى النموذجُ ولائحتُه فارغة، فيَبقى الاختصارُ
+   * والهاتفُ والفرزُ فارغةً أبداً — لأن الملءَ كان يَحدث مرّةً واحدةً عند
+   * التحقّق ولا يُعاد. وعلى اللابتوب تَصل اللائحةُ قبلَه فيَعمل، فيَظهر
+   * العطلُ «على الموبايل فقط» وهو في الحقيقة عطلُ توقيتٍ لا عطلُ جهاز.
+   */
+  function topUpFromRoster() {
+    const a = state.answers;
+    if (state.step !== 'form' || !a.name) return false;
+    if (a.abbr && a.phone && a.rotation) return false;
+
+    /*
+     * مرّةً واحدةً لكلِّ اسم. فلو تكرّر مع كلِّ رسمٍ لَعاد الهاتفُ الذي
+     * محاه المقيمُ عمداً بعد دقائقَ من تحديثِ البيانات الدوريّ — يُصحّح
+     * الموقعُ للمقيمِ ما قصَده، وهو أسوأُ من ألّا يُكمل أصلاً.
+     */
+    if (state.toppedUpFor === a.name) return false;
+
+    if (!fillFromRoster(a.name)) return false;
+    state.toppedUpFor = a.name;
+    saveDraft();
+    return true;
   }
 
   /* ═══════════════════════ الدخولُ بـ Google ═══════════════════════ */
@@ -298,6 +338,7 @@
 
     state.answers = base;
     state.prefilledFrom = from;
+    state.toppedUpFor = '';
 
     /*
      * الاسمُ المقترنُ بالبريد في استبيان الشهر الماضي يَعلو على المسوّدة
@@ -478,6 +519,9 @@
     const host = global.document.getElementById('survey11Host');
     if (!host) return;
 
+    // اللائحةُ قد تكون وصلت الآن: نُكمل ما نَقص قبل أن نُقرّر هل نُعيد البناء.
+    const toppedUp = topUpFromRoster();
+
     /*
      * بصمةٌ تَمنع إعادةَ البناء العابثة. فالموقعُ يُحدّث بياناتَه كلَّ ثلاث
      * دقائقَ ويُعيد رسمَ التبويبِ النشط — ولو أُعيد بناءُ النموذجِ حينها
@@ -491,10 +535,22 @@
       Object.keys(state.fieldErrors).join(','),
       state.prefilledFrom,
       roster().length,
+      [state.answers.abbr, state.answers.phone, state.answers.rotation].map(v => v ? '1' : '0').join(''),
       state.saved ? 'saved' : '-'
     ].join('¦');
 
     if (!(opts && opts.rebuild) && sig === state.signature && host.childElementCount) return;
+
+    /*
+     * امتلأت الحقولُ الآن والنموذجُ مبنيٌّ أصلاً: تُكتب القيمُ في مواضعها
+     * مباشرةً بلا إعادةِ بناء — فمن كان يكتب سببَه لا يَفقد موضعَ مؤشّره.
+     */
+    if (toppedUp && !(opts && opts.rebuild) && host.childElementCount && host.querySelector('#sfAbbr')) {
+      syncIdentityInputs(host);
+      state.signature = sig;
+      return;
+    }
+
     state.signature = sig;
 
     host.innerHTML = build();
@@ -1015,7 +1071,8 @@ ${answered}`;
     if (sel) {
       sel.addEventListener('change', () => {
         state.answers.name = sel.value;
-        if (sel.value) fillFromRoster(sel.value);
+        state.toppedUpFor = sel.value;
+        if (sel.value) fillFromRoster(sel.value, { force: true });
         delete state.fieldErrors.name;
         saveDraft();
         syncIdentityInputs(host);
@@ -1044,7 +1101,8 @@ ${answered}`;
         if (q && matches.length === 1) {
           sel.value = matches[0].name;
           state.answers.name = matches[0].name;
-          fillFromRoster(matches[0].name);
+          state.toppedUpFor = matches[0].name;
+          fillFromRoster(matches[0].name, { force: true });
           delete state.fieldErrors.name;
           saveDraft();
           syncIdentityInputs(host);
