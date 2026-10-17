@@ -66,6 +66,38 @@
     },
 
     /**
+     * استبيانُ الشهر داخلَ الموقع — تبويبُ «استبيان شهر ١١».
+     *
+     * هذا هو **كلُّ** ما يُضبط لتشغيله أو إغلاقه أو نقلِه إلى الشهر التالي.
+     * والكتابةُ تَمرّ عبر سكربتِ Apps Script في `5-أدوات/apps-script/`،
+     * فالموقعُ ساكنٌ ولا يَكتب في شيتٍ بنفسه. خطواتُ النشر كاملةً في
+     * `4-التوثيق/استبيان-الشهر-على-الموقع.md`.
+     */
+    surveyForm: {
+      /**
+       * رابطُ تطبيقِ الويب من Apps Script، المنتهي بـ `/exec`.
+       * فارغاً ← يُعرض في التبويب «لم يُفتح بعد» بلا أيِّ عطل.
+       */
+      endpoint: 'https://script.google.com/macros/s/AKfycbwSOCA_xQbqgZSp6-1PHf-jU5zeghZgl4imjWlVZD-oTd9kZoizJWaoTA-qls56HxXBRA/exec',
+
+      /**
+       * معرّفُ OAuth للويب (Google Cloud Console). يُفعّل «الدخول بحساب
+       * Google» فيصبح البريدُ موثَّقاً من Google لا مكتوباً بيد صاحبه.
+       * فارغاً ← يُسأل المقيمُ عن بريدِه ويُطابَق ببُرُدِ من أجاب الشهرَ
+       * الماضي. **اضبطه على القيمة نفسِها في السكربت أيضاً** — الصفحةُ
+       * تُرسل الرمزَ والسكربتُ هو من يَتحقّق منه.
+       */
+      googleClientId: '',
+
+      /** الشهرُ المسؤولُ عنه الاستبيان (أيامُ عدم القدرة على المناوبة). */
+      month: 11,
+      year: 2026,
+
+      /** الشهرُ الذي يُقيَّم فرزُه ورزنامتُه (الشهرُ المنصرف). */
+      ratedMonth: 10
+    },
+
+    /**
      * The residency years the site covers. Each year is a self-contained set of
      * sources: its own roster, its own on-call sheet, its own rotations. They
      * are never merged — a name or an abbreviation is only ever resolved inside
@@ -136,14 +168,25 @@
   /** Calendar grids in this app start on Monday. */
   const CALENDAR_DAY_HEADERS = ['اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد'];
 
-  /** Primary navigation tabs, in display order. */
+  /**
+   * Primary navigation tabs, in display order.
+   *
+   * `hidden: true` يُخفي **زرَّ** التبويب من الشريط فقط. والتبويبُ نفسُه يبقى
+   * كاملاً — قسمُه في الصفحة، ودالّةُ رسمِه، وبياناتُه — فيُفتح بـ
+   * `app.activateTab('<id>')` من الكونسول، ويعود بحذف السطر لا بإعادة كتابته.
+   * فالإخفاءُ قرارُ عرض، لا حذفُ ميزة.
+   */
   const TABS = [
     { id: 'residents', icon: '<i class="fas fa-user-doctor"></i>', label: 'لائحة المقيمين' },
-    { id: 'lectures', icon: '<i class="fas fa-calendar-check"></i>', label: 'رزنامة المحاضرات' },
+    // استبيانُ الشهر — مُوقَّتٌ بطبعه: يُعبَّأ مرّةً في الشهر ثم يُغلق. ولذلك
+    // زرُّه مميَّزٌ بلونٍ خاصٍّ لا بلونِ «الأدوية الإسعافية»، فلا يُزاحمه في
+    // جلبِ النظر. وإخفاؤه بعد انتهاء الشهر بسطرٍ واحد: `hidden: true`.
+    { id: 'survey11', icon: '<i class="fas fa-clipboard-question"></i>', label: 'استبيان شهر 11', highlight: 'survey' },
+    { id: 'lectures', icon: '<i class="fas fa-calendar-check"></i>', label: 'رزنامة المحاضرات', hidden: true },
     { id: 'shifts', icon: '<i class="fas fa-clipboard-list"></i>', label: 'الفروز' },
     { id: 'oncall', icon: '<i class="fas fa-calendar-days"></i>', label: 'المناوبات' },
-    { id: 'exams', icon: '<i class="fas fa-file-pen"></i>', label: 'الامتحانات والاختبارات' },
-    { id: 'clinicalcases', icon: '<i class="fas fa-stethoscope"></i>', label: 'مشروع الحالات السريرية' },
+    { id: 'exams', icon: '<i class="fas fa-file-pen"></i>', label: 'الامتحانات والاختبارات', hidden: true },
+    { id: 'clinicalcases', icon: '<i class="fas fa-stethoscope"></i>', label: 'مشروع الحالات السريرية', hidden: true },
     { id: 'doctorstats', icon: '<i class="fas fa-chart-column"></i>', label: 'احصائيات الأطباء' },
     { id: 'evaluation', icon: '<i class="fas fa-chart-line"></i>', label: 'التقييم السنوي' },
     // مبادرة الأدوية الإسعافية — تُعرض عالياً لأن الحاجة إليها لحظية: زميل

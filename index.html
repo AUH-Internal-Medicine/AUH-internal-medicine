@@ -5,7 +5,7 @@
 <header class="main-header"><div class="header-bg-image" id="draggableBg"><img class="header-bg-photo" src="bg.webp" alt="" loading="eager" fetchpriority="high" decoding="sync" onerror="this.onerror=null;this.src='bg.png';"></div><div class="header-top-row"><button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="تغيير الوضع"><i class="fas fa-moon" id="darkModeIcon"></i></button></div><div class="header-content"><h1 class="main-title"><span class="title-line1">أطباء قسم الداخلية</span><span class="title-line2">مشفى حلب الجامعي</span></h1><div class="header-stats"><span class="stat-badge" id="currentDateHeader"></span><button class="stat-badge refresh-badge-btn" id="lastUpdateTime" onclick="app.manualRefresh()" title="اضغط للتحديث الآن">تحميل...</button></div></div></header>
 <nav class="main-nav"><div class="nav-container" id="navContainer"></div></nav>
 <main class="main-content" id="mainContent"></main>
-<button class="support-shortcut" id="supportShortcut" aria-label="الدعم التقني" title="الدعم التقني"><i class="fas fa-headset"></i></button>
+<!-- زرُّ «الشكاوي» العائم أسفلَ اليسار — مخفيٌّ بطلب المالك 2026-10-17. تبويبُ الشكاوي نفسُه باقٍ: app.openComplaintsTab() -->
 <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-arrow-up"></i></button>
 <footer class="main-footer"><p>تجربة 2026</p></footer>
 <div class="name-tooltip" id="nameTooltip"><span class="tt-close" onclick="hideTooltip()">✕</span><div class="tt-name" id="ttName"></div><div class="tt-phone" id="ttPhone" dir="ltr"></div><button class="tt-copy-btn" id="ttCopyBtn" onclick="copyTooltipPhone()"><i class="fas fa-copy"></i> نسخ الرقم</button></div>
@@ -29,6 +29,7 @@
 <script src="js/data/parsers/holidays.js?v=__BUILD_ID__" defer></script>
 <script src="js/data/parsers/content.js?v=__BUILD_ID__" defer></script>
 <script src="js/data/repository.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/survey-submit.js?v=__BUILD_ID__" defer></script>
 <script src="js/domain/oncall-schedule.js?v=__BUILD_ID__" defer></script>
 <script src="js/domain/oncall-adjustments.js?v=__BUILD_ID__" defer></script>
 <script src="js/domain/doctor-stats.js?v=__BUILD_ID__" defer></script>
@@ -39,6 +40,7 @@
 <script src="js/views/lectures.js?v=__BUILD_ID__" defer></script>
 <script src="js/views/evaluation.js?v=__BUILD_ID__" defer></script>
 <script src="js/views/emergency-meds.js?v=__BUILD_ID__" defer></script>
+<script src="js/views/survey-form.js?v=__BUILD_ID__" defer></script>
 <script src="js/views/links-qa.js?v=__BUILD_ID__" defer></script>
 <script src="js/views/doctor-stats.js?v=__BUILD_ID__" defer></script>
 <script src="js/views/myinfo.js?v=__BUILD_ID__" defer></script>

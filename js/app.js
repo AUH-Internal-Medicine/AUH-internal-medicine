@@ -211,6 +211,23 @@
 
       const stored = AUH.storage.get('activeTab');
       if (stored) activateTab(stored, false);
+
+      /*
+       * `#<tab-id>` في الرابط يَفتح تبويبَه مباشرةً، ويَعلو على آخرِ تبويبٍ
+       * محفوظ. وُجد لأجل رابطٍ يُرسَل إلى المجموعة: «عبّئ الاستبيان» يَنبغي
+       * أن يَصل بالمقيم إلى الاستبيان لا إلى آخرِ تبويبٍ فتحه قبل أسبوع.
+       *
+       * ولا يُقبل إلا مُعرّفُ تبويبٍ **موجودٌ فعلاً** في الإعدادات، فلا
+       * يَصنع رابطٌ عابثٌ حالةً لا وجودَ لها.
+       */
+      const fromHash = () => {
+        const id = String((window.location.hash || '').replace(/^#/, '')).trim();
+        if (!id) return;
+        if (!AUH.constants.TABS.some(t => t.id === id)) return;
+        activateTab(id, false);
+      };
+      fromHash();
+      window.addEventListener('hashchange', fromHash);
     }
 
     /**
@@ -226,11 +243,19 @@
       this.activeTab = tabId;
 
       /*
-       * «أدوية إسعافية» تُرسم في كل فتح: محتواها تاريخ اليوم ومناوبو اليوم،
-       * فمنطق «هل اتّسخ التبويب؟» لا ينطبق عليه — ولأنه لم يكن في مجموعة
-       * الاتّساخ أصلاً كان لا يظهر شيءٌ عند أوّل ضغطة.
+       * تبويبان يُرسمان في كلِّ فتحٍ بلا انتظارِ «اتّساخ»:
+       *
+       * «أدوية إسعافية» — محتواها تاريخُ اليوم ومناوبو اليوم، فمنطقُ «هل
+       * اتّسخ التبويب؟» لا ينطبق عليه؛ ولأنه لم يكن في مجموعة الاتّساخ
+       * أصلاً كان لا يظهر شيءٌ عند أوّل ضغطة.
+       *
+       * «استبيان شهر ١١» — حالتُه في الذاكرة لا في البيانات (بوّابةُ الدخول،
+       * ثم النموذجُ، ثم التأكيد)، فلا شيءَ يُوسّخه من طبقة البيانات. ودالّةُ
+       * رسمِه تَحمي نفسَها ببصمةٍ داخلية فلا تُعيد بناءَ النموذجِ على مَن
+       * يكتب فيه.
        */
-      if (!opts.force && tabId !== 'emergencymeds' && !this._dirtyTabs.has(tabId)) return;
+      const ALWAYS_FRESH = ['emergencymeds', 'survey11'];
+      if (!opts.force && ALWAYS_FRESH.indexOf(tabId) < 0 && !this._dirtyTabs.has(tabId)) return;
       this._dirtyTabs.delete(tabId);
 
       const scrollY = opts.preserveScroll ? window.scrollY : null;
@@ -263,6 +288,9 @@
           break;
         case 'emergencymeds':
           if (AUH.views.emergMeds) AUH.views.emergMeds.render();
+          break;
+        case 'survey11':
+          if (AUH.views.surveyForm) AUH.views.surveyForm.render();
           break;
         case 'qa':
           this.renderQA();
