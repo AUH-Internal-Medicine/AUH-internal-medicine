@@ -52,6 +52,7 @@
     prefilledFrom: '',   // server · local · draft · '' — لإخبارِ المقيمِ من أين جاء ما يراه
     serverAnswer: null,  // نسخةُ الخادم كما وصلت، ليُستعاد إليها بزرّ
     toppedUpFor: '',     // لمن أُكملت الحقولُ من اللائحة — فلا تُكرَّر عليه
+    viewingSaved: false, // بطاقةُ الملخّص تَعرض جواباً مسجَّلاً لا إرسالاً جديداً
     signature: ''        // بصمةُ ما بُني، لمنعِ إعادةِ بناءٍ تَمسح ما كُتب
   };
 
@@ -465,10 +466,22 @@
       }
 
       state.busy = '';
-      state.step = 'form';
       prefill();
+
+      /*
+       * من له جوابٌ مسجَّلٌ يَرى **ملخّصَه** أوّلاً لا نموذجاً مملوءاً.
+       * فأكثرُ من يُعيد إدخال بريده إنما يسأل «ماذا أرسلتُ؟» لا يُريد
+       * التعبئةَ من جديد؛ ومن أراد التعديلَ فزرٌّ واحدٌ يُعيده إلى الحقول.
+       *
+       * ويُستثنى من ذلك من تَرك مسوّدةً لم يُرسلها: يُفتح له النموذجُ على
+       * ما كتبه، فلا يَظنّ عملَه ضائعاً.
+       */
+      const hasDraft = state.prefilledFrom === 'draft';
+      state.viewingSaved = !!(state.session.answered && !hasDraft);
+      state.step = state.viewingSaved ? 'sent' : 'form';
+
       render({ rebuild: true });
-      focusFirstField();
+      if (!state.viewingSaved) focusFirstField();
     }, err => {
       state.busy = '';
       state.gateError = err && err.message ? err.message : 'تعذّر التحقّق.';
@@ -556,6 +569,7 @@
     state.session = null;
     state.step = 'gate';
     state.saved = null;
+    state.viewingSaved = false;
     state.gateError = '';
     render({ rebuild: true });
   }
@@ -725,6 +739,7 @@
   function editAgain() {
     state.step = 'form';
     state.saved = null;
+    state.viewingSaved = false;
     state.formError = '';
     // معرّفٌ جديد: هذا طلبٌ جديدٌ يَستبدل، لا إعادةُ إرسالِ الطلبِ نفسِه.
     if (state.session) state.session.reqId = AUH.data.surveySubmit.newId();
@@ -755,7 +770,8 @@
       state.prefilledFrom,
       roster().length,
       [state.answers.abbr, state.answers.phone, state.answers.rotation].map(v => v ? '1' : '0').join(''),
-      state.saved ? 'saved' : '-'
+      state.saved ? 'saved' : '-',
+      state.viewingSaved ? 'view' : '-'
     ].join('¦');
 
     if (!(opts && opts.rebuild) && sig === state.signature && host.childElementCount) return;
@@ -781,7 +797,11 @@
     if (!api.configured()) return notReadyCard();
     if (global.location && global.location.protocol === 'file:') return offlineFileCard();
 
-    if (state.step === 'sent') return headCard() + sentCard();
+    // في وضع العرض يُعرض شريطُ الهويّة أيضاً، ليَرى بأيِّ بريدٍ يَنظر
+    // ويَستطيع تبديلَه؛ أمّا بعد إرسالٍ جديدٍ فالسياقُ معروفٌ فلا يُزاحم.
+    if (state.step === 'sent') {
+      return headCard() + (state.viewingSaved ? whoBar({ compact: true }) : '') + sentCard();
+    }
     if (state.step === 'gate') return headCard() + gateCard();
     return headCard() + whoBar() + formCard();
   }
@@ -875,8 +895,9 @@
 </div>`;
   }
 
-  function whoBar() {
+  function whoBar(opts) {
     const s = state.session || {};
+    const compact = !!(opts && opts.compact);
     const badge = s.verified === 'Google' ? 'موثَّق من Google'
       : s.verified === 'Google (جديد)' ? 'موثَّق من Google — بريدٌ جديد'
       : s.verified === 'جديد' ? 'بريدٌ جديد'
@@ -920,7 +941,7 @@
     <i class="fas fa-right-from-bracket"></i> لستُ أنا
   </button>
 </div>
-${answered}`;
+${compact ? '' : answered}`;
   }
 
   /* ──────────────────────────── النموذج ──────────────────────────── */
@@ -1194,6 +1215,8 @@ ${answered}`;
     const m = monthInfo();
     const p = prevMonthInfo();
     const replaced = state.saved && state.saved.replaced;
+    const viewing = state.viewingSaved;
+    const when = (state.session && state.session.prev && state.session.prev.when) || '';
 
     const sorted = a.days.slice().sort((x, y) => x - y);
     const dayChips = sorted.length
@@ -1238,10 +1261,12 @@ ${answered}`;
   <div class="sf-card sf-done">
     <div class="sf-done-top">
       <div class="sf-done-mark"><i class="fas fa-check"></i></div>
-      <h3>${replaced ? 'حُدِّث جوابك' : 'وصل جوابك'}</h3>
-      <p>${replaced
-        ? 'استُبدل جوابك السابق. يُقرأ الأخير وحده.'
-        : 'سُجِّل جوابك. شكراً لك.'}</p>
+      <h3>${viewing ? 'هذا جوابك المسجَّل' : replaced ? 'حُدِّث جوابك' : 'وصل جوابك'}</h3>
+      <p>${viewing
+        ? (when ? 'أُرسل في ' + esc(when) + '. ' : '') + 'عدّله متى شئت ما دام الاستبيان مفتوحاً.'
+        : replaced
+          ? 'استُبدل جوابك السابق. يُقرأ الأخير وحده.'
+          : 'سُجِّل جوابك. شكراً لك.'}</p>
     </div>
 
     <dl class="sf-sum">${rows}</dl>
