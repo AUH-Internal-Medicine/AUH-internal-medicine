@@ -32,7 +32,11 @@
   function endpoint(spreadsheetId, gid, format, extra) {
     const out = format === 'json' ? 'json' : 'csv';
     const tqx = extra && extra.responseHandler ? `out:${out};responseHandler:${extra.responseHandler}` : `out:${out}`;
-    return `${BASE}/${spreadsheetId}/gviz/tq?tqx=${encodeURIComponent(tqx).replace(/%3A/g, ':').replace(/%3B/g, ';')}&gid=${gid}&_=${Date.now()}`;
+    // `tq` استعلامٌ يُنفّذه Google على الشيت فيُعيد الصفوفَ المطابقةَ وحدَها.
+    // وهو ليس تحسينَ سرعةٍ بل حمايةُ خصوصية: بدونه تُنزَّل الورقةُ كاملةً —
+    // ببُرُدِ الجميع وهواتفهم — إلى متصفّحِ كلِّ من يفتح الصفحة.
+    const tq = extra && extra.query ? `&tq=${encodeURIComponent(extra.query)}` : '';
+    return `${BASE}/${spreadsheetId}/gviz/tq?tqx=${encodeURIComponent(tqx).replace(/%3A/g, ':').replace(/%3B/g, ';')}&gid=${gid}${tq}&_=${Date.now()}`;
   }
 
   /* --------------------------------------------------------------- CSV parsing */
@@ -312,8 +316,52 @@
     return null;
   }
 
+  /**
+   * استعلامٌ مُوجَّهٌ على ورقةٍ عامّة، يُعيد صفوفاً (مصفوفةَ مصفوفات) أو `null`.
+   *
+   * يُجرَّب `fetch` أوّلاً، ويُسقَط إلى JSONP حين يَمنعه المتصفّح — وهو ما
+   * يَحدث حين يُفتح الموقعُ من القرص (`file://`)، فيَبقى يعمل هناك أيضاً.
+   */
+  async function fetchQuery(spreadsheetId, gid, query, label) {
+    const url = endpoint(spreadsheetId, gid, 'csv', { query });
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const text = new TextDecoder('utf-8').decode(await res.arrayBuffer());
+        if (!text.includes('<!DOCTYPE') && !text.includes('<html')) return parseCSV(text);
+      }
+      log.warn('query', `${label || gid}: HTTP ${res.status}`);
+    } catch (e) {
+      log.debug('query', `${label || gid}: ${e && e.message} — نجرّب JSONP`);
+    }
+
+    return new Promise(resolve => {
+      if (!global.document) { resolve(null); return; }
+      const callback = `__auhGvizQ${Date.now().toString(36)}_${jsonpSeq++}`;
+      const script = document.createElement('script');
+      let done = false;
+
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        try { delete global[callback]; } catch (e) { global[callback] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+      const finish = value => { if (done) return; done = true; cleanup(); resolve(value); };
+
+      const timer = setTimeout(() => finish(null), 15000);
+      global[callback] = payload => {
+        const table = flattenGvizTable(payload);
+        finish(table);
+      };
+      script.src = endpoint(spreadsheetId, gid, 'json', { query, responseHandler: callback });
+      script.onerror = () => finish(null);
+      document.head.appendChild(script);
+    });
+  }
+
   AUH.data.gviz = {
     parseCSV,
+    fetchQuery,
     parseCSVLine,
     flattenGvizTable,
     cellValue,

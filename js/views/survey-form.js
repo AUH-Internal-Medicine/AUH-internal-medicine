@@ -27,7 +27,9 @@
 
   const AUH = global.AUH;
   const esc = s => AUH.text.escapeHtml(String(s == null ? '' : s));
+  const { normAr } = AUH.text;
   const { MONTH_NAMES, DAY_NAMES, CALENDAR_DAY_HEADERS } = AUH.constants;
+  const log = AUH.log;
 
   /* ═══════════════════════════ الحالة ═══════════════════════════ */
 
@@ -232,6 +234,102 @@
     return true;
   }
 
+  /* ═══════════ الربطُ بين البريد والاسم — من شيت الشهر الماضي ═══════════ */
+
+  /*
+   * تَقرأ الصفحةُ هذا الربطَ **بنفسها** لا تَنتظره من الخادم.
+   *
+   * والسبب عمليّ: نسخةُ السكربت المنشورة قد تَسبق هذا الربطَ أو تَتأخّر عنه،
+   * فلو عُلّق الملءُ التلقائيُّ على ما يُرسله الخادمُ لَبقي معطَّلاً حتى تُنشَر
+   * نسخةٌ جديدة. وشيتُ الشهر الماضي عامٌّ يُقرأ كما تُقرأ بقيّةُ شيتات الموقع.
+   *
+   * ويُقرأ **باستعلامٍ مُوجَّه** لا بتنزيل الورقة: الورقةُ فيها بريدُ كلِّ
+   * مقيمٍ وهاتفُه ونصوصُ طلباته، وتنزيلُها إلى متصفّح كلِّ زائرٍ تسريبٌ لا
+   * مبرّر له. فلا يَصل إلا الصفُّ المسؤولُ عنه السؤال.
+   *
+   * وما هنا **تسهيلٌ ومنعُ خطأ**، لا حراسة: الحراسةُ في Apps Script، لأن مَن
+   * أراد العبثَ تجاوز الصفحةَ وأرسل إلى الرابط مباشرةً.
+   */
+
+  const identityCache = { byEmail: {}, byName: {} };
+
+  function prevSheetId() {
+    return (AUH.config.spreadsheets && AUH.config.spreadsheets.survey) || '';
+  }
+
+  /** يُنقّي قيمةً قبل وضعها في استعلام gviz. */
+  function q(v) {
+    return String(v == null ? '' : v).replace(/['\\]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  /** الاسمُ المقترنُ بهذا البريد في استبيان الشهر الماضي، أو `''`. */
+  async function lookupNameByEmail(email) {
+    const key = String(email || '').toLowerCase();
+    if (!key) return '';
+    if (identityCache.byEmail[key] !== undefined) return identityCache.byEmail[key];
+
+    let name = '';
+    try {
+      const rows = await AUH.data.gviz.fetchQuery(
+        prevSheetId(), '0',
+        `select B, C where lower(B) = '${q(key).toLowerCase()}'`,
+        'ربط البريد بالاسم'
+      );
+      if (rows && rows.length > 1) {
+        for (let i = rows.length - 1; i >= 1; i--) {
+          const v = String(rows[i][1] == null ? '' : rows[i][1]).trim();
+          if (v) { name = v; break; }               // آخرُ صفٍّ هو الأحدث
+        }
+      }
+    } catch (err) {
+      // يُسجَّل ولا يُبتلع: `catch` الصامتُ هو ما أخفى خطأً حقيقيّاً هنا
+      // (دالّةٌ غيرُ مستورَدة) فبدا الفحصُ كأنه عمل ولم يَعمل.
+      log.warn('surveyForm', 'تعذّر ربطُ البريد بالاسم: ' + (err && err.message));
+    }
+
+    identityCache.byEmail[key] = name;
+    return name;
+  }
+
+  /**
+   * هل هذا الاسمُ مقترنٌ ببريدٍ في الشهر الماضي؟ يُعيد البريدَ أو `''`.
+   *
+   * ويُستعلم بكلمتَين من الاسم (الأولى والأخيرة) لا بالاسم كاملاً، لأن
+   * المطابقةَ الحرفيّةَ تَسقط على فراغٍ زائدٍ أو همزةٍ مختلفة. ثم تُقارَن
+   * النتائجُ القليلةُ بالتطبيع العربي هنا.
+   */
+  async function lookupEmailByName(name) {
+    const full = String(name || '').trim();
+    if (!full) return '';
+    const key = normAr(full);
+    if (identityCache.byName[key] !== undefined) return identityCache.byName[key];
+
+    const parts = full.split(/\s+/).filter(Boolean);
+    const probes = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : [parts[0]];
+    const where = probes.map(w => `C contains '${q(w)}'`).join(' and ');
+
+    let owner = '';
+    try {
+      const rows = await AUH.data.gviz.fetchQuery(
+        prevSheetId(), '0', `select B, C where ${where}`, 'صاحبُ الاسم'
+      );
+      if (rows && rows.length > 1) {
+        for (let i = 1; i < rows.length; i++) {
+          const nm = String(rows[i][1] == null ? '' : rows[i][1]).trim();
+          const em = String(rows[i][0] == null ? '' : rows[i][0]).trim().toLowerCase();
+          if (nm && em && normAr(nm) === key) { owner = em; break; }
+        }
+      }
+    } catch (err) {
+      log.warn('surveyForm', 'تعذّرت قراءةُ صاحبِ الاسم: ' + (err && err.message));
+      identityCache.byName[key] = undefined;       // لا نُثبّت نتيجةً خاطئة
+      throw err;                                   // ليَظهر أثرُه في الإرسال
+    }
+
+    identityCache.byName[key] = owner;
+    return owner;
+  }
+
   /* ═══════════════════════ الدخولُ بـ Google ═══════════════════════ */
 
   let gisLoading = null;
@@ -291,13 +389,23 @@
     state.gateError = '';
     render({ rebuild: true });
 
-    api.authenticate(credentials).then(d => {
+    api.authenticate(credentials).then(async d => {
       state.session = {
         nonce: d.nonce, email: d.email, verified: d.verified,
         answered: !!d.answered, prev: d.prev || null,
         boundName: d.boundName || '',
         idToken: credentials.idToken || ''
       };
+
+      /*
+       * الخادمُ قد لا يُرسل الاسمَ المقترن (نسخةٌ منشورةٌ أقدم). فنَقرأه من
+       * شيت الشهر الماضي مباشرةً — فلا يَتعطّل الملءُ التلقائيُّ أبداً
+       * بسبب نسخةٍ لم تُنشَر بعد.
+       */
+      if (!state.session.boundName) {
+        try { state.session.boundName = await lookupNameByEmail(d.email); } catch (err) {}
+      }
+
       state.busy = '';
       state.step = 'form';
       prefill();
@@ -438,7 +546,7 @@
 
   /* ═══════════════════════════ الإرسال ═══════════════════════════ */
 
-  function doSubmit() {
+  async function doSubmit() {
     if (state.busy) return;
     state.formError = '';
 
@@ -447,6 +555,41 @@
       render({ rebuild: true });
       focusFirstError();
       return;
+    }
+
+    /*
+     * اسمٌ مقترنٌ ببريدٍ آخر: يُوقَف هنا قبل الإرسال.
+     *
+     * والفحصُ عند الضغط لا عند الاختيار، لأنه يَحتاج طلبَ شبكة — فلا يُثقَّل
+     * كلُّ نقرةٍ في القائمة. والخادمُ يُعيد الفحصَ على كلِّ حال.
+     */
+    if (!state.session.boundName) {
+      state.busy = ' ';
+      render({ rebuild: true });
+      let owner = '', lookupFailed = false;
+      try {
+        owner = await lookupEmailByName(state.answers.name);
+      } catch (err) {
+        lookupFailed = true;
+        log.warn('surveyForm', 'فحصُ الاسم تعذّر: ' + (err && err.message));
+      }
+      state.busy = '';
+
+      if (lookupFailed) {
+        // لا نَمرّ على فحصٍ لم يَجرِ: الخادمُ هو الحَكَم، لكنّ المقيمَ يُخبَر.
+        state.formError = 'تعذّر التحقّق من الاسم الآن. أعد المحاولة بعد لحظات.';
+        render({ rebuild: true });
+        return;
+      }
+
+      if (owner && owner !== String(state.session.email || '').toLowerCase()) {
+        state.fieldErrors.name = 'هذا الاسم مسجَّل ببريد آخر في استبيان الشهر الماضي.';
+        state.formError = 'هذا الاسم مسجَّل ببريد آخر في استبيان الشهر الماضي. ' +
+          'اكتب البريد الذي عبّأت به الشهر الماضي، أو راجع المسؤول إن تغيّر بريدك.';
+        render({ rebuild: true });
+        focusFirstError();
+        return;
+      }
     }
 
     const a = state.answers;
