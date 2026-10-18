@@ -183,6 +183,64 @@
     return app && app.rosterModelFor ? app.rosterModelFor(1) : (app && app.residentsModel);
   }
 
+  /**
+   * يَردّ اسماً كما كُتب في استبيان الشهر الماضي إلى صيغته في **لائحة المقيمين**.
+   *
+   * ولولا هذا لَتعطّل ١١٪ من المقيمين تعطّلاً صامتاً: ثمانيةَ عشرَ اسماً في
+   * شيت الشهر الماضي لا تُطابق اللائحةَ حرفاً بحرف — «عبدالله» مقابل «عبد
+   * الله»، و«آية قباوة» مقابل «آيه أحمد قباوه». وكان الاسمُ يُقفَل على صيغةِ
+   * الشيت، فيَرفضها التحقّقُ لأنها ليست في اللائحة، **والحقلُ المقفلُ لا
+   * يَعرض خطأً** — فيَرى المقيمُ «راجِع الحقولَ المعلَّمة بالأحمر» ولا شيءَ
+   * أحمرَ أمامه، ولا يَستطيع الإرسالَ أبداً.
+   *
+   * أربعُ محاولاتٍ بالترتيب، وكلٌّ منها لا تُقبل إلا إن أعطت **مرشَّحاً
+   * واحداً**: التطابقُ المطبَّع، ثم إسقاطُ المسافات («عبدالله» = «عبد الله»)،
+   * ثم احتواءُ الكلمات (الاسمُ المختصرُ داخل الكامل)، ثم الاحتواءُ بلا
+   * مسافات. وإن بقي غامضاً رُدَّ فارغاً — فيَختار المقيمُ اسمَه من القائمة،
+   * وهو أسلمُ من أن نُخمّن له.
+   */
+  function resolveToRoster(name) {
+    const people = roster();
+    if (!people.length || !name) return '';
+
+    const tight = v => normAr(v).replace(/\s+/g, '');
+    const key = normAr(name);
+    const keyTight = tight(name);
+    const pick = list => (list.length === 1 ? list[0].name : '');
+
+    let hit = pick(people.filter(r => normAr(r.name) === key));
+    if (hit) return hit;
+
+    hit = pick(people.filter(r => tight(r.name) === keyTight));
+    if (hit) return hit;
+
+    const want = key.split(' ').filter(Boolean);
+    hit = pick(people.filter(r => {
+      const have = normAr(r.name).split(' ').filter(Boolean);
+      return want.every(t => have.indexOf(t) >= 0) || have.every(t => want.indexOf(t) >= 0);
+    }));
+    if (hit) return hit;
+
+    return pick(people.filter(r => {
+      const t = tight(r.name);
+      return t.indexOf(keyTight) >= 0 || keyTight.indexOf(t) >= 0;
+    }));
+  }
+
+  /** كلُّ الفروز المذكورة في اللائحة، للإكمال التلقائي. */
+  function knownRotations() {
+    const model = rosterModel();
+    if (!model) return [];
+    const seen = {};
+    (model.residents || []).forEach(r => {
+      Object.keys(r.shifts || {}).forEach(k => {
+        const v = String((r.shifts || {})[k] || '').trim();
+        if (v && v !== '-' && v.length < 60) seen[v] = true;
+      });
+    });
+    return Object.keys(seen).sort((a, b) => a.localeCompare(b, 'ar'));
+  }
+
   /** يُعبّئ الاختصارَ والهاتفَ وفرزَ الشهر المُقيَّم من الشيت نفسِه. */
   /**
    * يُعيد `true` إن وَجد المقيمَ في اللائحة فعلاً.
@@ -454,8 +512,17 @@
      * تُرك ما في المسوّدةِ ظاهراً لَملأ المقيمُ النموذجَ كلَّه ثم رُفض عند
      * الإرسال — وهو أسوأُ من أن يَجد اسمَه مُثبَّتاً من البداية.
      */
-    const bound = state.session && state.session.boundName;
-    if (bound) state.answers.name = bound;
+    /*
+     * الاسمُ المقترنُ يُقفَل **فقط** إن وُجد في اللائحة. وإلّا تُفتح القائمةُ
+     * ليَختار — فلا يَقع في طريقٍ مسدودٍ بلا علامةٍ حمراء.
+     */
+    const sess = state.session || {};
+    if (sess.boundName) {
+      const resolved = resolveToRoster(sess.boundName);
+      sess.boundResolved = resolved;
+      if (resolved) state.answers.name = resolved;
+      else if (!state.answers.name) state.answers.name = '';
+    }
 
     if (state.answers.name && !state.answers.abbr) fillFromRoster(state.answers.name);
 
@@ -508,12 +575,12 @@
     if (!a.name) e.name = 'اختر اسمَك من القائمة.';
     else if (names.indexOf(a.name) < 0) e.name = 'هذا الاسمُ ليس في لائحة المقيمين.';
 
-    if (a.phone && !/^\+?\d{7,15}$/.test(a.phone.replace(/[^\d+]/g, ''))) e.phone = 'رقمٌ غيرُ صالح.';
+    if (a.phone && !/^\+?\d{7,15}$/.test(toAscii(a.phone).replace(/[^\d+]/g, ''))) e.phone = 'رقمٌ غيرُ صالح.';
     if (!a.rotation.trim()) e.rotation = 'اكتب فرزَك في شهر ' + prevMonthInfo().label + '.';
 
-    const relief = Number(a.reliefCount);
-    if (a.reliefCount === '' || !Number.isInteger(relief) || relief < 0 || relief > 31) {
-      e.reliefCount = 'رقمٌ بين 0 و31.';
+    const relief = Number(toAscii(a.reliefCount).replace(/[^\d]/g, ''));
+    if (String(a.reliefCount).trim() === '' || !Number.isInteger(relief) || relief < 0 || relief > 31) {
+      e.reliefCount = 'اكتب رقماً بين 0 و31.';
     }
     if (!a.difficulty) e.difficulty = 'اختر درجةً من 1 إلى 10.';
     if (!a.scheduleRating) e.scheduleRating = 'اختر درجةً من 1 إلى 10.';
@@ -563,7 +630,16 @@
      * والفحصُ عند الضغط لا عند الاختيار، لأنه يَحتاج طلبَ شبكة — فلا يُثقَّل
      * كلُّ نقرةٍ في القائمة. والخادمُ يُعيد الفحصَ على كلِّ حال.
      */
-    if (!state.session.boundName) {
+    /*
+     * الاسمُ قابلٌ للتعديل دائماً — فقد يُخطئ الردُّ الآليُّ في اسمٍ مختصر.
+     * والفحصُ يَجري كلّما اختلف المختارُ عن المقترنِ ببريده: إن كان الاسمُ
+     * الجديدُ حرّاً مُرّ، وإن كان مقترناً بزميلٍ آخرَ وُقف. فالتصحيحُ مفتوح،
+     * والانتحالُ مسدود.
+     */
+    const boundNow = (state.session.boundResolved || '');
+    const differs = !boundNow || normAr(state.answers.name) !== normAr(boundNow);
+
+    if (differs) {
       state.busy = ' ';
       render({ rebuild: true });
       let owner = '', lookupFailed = false;
@@ -596,9 +672,9 @@
     const payload = {
       name: a.name,
       abbr: a.abbr,
-      phone: a.phone,
       rotation: a.rotation.trim(),
-      reliefCount: Number(a.reliefCount),
+      phone: digitsOnly(a.phone),
+      reliefCount: Number(toAscii(a.reliefCount).replace(/[^\d]/g, '')),
       difficulty: Number(a.difficulty),
       days: a.days.slice().sort((x, y) => x - y),
       reason: a.days.length ? a.reason.trim() : '',
@@ -863,7 +939,9 @@ ${answered}`;
     const m = monthInfo();
     const p = prevMonthInfo();
     const people = roster();
-    const bound = !!(state.session && state.session.boundName);
+    const rotations = knownRotations();
+    const bound = !!(state.session && state.session.boundResolved);
+    const boundRaw = (state.session && state.session.boundName) || '';
 
     if (!people.length) {
       return `
@@ -890,15 +968,6 @@ ${answered}`;
   <section class="sf-card">
     <div class="sf-sec"><span class="sf-num">١</span><h3>مَن أنت</h3></div>
 
-    ${bound ? `
-    <div class="sf-field" data-field="name">
-      <label>الاسم الثلاثي</label>
-      <div class="sf-locked">
-        <i class="fas fa-lock"></i>
-        <span>${esc(a.name)}</span>
-      </div>
-      <div class="sf-hint">هذا الاسم مقترن ببريدك في استبيان الشهر الماضي.</div>
-    </div>` : `
     <div class="sf-field" data-field="name">
       <label for="sfName">الاسم الثلاثي <span class="sf-req">*</span></label>
       <input class="sf-input sf-search" id="sfNameSearch" type="search" autocomplete="off"
@@ -907,9 +976,13 @@ ${answered}`;
         <option value="">— اختر اسمَك —</option>
         ${options}
       </select>
-      <div class="sf-hint" id="sfNameHint">${people.length} اسماً في اللائحة. الاختصارُ والهاتفُ والفرزُ تُعبَّأ تلقائياً.</div>
+      <div class="sf-hint" id="sfNameHint">${bound
+        ? `مُعبَّأٌ من بريدك — عدّله إن لم يكن اسمك.`
+        : boundRaw
+          ? `بريدك مسجَّل باسم «${esc(boundRaw)}» ولم نجده في اللائحة حرفياً — اختر اسمك منها.`
+          : `${people.length} اسماً في اللائحة. الاختصارُ والهاتفُ والفرزُ تُعبَّأ تلقائياً.`}</div>
       ${errOf('name')}
-    </div>`}
+    </div>
 
     <div class="sf-grid2">
       <div class="sf-field">
@@ -933,14 +1006,19 @@ ${answered}`;
       <div class="sf-field" data-field="rotation">
         <label for="sfRotation">الفرز <span class="sf-req">*</span></label>
         <input class="${cls('rotation', 'sf-input')}" id="sfRotation" type="text"
-               value="${esc(a.rotation)}" placeholder="مثلاً: دموية">
-        <div class="sf-hint">مُعبَّأٌ من شيت القسم — صحّحه إن كان خطأً.</div>
+               list="sfRotationList" autocomplete="off"
+               value="${esc(a.rotation)}" placeholder="اكتب أو اختر من القائمة">
+        <datalist id="sfRotationList">
+          ${rotations.map(v => `<option value="${esc(v)}"></option>`).join('')}
+        </datalist>
+        <div class="sf-hint">مُعبَّأٌ من شيت القسم — صحّحه إن كان خطأً. والقائمة فيها ${rotations.length} فرزاً.</div>
         ${errOf('rotation')}
       </div>
       <div class="sf-field" data-field="reliefCount">
         <label for="sfRelief">عدد التفريغات <span class="sf-req">*</span></label>
-        <input class="${cls('reliefCount', 'sf-input')}" id="sfRelief" type="number"
-               inputmode="numeric" min="0" max="31" step="1" value="${esc(a.reliefCount)}" placeholder="0">
+        <input class="${cls('reliefCount', 'sf-input')}" id="sfRelief" type="text"
+               inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off"
+               value="${esc(a.reliefCount)}" placeholder="0">
         <div class="sf-hint">اكتب 0 إن لم يكن هناك تفريغ.</div>
         ${errOf('reliefCount')}
       </div>
@@ -1255,9 +1333,9 @@ ${answered}`;
 
     /* الحقولُ النصّية */
     bindText(host, '#sfAbbr', 'abbr');
-    bindText(host, '#sfPhone', 'phone');
+    bindText(host, '#sfPhone', 'phone', digitsOnly);
     bindText(host, '#sfRotation', 'rotation');
-    bindText(host, '#sfRelief', 'reliefCount');
+    bindText(host, '#sfRelief', 'reliefCount', countOnly);
     bindText(host, '#sfReason', 'reason');
     bindText(host, '#sfProblems', 'scheduleProblems');
     bindText(host, '#sfNotes', 'notes');
@@ -1318,15 +1396,37 @@ ${answered}`;
     }
   }
 
-  function bindText(host, selector, key) {
+  /**
+   * `clean` يُنقّي ما كُتب **في الحقل نفسِه** لا في الحالة وحدها.
+   *
+   * ولوحةُ المفاتيح العربيّةُ على الهاتف تُدخل «٢» لا «2»، و`Number('٢')`
+   * يُعطي NaN — فيَفشل التحقّقُ على حقلٍ يَراه المقيمُ ممتلئاً. التحويلُ
+   * هنا يُنهي هذا الصنفَ من الأعطال قبل أن يَقع.
+   */
+  function bindText(host, selector, key, clean) {
     const el = host.querySelector(selector);
     if (!el) return;
     el.addEventListener('input', () => {
+      if (clean) {
+        const before = el.value;
+        const after = clean(before);
+        if (after !== before) {
+          const atEnd = el.selectionStart === before.length;
+          el.value = after;
+          if (!atEnd) { try { el.setSelectionRange(after.length, after.length); } catch (e) {} }
+        }
+      }
       state.answers[key] = el.value;
       if (state.fieldErrors[key]) { delete state.fieldErrors[key]; clearFieldError(host, key); }
       saveDraft();
     });
   }
+
+  const toAscii = v => AUH.text.toAsciiDigits(String(v == null ? '' : v));
+  /** الهاتف: أرقامٌ و«+» البادئة لا غير. */
+  const digitsOnly = v => toAscii(v).replace(/(?!^\+)[^\d]/g, '').slice(0, 16);
+  /** عدد التفريغات: رقمان على الأكثر، بلا أصفارٍ بادئة زائدة. */
+  const countOnly = v => toAscii(v).replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '').slice(0, 2);
 
   /** يُزيل علامةَ الخطأ فوراً عند التصحيح، بلا إعادةِ بناءٍ تَفقد المؤشّر. */
   function clearFieldError(host, key) {
