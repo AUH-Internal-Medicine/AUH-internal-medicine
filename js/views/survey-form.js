@@ -350,45 +350,6 @@
     return name;
   }
 
-  /**
-   * هل هذا الاسمُ مقترنٌ ببريدٍ في الشهر الماضي؟ يُعيد البريدَ أو `''`.
-   *
-   * ويُستعلم بكلمتَين من الاسم (الأولى والأخيرة) لا بالاسم كاملاً، لأن
-   * المطابقةَ الحرفيّةَ تَسقط على فراغٍ زائدٍ أو همزةٍ مختلفة. ثم تُقارَن
-   * النتائجُ القليلةُ بالتطبيع العربي هنا.
-   */
-  async function lookupEmailByName(name) {
-    const full = String(name || '').trim();
-    if (!full) return '';
-    const key = normAr(full);
-    if (identityCache.byName[key] !== undefined) return identityCache.byName[key];
-
-    const parts = full.split(/\s+/).filter(Boolean);
-    const probes = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : [parts[0]];
-    const where = probes.map(w => `C contains '${q(w)}'`).join(' and ');
-
-    let owner = '';
-    try {
-      const rows = await AUH.data.gviz.fetchQuery(
-        prevSheetId(), '0', `select B, C where ${where}`, 'صاحبُ الاسم'
-      );
-      if (rows && rows.length > 1) {
-        for (let i = 1; i < rows.length; i++) {
-          const nm = String(rows[i][1] == null ? '' : rows[i][1]).trim();
-          const em = String(rows[i][0] == null ? '' : rows[i][0]).trim().toLowerCase();
-          if (nm && em && normAr(nm) === key) { owner = em; break; }
-        }
-      }
-    } catch (err) {
-      log.warn('surveyForm', 'تعذّرت قراءةُ صاحبِ الاسم: ' + (err && err.message));
-      identityCache.byName[key] = undefined;       // لا نُثبّت نتيجةً خاطئة
-      throw err;                                   // ليَظهر أثرُه في الإرسال
-    }
-
-    identityCache.byName[key] = owner;
-    return owner;
-  }
-
   /* ═══════════════════════ الدخولُ بـ Google ═══════════════════════ */
 
   let gisLoading = null;
@@ -645,42 +606,15 @@
      * كلُّ نقرةٍ في القائمة. والخادمُ يُعيد الفحصَ على كلِّ حال.
      */
     /*
-     * الاسمُ قابلٌ للتعديل دائماً — فقد يُخطئ الردُّ الآليُّ في اسمٍ مختصر.
-     * والفحصُ يَجري كلّما اختلف المختارُ عن المقترنِ ببريده: إن كان الاسمُ
-     * الجديدُ حرّاً مُرّ، وإن كان مقترناً بزميلٍ آخرَ وُقف. فالتصحيحُ مفتوح،
-     * والانتحالُ مسدود.
+     * **لا يُحجب أحد.**
+     *
+     * كان الاسمُ المخالفُ للاقتران يُوقف الإرسال، فأوقف أناساً لا ذنبَ لهم:
+     * خطأٌ إملائيٌّ في اسم الشهر الماضي، أو بريدٌ حُذف من الشيت القديم، أو
+     * مسافةٌ واحدةٌ («سعاد سعدالله» مقابل «سعاد سعد الله»). وضياعُ جوابِ
+     * مُحقٍّ أسوأُ من مرورِ مُبطلٍ يُكشف في عمودٍ أمام بانِي الجدول.
+     *
+     * فالخادمُ يُسجّل الملاحظةَ في عمود «ملاحظة التحقّق» ويَقبل الجواب.
      */
-    const boundNow = (state.session.boundResolved || '');
-    const differs = !boundNow || normAr(state.answers.name) !== normAr(boundNow);
-
-    if (differs) {
-      state.busy = ' ';
-      render({ rebuild: true });
-      let owner = '', lookupFailed = false;
-      try {
-        owner = await lookupEmailByName(state.answers.name);
-      } catch (err) {
-        lookupFailed = true;
-        log.warn('surveyForm', 'فحصُ الاسم تعذّر: ' + (err && err.message));
-      }
-      state.busy = '';
-
-      if (lookupFailed) {
-        // لا نَمرّ على فحصٍ لم يَجرِ: الخادمُ هو الحَكَم، لكنّ المقيمَ يُخبَر.
-        state.formError = 'تعذّر التحقّق من الاسم الآن. أعد المحاولة بعد لحظات.';
-        render({ rebuild: true });
-        return;
-      }
-
-      if (owner && owner !== String(state.session.email || '').toLowerCase()) {
-        state.fieldErrors.name = 'هذا الاسم مسجَّل ببريد آخر في استبيان الشهر الماضي.';
-        state.formError = 'هذا الاسم مسجَّل ببريد آخر في استبيان الشهر الماضي. ' +
-          'اكتب البريد الذي عبّأت به الشهر الماضي، أو راجع المسؤول إن تغيّر بريدك.';
-        render({ rebuild: true });
-        focusFirstError();
-        return;
-      }
-    }
 
     const a = state.answers;
     const payload = {
