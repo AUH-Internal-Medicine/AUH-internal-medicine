@@ -69,6 +69,11 @@
     return (AUH.config && AUH.config.surveyForm) || {};
   }
 
+  /** أُغلق بابُ التقديم والتعديل؟ */
+  function isClosed() {
+    return !!cfg().closed;
+  }
+
   function monthInfo() {
     const c = cfg();
     const month = Number(c.month) || 11;
@@ -438,8 +443,14 @@
        * ما كتبه، فلا يَظنّ عملَه ضائعاً.
        */
       const hasDraft = state.prefilledFrom === 'draft';
-      state.viewingSaved = !!(state.session.answered && !hasDraft);
-      state.step = state.viewingSaved ? 'sent' : 'form';
+      if (isClosed()) {
+        // بابٌ مغلق: لا نموذجَ ولا مسوّدة — عرضُ المسجَّل وحدَه.
+        state.viewingSaved = true;
+        state.step = 'sent';
+      } else {
+        state.viewingSaved = !!(state.session.answered && !hasDraft);
+        state.step = state.viewingSaved ? 'sent' : 'form';
+      }
 
       render({ rebuild: true });
       if (!state.viewingSaved) focusFirstField();
@@ -589,7 +600,7 @@
   /* ═══════════════════════════ الإرسال ═══════════════════════════ */
 
   async function doSubmit() {
-    if (state.busy) return;
+    if (state.busy || isClosed()) return;
     state.formError = '';
 
     if (!validateLocal()) {
@@ -671,6 +682,7 @@
   }
 
   function editAgain() {
+    if (isClosed()) return;
     state.step = 'form';
     state.saved = null;
     state.viewingSaved = false;
@@ -705,7 +717,8 @@
       roster().length,
       [state.answers.abbr, state.answers.phone, state.answers.rotation].map(v => v ? '1' : '0').join(''),
       state.saved ? 'saved' : '-',
-      state.viewingSaved ? 'view' : '-'
+      state.viewingSaved ? 'view' : '-',
+      isClosed() ? 'closed' : 'open'
     ].join('¦');
 
     if (!(opts && opts.rebuild) && sig === state.signature && host.childElementCount) return;
@@ -779,7 +792,12 @@
     return `
 <div class="sf-head">
   <h2>استبيان شهر ${esc(String(m.month))}</h2>
-</div>`;
+</div>
+${isClosed() ? `
+<div class="sf-closed">
+  <i class="fas fa-lock"></i>
+  <span>انتهت مدّة التقديم والتعديل على الاستبيان.</span>
+</div>` : ''}`;
   }
 
   /* ──────────────────────────── بوّابةُ الهويّة ──────────────────────────── */
@@ -806,15 +824,17 @@
     <div class="sf-gate-why">
       <i class="fas fa-envelope-circle-check"></i>
       <div>
-        <strong>اكتب بريدَك الإلكتروني.</strong>
-        <span>به يُعرَف أن الجوابَ منك، وبه تُعدّل جوابَك لاحقاً.</span>
+        <strong>اكتب بريدَك الإلكتروني${isClosed() ? ' لعرض جوابك' : ''}.</strong>
+        <span>${isClosed()
+          ? 'البريدُ نفسُه الذي أرسلتَ به جوابَك.'
+          : 'به يُعرَف أن الجوابَ منك، وبه تُعدّل جوابَك لاحقاً.'}</span>
       </div>
     </div>
     <div class="sf-row sf-row-tight">
       <input class="sf-input" id="sfEmail" type="email" inputmode="email" dir="ltr"
              autocomplete="email" placeholder="name@gmail.com" value="${esc(state.emailTyped)}">
       <button class="sf-btn sf-btn-main" id="sfEmailGo" type="button">
-        <i class="fas fa-arrow-left"></i> متابعة
+        <i class="fas ${isClosed() ? 'fa-eye' : 'fa-arrow-left'}"></i> ${isClosed() ? 'عرض جوابي' : 'متابعة'}
       </button>
     </div>
     `;
@@ -1151,6 +1171,22 @@ ${compact ? '' : answered}`;
     const replaced = state.saved && state.saved.replaced;
     const viewing = state.viewingSaved;
     const when = (state.session && state.session.prev && state.session.prev.when) || '';
+    const closed = isClosed();
+    const hasAnswer = !!(state.session && state.session.answered);
+
+    // بابٌ مغلقٌ وبريدٌ بلا جواب: لا ملخّصَ يُعرض، فيُقال له ذلك صراحةً.
+    if (closed && !hasAnswer) {
+      return `
+<div class="sf-wrap">
+  <div class="sf-card sf-done sf-center">
+    <div class="sf-done-mark sf-mark-quiet"><i class="fas fa-inbox"></i></div>
+    <h3>لا جواب مسجَّل بهذا البريد</h3>
+    <p class="sf-note sf-dim" style="justify-content:center">
+      إن كنت أرسلت جوابك ببريد آخر فجرّبه، أو راجع المسؤول.
+    </p>
+  </div>
+</div>`;
+    }
 
     const sorted = a.days.slice().sort((x, y) => x - y);
     const dayChips = sorted.length
@@ -1197,7 +1233,8 @@ ${compact ? '' : answered}`;
       <div class="sf-done-mark"><i class="fas fa-check"></i></div>
       <h3>${viewing ? 'هذا جوابك المسجَّل' : replaced ? 'حُدِّث جوابك' : 'وصل جوابك'}</h3>
       <p>${viewing
-        ? (when ? 'أُرسل في ' + esc(when) + '. ' : '') + 'عدّله متى شئت ما دام الاستبيان مفتوحاً.'
+        ? (when ? 'أُرسل في ' + esc(when) + '.' : '') +
+          (closed ? '' : ' عدّله متى شئت ما دام الاستبيان مفتوحاً.')
         : replaced
           ? 'استُبدل جوابك السابق. يُقرأ الأخير وحده.'
           : 'سُجِّل جوابك. شكراً لك.'}</p>
@@ -1205,9 +1242,10 @@ ${compact ? '' : answered}`;
 
     <dl class="sf-sum">${rows}</dl>
 
+    ${closed ? '' : `
     <button class="sf-btn sf-btn-main sf-btn-big" id="sfEdit" type="button">
       <i class="fas fa-pen"></i> تعديل جوابي
-    </button>
+    </button>`}
   </div>
 </div>`;
   }
