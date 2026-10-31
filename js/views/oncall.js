@@ -96,7 +96,6 @@
       const sel = ds === this.selectedOncallDate;
       const pa = ds < this.today;
 
-      const hasVolunteer = this.adjustmentAdditions.some(a => a.date === ds);
       const holidayName = this.getHolidayName(ds);
 
       let cls = 'calendar-day';
@@ -105,14 +104,13 @@
       if (pa && !sel) cls += ' past-day';
       if (di === 5 || di === 6) cls += ' weekend';
       if (holidayName) cls += ' official-holiday';
-      if (hasVolunteer) cls += ' has-volunteer';
 
       const holidayMark = holidayName
         ? `<span class="calendar-holiday-star" title="${escapeHtml(holidayName)}"><i class="fas fa-star"></i></span>` +
           `<span class="calendar-holiday-name">${escapeHtml(holidayName)}</span>`
         : '';
 
-      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')"${holidayName ? ` title="${escapeHtml(holidayName)}"` : ''}>${day}${holidayMark}${hasVolunteer ? '<span class="calendar-volunteer-dot" title="مناوبة تطوعية إضافية"></span>' : ''}</div>`;
+      h += `<div class="${cls}" onclick="app.clickCalendarDay('${ds}')"${holidayName ? ` title="${escapeHtml(holidayName)}"` : ''}>${day}${holidayMark}</div>`;
     }
 
     h += '</div></div>';
@@ -244,22 +242,140 @@
   },
 
   /**
-   * «إسعاف مركز» في الشهر الانتقاليّ: البطاقةُ واحدة، لكن داخلها مجموعتان
-   * «نهاري» و«ليلي» كما كان الشيتُ يكتبهما — فيعرف كلُّ مناوبٍ أين اسمُه.
+   * مناوبو نفس الفرز — ليس فئة المناوبة اليومية، بل «فرز شهر N» في لائحة
+   * المقيمين (`residentsModel.getShift`): من يشاركون نفس الفرز/الرواية، ومن
+   * بينهم من يناوب في **اليوم المختار على التقويم** (`this.selectedOncallDate`
+   * — افتراضياً اليوم الحقيقي، ويتغيّر مع كلّ نقرة على يوم آخر). مبنيّةٌ على
+   * `this.doctorStats` الجاهزة (فيها كلّ مناوبةٍ مع تصنيف المجموعة وعلامة
+   * الليلية)، لا على مسحٍ جديد للجدول.
    *
-   * تُعاد `null` إذا لم يكن اليومُ في ذلك الشهر، أو لم يُدمَج، أو لم يُعرف
-   * النصفان — وحينها تُرسم البطاقةُ مجموعةً واحدة كأيّ فئةٍ أخرى.
-   * وأيُّ اسمٍ لا يُطابق نصفاً (إضافةٌ تطوعية مثلاً) يُلحق بمجموعة «غير مقسوم»
-   * ولا يُحذف أبداً.
+   * الفرزُ يخصّ السنة الأولى فقط (لا عمود «فرز» للسنة الثانية)، والشهرُ الذي
+   * يُشتقّ منه فرزُ كلّ مقيم هو شهر **اليوم المختار نفسه**، لا شهر اليوم
+   * الحقيقي ولا شهر التقويم المعروض بالضرورة (عادةً نفس الشيء، لكن الدقّة هنا
+   * تمنع أي تضاربٍ لو اختلفا).
    */
-  emergencyCenterHalves(categoryName, dstr, names) {
+  shiftGroupOptions() {
+    const month = parseInt((this.selectedOncallDate || this.today).split('-')[1], 10);
+    const groups = this.dataset.residents.groupByShift(month);
+    return Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ar'));
+  },
+
+  syncShiftGroupOptions() {
+    const list = document.getElementById('shiftGroupOptionsList');
+    if (!list) return;
+    const options = this.shiftGroupOptions();
+    const signature = `${this.selectedOncallDate}:${options.join('|')}`;
+    if (list.dataset.signature === signature) return;
+    list.innerHTML = options.map(o => `<option value="${this.escapeHtml(o)}"></option>`).join('');
+    list.dataset.signature = signature;
+  },
+
+  toggleShiftGroupFinder() {
+    const wrap = document.getElementById('shiftGroupFinderWrap');
+    if (!wrap) return;
+    if (wrap.style.display === 'none' || !wrap.style.display) {
+      this.renderShiftGroupFinder();
+      wrap.style.display = 'block';
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      wrap.style.display = 'none';
+    }
+  },
+
+  /** Re-renders the panel whenever the selected on-call day changes, only when it is actually open. */
+  refreshShiftGroupFinderIfOpen() {
+    const wrap = document.getElementById('shiftGroupFinderWrap');
+    if (wrap && wrap.style.display !== 'none') this.renderShiftGroupFinder();
+  },
+
+  searchShiftGroup(value) {
+    this.shiftGroupQuery = value || '';
+    this.renderShiftGroupResults();
+  },
+
+  renderShiftGroupFinder() {
+    const wrap = document.getElementById('shiftGroupFinderWrap');
+    if (!wrap) return;
+    const head = '<div class="oncall-raw-modal-head"><h4><i class="fas fa-people-group"></i> مناوبو نفس الفرز</h4><button class="oncall-raw-close-btn" onclick="app.toggleShiftGroupFinder()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button></div>';
+    const dstr = this.selectedOncallDate || this.today;
+    const dayLine = `<div class="shift-group-day"><i class="fas fa-calendar-day"></i> اليوم المختار: <strong>${getDayName(dstr)} ${dstr}</strong> — غيّره من التقويم فوق.</div>`;
+    const search = `<div class="shift-group-search"><input type="text" id="shiftGroupInput" list="shiftGroupOptionsList" placeholder="اكتب اسم الفرز أو اختره — مثلاً: سابع" value="${this.escapeHtml(this.shiftGroupQuery || '')}" oninput="app.searchShiftGroup(this.value)"><datalist id="shiftGroupOptionsList"></datalist></div><div id="shiftGroupResults" class="shift-group-results"></div>`;
+    wrap.innerHTML = head + dayLine + search;
+    this.syncShiftGroupOptions();
+    this.renderShiftGroupResults();
+  },
+
+  renderShiftGroupResults() {
+    const el = document.getElementById('shiftGroupResults');
+    if (!el) return;
+
+    const query = (this.shiftGroupQuery || '').trim();
+    if (!query) {
+      el.innerHTML = '<p class="shift-group-empty">اكتب اسم الفرز أو اختره من اللائحة لترى مَن يناوب من أبناء فرزه في اليوم المختار.</p>';
+      return;
+    }
+
+    const dstr = this.selectedOncallDate || this.today;
+    const month = parseInt(dstr.split('-')[1], 10);
+    const groups = this.dataset.residents.groupByShift(month);
+
+    const matchKey = Object.keys(groups).find(k => normAr(k) === normAr(query)) ||
+      Object.keys(groups).find(k => normAr(k).includes(normAr(query)));
+
+    if (!matchKey) {
+      el.innerHTML = `<p class="shift-group-empty">لا يوجد فرزٌ باسم «${this.escapeHtml(query)}» في شهر هذا اليوم.</p>`;
+      return;
+    }
+
+    const residentsInGroup = groups[matchKey] || [];
+
+    const entries = [];
+    residentsInGroup.forEach(r => {
+      const stat = AUH.domain.doctorStats.findStatsFor(this.doctorStats, r.name, r.abbr);
+      (stat ? stat.assignments : []).forEach(a => {
+        if (a.date !== dstr) return;
+        entries.push(Object.assign({ name: r.name, abbr: r.abbr, phone: r.phone }, a));
+      });
+    });
+
+    // الترتيبُ المطلوب: إسعافُ الليل أوّلاً (الأشقّ، يحتاج تنسيقاً)، ثم باقي
+    // المناوبات (فرزهم الأصلي غالباً)، ثم إسعافُ النهار أخيراً.
+    const nightEmergency = entries.filter(e => e.group === 'emergency' && e.isNight);
+    const dayEmergency = entries.filter(e => e.group === 'emergency' && !e.isNight);
+    const rest = entries.filter(e => e.group !== 'emergency');
+
+    const rowHtml = e => `<div class="shift-group-row${e.isCompleted ? ' is-done' : ''}"><span class="sg-name">${mcn(e.name, e.phone, e.abbr)}</span><span class="sg-cat">${this.escapeHtml(e.category)}</span>${e.isCompleted ? '<i class="fas fa-check sg-done-icon" title="تمّت"></i>' : ''}</div>`;
+
+    const section = (title, icon, list) => list.length
+      ? `<div class="shift-group-section"><h5><i class="fas ${icon}"></i> ${title} <span class="count-badge">${list.length}</span></h5>${list.map(rowHtml).join('')}</div>`
+      : '';
+
+    const summary = `<div class="shift-group-summary"><i class="fas fa-circle-info"></i> <strong>${this.formatNumDisplay(residentsInGroup.length)}</strong> مقيم بفرز «${this.escapeHtml(matchKey)}» — <strong>${this.formatNumDisplay(entries.length)}</strong> منهم مناوبون يوم ${getDayName(dstr)} ${dstr}.</div>`;
+
+    el.innerHTML = summary +
+      section('إسعاف ليلي', 'fa-moon', nightEmergency) +
+      section('باقي المناوبات', 'fa-layer-group', rest) +
+      section('إسعاف نهاري', 'fa-sun', dayEmergency) +
+      (entries.length ? '' : '<p class="shift-group-empty">لا أحد منهم مناوبٌ في هذا اليوم.</p>');
+  },
+
+  /**
+   * فئةٌ مدموجة (مثل «إسعاف مركز») في شهرها الانتقاليّ: البطاقةُ واحدة، لكن
+   * داخلها مجموعتان كما كان الشيتُ يكتبهما قبل الدمج — فيعرف كلُّ مناوبٍ أين
+   * اسمُه. يعتمد على `splitMonth` في قاعدة الدمج نفسها (`oncall-schedule.js`).
+   *
+   * تُعاد `null` إذا لم يكن اليومُ في ذلك الشهر، أو لم تكن هذه فئةً مدموجة، أو
+   * لم تملك القاعدة شهراً انتقالياً أصلاً، أو لم يُعرف النصفان — وحينها تُرسم
+   * البطاقةُ مجموعةً واحدة كأيّ فئةٍ أخرى. وأيُّ اسمٍ لا يُطابق نصفاً (إضافةٌ
+   * تطوعية مثلاً) يُلحق بمجموعة «غير مقسوم» ولا يُحذف أبداً.
+   */
+  categoryMergeHalves(categoryName, dstr, names) {
     const rules = AUH.domain.oncallSchedule;
-    const month = rules.EMERGENCY_CENTER_SPLIT_MONTH;
-    if (!month || !dstr || dstr.slice(0, 7) !== month) return null;
-    if (normAr(categoryName) !== normAr(rules.EMERGENCY_CENTER_MERGED)) return null;
+    const rule = rules.mergeRuleForMerged(categoryName);
+    if (!rule || !rule.splitMonth || !dstr || dstr.slice(0, 7) !== rule.splitMonth) return null;
 
     const row = this.getOncRow(dstr);
-    const halves = row && row.emergencyCenterHalves;
+    const halves = row && row.mergeHalves && row.mergeHalves[rule.key];
     if (!halves || halves.length < 2) return null;
 
     const yearId = this.yearForTab ? this.yearForTab('oncall') : 1;
@@ -290,7 +406,7 @@
     return label || '';
   },
 
-  buildOncallCategoriesForDate(dstr, oncRows, oncHeaders, applyAdjustments, yearId) {
+  buildOncallCategoriesForDate(dstr, oncRows, oncHeaders, yearId) {
     const row = (oncRows || []).find(r => r.date === dstr);
     const cats = {};
 
@@ -310,24 +426,9 @@
           const ab = resident ? resident.abbr : n;
           if (cats[cn].find(x => x.abbr === ab)) continue;
 
-          const entryObj = { abbr: ab, name: fn, phone: ph, resAbbr: ab };
-          if (applyAdjustments) {
-            const overrideKey = `${dstr}|${ab}|${normAr(cn)}`;
-            if (this.adjustmentOverrides.has(overrideKey)) entryObj.hoursOverride = this.adjustmentOverrides.get(overrideKey);
-          }
-          cats[cn].push(entryObj);
+          cats[cn].push({ abbr: ab, name: fn, phone: ph, resAbbr: ab });
         }
       }
-    }
-
-    if (applyAdjustments) {
-      this.adjustmentAdditions
-        .filter(a => a.date === dstr)
-        .forEach(a => {
-          if (!cats[a.category]) cats[a.category] = [];
-          if (cats[a.category].find(x => x.abbr === a.abbr)) return;
-          cats[a.category].push({ abbr: a.abbr, name: a.name, phone: '', resAbbr: a.abbr, isVolunteer: true, hoursOverride: a.hours });
-        });
     }
 
     return cats;
@@ -359,14 +460,9 @@
       const schedule = isYear1 ? this.getCategorySchedule(cn, dstr) : null;
       const scheduleHtml = schedule && (schedule.time || schedule.duration) ? `<div class="oncall-schedule-meta${schedule.isHoliday ? ' holiday' : ''}"><span>${schedule.time || '-'}</span><span>${schedule.duration || '-'}</span></div>` : '';
 
-      const nameTag = n => {
-        let extra = '';
-        if (n.isVolunteer) extra = ` <span class="oncall-mini-badge volunteer">تطوعي · ${this.formatNumDisplay(n.hoursOverride)} س</span>`;
-        else if (n.hoursOverride !== undefined) extra = ` <span class="oncall-mini-badge adjusted">${this.formatNumDisplay(n.hoursOverride)} س</span>`;
-        return `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}${extra}</span>`;
-      };
+      const nameTag = n => `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}</span>`;
 
-      const halves = isYear1 ? this.emergencyCenterHalves(cn, dstr, names) : null;
+      const halves = isYear1 ? this.categoryMergeHalves(cn, dstr, names) : null;
       const teamed = !halves && this.teamedCategory(cn, isYear1) && names.length > 3;
       h += `<div class="oncall-category${schedule && schedule.isHoliday ? ' holiday' : ''}${teamed ? ' teamed' : ''}${halves ? ' halved' : ''}"><h4><span>${cn}</span><span class="cat-count">${names.length}</span></h4>${scheduleHtml}`;
 
@@ -415,12 +511,6 @@
       }
     }
 
-    this.adjustmentAdditions.forEach(a => {
-      if (a.date !== dateIso || normAr(a.category) !== normAr(category)) return;
-      if (a.abbr === excludeAbbr) return;
-      if (!list.find(x => x.abbr === a.abbr)) list.push({ name: a.name, abbr: a.abbr, phone: '' });
-    });
-
     return list;
   },
 
@@ -439,13 +529,14 @@
     this.selectedOncallDate = dstr;
     const picker = document.getElementById('oncallDatePicker');
     if (picker && picker.value !== dstr) picker.value = dstr;
+    this.refreshShiftGroupFinderIfOpen();
 
     const showY1 = this.oncallYearFilter === 'y1' || this.oncallYearFilter === 'y1y2';
     const showY2 = this.oncallYearFilter === 'y2' || this.oncallYearFilter === 'y1y2';
     const showBoth = this.oncallYearFilter === 'y1y2';
 
-    const cats1 = showY1 ? this.buildOncallCategoriesForDate(dstr, this.oncRows, this.oncHeaders, true, this.yearForTab ? this.yearForTab('oncall') : 1) : {};
-    const cats2 = showY2 ? this.buildOncallCategoriesForDate(dstr, this.oncRows2, this.oncHeaders2, false, 2) : {};
+    const cats1 = showY1 ? this.buildOncallCategoriesForDate(dstr, this.oncRows, this.oncHeaders, this.yearForTab ? this.yearForTab('oncall') : 1) : {};
+    const cats2 = showY2 ? this.buildOncallCategoriesForDate(dstr, this.oncRows2, this.oncHeaders2, 2) : {};
     const entries1 = Object.entries(cats1);
     const entries2 = Object.entries(cats2);
 

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>لوحة الاستبيان — مسؤول الجدول</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗂️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="survey.css?v=__BUILD_ID__">
+<script>
+/* ─────────────────────────────────────────────────────────────────────────
+   رمز الدخول. غيّره متى شئت — سطرٌ واحد.
+   واعلم ما هو: **سترٌ لا أمان.** الصفحة تُقرأ في متصفّح الزائر، فمن فتح
+   شيفرتها رأى الرمز. إن كانت الأسماء والأرقام لا يجوز أن تُرى، فلا تنشر هذه
+   الصفحة على الإنترنت أصلاً: افتحها من جهازك (نقراً مزدوجاً على الملف)،
+   فهي تعمل من القرص كما تعمل من الشبكة.
+   اتركه فارغاً ('') لتعطيل البوّابة كلّها.
+   ───────────────────────────────────────────────────────────────────────── */
+window.SURVEY_ADMIN_CODE = '2026';
+</script>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="card">
+    <i class="fas fa-lock lock"></i>
+    <h2>لوحة الاستبيان</h2>
+    <p>هذه الصفحة تعرض الأسماء والأرقام ونصوص الطلبات. أدخل رمز الدخول.</p>
+    <form id="gateForm" autocomplete="off">
+      <input id="gateInput" type="password" inputmode="numeric" autocomplete="off" aria-label="رمز الدخول">
+      <button id="gateBtn" type="submit">دخول</button>
+    </form>
+    <div class="err" id="gateErr" role="alert"></div>
+    <div class="note">
+      الرمز يمنع الفضول العابر لا أكثر. لحماية حقيقية: أبقِ هذه الصفحة على جهازك
+      ولا ترفعها، أو انقل الاستبيان إلى الخادم حيث يوجد تسجيل دخول فعلي.
+    </div>
+  </div>
+</div>
+
+<div id="page" hidden>
+  <header class="hero">
+    <img class="hero-bg" src="bg.webp?v=__BUILD_ID__" alt="" loading="eager"
+         onerror="this.onerror=null;this.src='bg.png?v=__BUILD_ID__';">
+    <div class="hero-tools">
+      <button class="icon-btn" id="darkBtn" aria-label="تغيير الوضع الليلي"><i class="fas fa-moon" id="darkIcon"></i></button>
+      <a class="icon-btn" href="survey.html" aria-label="الصفحة العامة" title="الصفحة العامة"><i class="fas fa-chart-simple"></i></a>
+    </div>
+    <div class="hero-kicker">خاص بمسؤول الجدول</div>
+    <h1>لوحة الاستبيان الكاملة</h1>
+    <div class="dept">الطلبات والتوصيات بأسمائها وأسبابها</div>
+    <div class="hero-meta">
+      <span class="hero-pill"><i class="fas fa-eye"></i> تعرض الأسماء وأرقام الهواتف</span>
+      <button class="hero-pill" id="refreshBtn" type="button"><i class="fas fa-rotate"></i> تحديث</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <label for="monthPicker" style="font-size:12.6px;font-weight:700;color:var(--ink-2)">الشهر</label>
+      <select class="picker" id="monthPicker" aria-label="اختيار الشهر"></select>
+    </div>
+
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <div id="content"></div>
+  </main>
+
+  <footer class="foot">
+    <div class="privacy"><i class="fas fa-triangle-exclamation"></i> ما في هذه الصفحة شخصيّ — لا تُشارك لقطات شاشتها.</div>
+    <div><a href="survey.html">الصفحة العامة</a> · <a href="index.html">موقع القسم</a></div>
+  </footer>
+</div>
+
+<script src="js/core/namespace.js?v=__BUILD_ID__"></script>
+<script src="js/core/storage.js?v=__BUILD_ID__"></script>
+<script src="js/core/config.js?v=__BUILD_ID__"></script>
+<script src="js/core/logger.js?v=__BUILD_ID__"></script>
+<script src="js/core/text.js?v=__BUILD_ID__"></script>
+<script src="js/core/dates.js?v=__BUILD_ID__"></script>
+<!-- لائحة المقيمين: لحساب عبء الفروز. الاستبيان يعرف رأي الشهر،
+     واللائحة تعرف تاريخ فروز كل طبيب شهراً بشهر. -->
+<script src="js/core/status.js?v=__BUILD_ID__"></script>
+<script src="js/data/schema.js?v=__BUILD_ID__"></script>
+<script src="js/data/header-map.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/residents.js?v=__BUILD_ID__"></script>
+<script src="js/data/gviz-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/survey-responses.js?v=__BUILD_ID__"></script>
+<script src="js/domain/survey-stats.js?v=__BUILD_ID__"></script>
+<script src="js/views/survey-ui.js?v=__BUILD_ID__"></script>
+<script src="js/views/survey-admin.js?v=__BUILD_ID__"></script>
+</body>
+</html>

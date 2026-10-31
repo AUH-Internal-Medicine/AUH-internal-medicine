@@ -30,6 +30,9 @@
     'سابع':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'رابع':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'تالت':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
+    // «تالت+خارجيات» المدموجة لا تظهر إلا من MERGE_DATE_THIRD_OUTPATIENT،
+    // وذاك التاريخ بعد SWITCH_DATE دائماً — هذا السطر احتياط فقط.
+    'تالت+خارجيات':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     'تاني':{workTime:'2:30 حتى 10:00',workDuration:'7 ساعات ونصف',holidayTime:'9 صباحاً حتى 10 ليلاً',holidayDuration:'13 ساعة'},
     // أُعيدت تسمية عمود «تاني» في الشيت إلى «تاني رجال»، وأُضيف «تاني نساء»
     // (2026-10). الاسمُ القديم يبقى هنا لأنّ الصفوفَ القديمة قد تُقرأ به.
@@ -58,6 +61,8 @@
     'سابع':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'رابع':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'تالت':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
+    // من 2026-11-01 اندمج «تالت» و«الخارجيات» في مناوبةٍ واحدة — نفس أوقات الأجنحة.
+    'تالت+خارجيات':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'تاني':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     'تاني رجال':{workTime:'2:30 pm حتى 8:30 am',workDuration:'18 ساعة',holidayTime:'9:00 am حتى 9:00 am',holidayDuration:'24 ساعة'},
     // أُضيفت 2026-10: جناحٌ جديد، أوقاتُه ودوامُه كبقية الأجنحة.
@@ -91,6 +96,8 @@
     'رابع': ['جناح الرابع'],
     'تالت': ['ثالث خاص + خارجيات'],
     'خارجيات': ['ثالث خاص + خارجيات'],
+    // من 2026-11-01: الاسم المدموج في السنة الأولى، لنفس مقابل السنة الثانية.
+    'تالت+خارجيات': ['ثالث خاص + خارجيات'],
     'تاني': ['ثاني رجال'],
     'تاني رجال': ['ثاني رجال'],
     // «تاني نساء» بلا مقابلٍ في شيت السنة الثانية — يُترك بلا تخمين.
@@ -110,41 +117,62 @@
   };
 
   /**
-   * إسعاف المركز: كان مقسوماً «صباحي / ليلي»، وصار من هذا التاريخ مناوبةً
-   * كاملةً واحدة. والشيتُ يُبقي العمودين كما هما، فالدمجُ يحدث هنا — في طبقة
-   * القواعد — مرّةً واحدةً لا في كلّ واجهة:
+   * دمج فئات: عمودان حقيقيان في الشيت صارا مناوبةً واحدة من تاريخٍ معيّن.
+   * الشيتُ يُبقي العمودين كما هما إلى الأبد؛ الدمجُ يحدث هنا — في طبقة
+   * القواعد — مرّةً واحدةً لا في كلّ واجهة (`mergeCategories` في
+   * `js/data/parsers/oncall.js` هو من يُطبّق هذه القاعدة فعلياً، لكل قاعدة
+   * في هذه اللائحة):
    *
-   *   اليومُ قبل التاريخ  → العمودان منفصلان كما كانا، بساعاتهما القديمة
-   *   اليومُ من التاريخ   → عمودٌ واحد «إسعاف مركز» بساعات الأجنحة (18/24)
+   *   اليومُ قبل تاريخ الدمج → العمودان منفصلان كما كانا، بساعاتهما القديمة
+   *   اليومُ من تاريخ الدمج  → عمودٌ واحد مدموج، والعمودان الأصليّان فارغان
    *
-   * المقارنةُ بتاريخ المناوبة نفسِه، لا بتاريخ اليوم — فالماضي يبقى صحيحاً.
+   * المقارنةُ بتاريخ المناوبة نفسِه، لا بتاريخ اليوم — فالماضي يبقى صحيحاً،
+   * والإحصائيات ترث هذا تلقائياً لأنها تُحصي بالاسم الفعلي لكل يوم.
    */
-  const MERGE_DATE_EMERGENCY_CENTER = '2026-10-06';
-  const EMERGENCY_CENTER_PARTS = ['إسعاف مركز صباحي', 'إسعاف مركز ليلي'];
-  const EMERGENCY_CENTER_MERGED = 'إسعاف مركز';
-  /**
-   * الشهرُ الانتقاليّ: تُعرض بطاقةُ «إسعاف مركز» وحدَها، لكن **داخلها**
-   * يُعرض التقسيمُ القديم (نهاري / ليلي) ليعرف كلُّ مناوبٍ أين كان مكتوباً.
-   * هذا للشهر المذكور فقط؛ وبعده تُعرض البطاقةُ مجموعةً واحدة.
-   * ولحذفِ التقسيم لاحقاً: اجعل القيمةَ '' — لا شيءَ آخرَ يلزم.
-   */
-  const EMERGENCY_CENTER_SPLIT_MONTH = '2026-10';
+  const MERGE_RULES = [
+    {
+      key: 'emergencyCenter',
+      mergeDate: '2026-10-06',
+      parts: ['إسعاف مركز صباحي', 'إسعاف مركز ليلي'],
+      merged: 'إسعاف مركز',
+      /**
+       * الشهرُ الانتقاليّ: تُعرض بطاقةُ «إسعاف مركز» وحدَها، لكن **داخلها**
+       * يُعرض التقسيمُ القديم (نهاري / ليلي) ليعرف كلُّ مناوبٍ أين كان مكتوباً.
+       * هذا للشهر المذكور فقط؛ وبعده تُعرض البطاقةُ مجموعةً واحدة.
+       * ولحذفِ التقسيم لاحقاً: اجعل القيمةَ '' — لا شيءَ آخرَ يلزم.
+       */
+      splitMonth: '2026-10'
+    },
+    {
+      key: 'thirdOutpatient',
+      // المالك: الدمج من بداية هذا الشهر (2026-11-01).
+      mergeDate: '2026-11-01',
+      parts: ['تالت', 'خارجيات'],
+      merged: 'تالت+خارجيات',
+      splitMonth: ''
+    }
+  ];
 
-  /** True when this category is one of the two halves that now merge. */
-  function isEmergencyCenterPart(category) {
+  /** The merge rule a RAW part-column category belongs to, or null. */
+  function mergeRuleForPart(category) {
     const n = normAr(category || '');
-    return EMERGENCY_CENTER_PARTS.some(p => normAr(p) === n);
+    return MERGE_RULES.find(r => r.parts.some(p => normAr(p) === n)) || null;
+  }
+
+  /** The merge rule whose MERGED name this is, or null. */
+  function mergeRuleForMerged(category) {
+    const n = normAr(category || '');
+    return MERGE_RULES.find(r => normAr(r.merged) === n) || null;
   }
 
   /**
    * The category name to USE for a duty on a given day: the merged name when the
-   * day is on/after the merge date and the category is one of the two halves,
+   * day is on/after that rule's merge date and the category is one of its parts,
    * otherwise the category unchanged.
    */
   function effectiveCategory(category, dateIso) {
-    if (dateIso && dateIso >= MERGE_DATE_EMERGENCY_CENTER && isEmergencyCenterPart(category)) {
-      return EMERGENCY_CENTER_MERGED;
-    }
+    const rule = mergeRuleForPart(category);
+    if (rule && dateIso && dateIso >= rule.mergeDate) return rule.merged;
     return category;
   }
 
@@ -158,7 +186,7 @@
   };
 
   const WARD_NAMES = ['تاني', 'ثاني', 'تاني رجال', 'ثاني رجال', 'تاني نساء', 'ثاني نساء',
-    'تالت', 'ثالث', 'رابع', 'خارجيات', 'سابع'];
+    'تالت', 'ثالث', 'رابع', 'خارجيات', 'سابع', 'تالت+خارجيات'];
   const MISC_NAMES = ['اورام', 'أورام', 'ديال'];
 
   /** Buckets an on-call category name into one of the four display groups. */
@@ -229,11 +257,9 @@
 
   AUH.domain.oncallSchedule = {
     SWITCH_DATE,
-    MERGE_DATE_EMERGENCY_CENTER,
-    EMERGENCY_CENTER_PARTS,
-    EMERGENCY_CENTER_MERGED,
-    EMERGENCY_CENTER_SPLIT_MONTH,
-    isEmergencyCenterPart,
+    MERGE_RULES,
+    mergeRuleForPart,
+    mergeRuleForMerged,
     effectiveCategory,
     ONCALL_SCHEDULE_OLD,
     ONCALL_SCHEDULE_NEW,

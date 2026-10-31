@@ -48,13 +48,14 @@
       this.lectures = [];
       this.holidaysModel = AUH.parse.emptyHolidays();
       this.annualHolidays = new Set();
-      this.adjustmentOverrides = new Map();
-      this.adjustmentAdditions = [];
-      this.bonusHours = [];
+      this.adjustmentBonuses = [];
+      this.adjustmentPenalties = [];
       this.doctorStats = [];
 
       /* --- roster tab state ------------------------------------------------ */
-      this.filterJoined = false;
+      // الافتراضي الآن «الملتحقين فقط» — المنفكون يبقون مذكورين بعدد حيّ في
+      // زرّ «المنفكين» (دائماً ظاهر، بلا حاجة لتفعيل فلتر).
+      this.filterJoined = true;
       this.filterDetached = false;
       this.filterSpecialty = '';
       this.filterShift = '';
@@ -63,7 +64,7 @@
 
       /* --- statistics tab state -------------------------------------------- */
       this.doctorStatsSearchTerm = '';
-      this.doctorStatsSort = { key: 'hoursCompleted', dir: 'desc' };
+      this.doctorStatsSort = { key: 'completed', dir: 'desc' };
       // '' | 'group:<key>' | 'cat:<category>' — see views/doctor-stats.js
       this.doctorStatsShiftFilter = '';
       this.doctorStatsOnlyWithShift = true;
@@ -704,24 +705,22 @@
       this.holidaysModel = dataset.holidays;
       this.annualHolidays = new Set([...(dataset.rules.annualHolidays || []), ...dataset.holidays.dates]);
 
-      // Derived data (order matters: adjustments need residents + on-call,
+      // Derived data (order matters: adjustments need residents,
       // statistics need adjustments).
-      const resolved = AUH.domain.adjustments.resolveAdjustments(dataset.adjustments.entries, {
+      const resolved = AUH.domain.adjustments.resolveAdjustments({
         residents: dataset.residents,
-        oncall: dataset.oncall,
-        bonuses: dataset.adjustments.bonuses
+        bonuses: dataset.adjustments.bonuses,
+        penalties: dataset.adjustments.penalties
       });
-      this.adjustmentOverrides = resolved.overrides;
-      this.adjustmentAdditions = resolved.additions;
-      this.bonusHours = resolved.bonuses;
+      this.adjustmentBonuses = resolved.bonuses;
+      this.adjustmentPenalties = resolved.penalties;
 
       this.doctorStats = AUH.domain.doctorStats.computeDoctorStats({
         residents: dataset.residents,
         oncall: dataset.oncall,
         evaluation: dataset.evaluation,
-        overrides: this.adjustmentOverrides,
-        additions: this.adjustmentAdditions,
-        bonuses: this.bonusHours,
+        bonuses: this.adjustmentBonuses,
+        penalties: this.adjustmentPenalties,
         annualHolidays: this.annualHolidays,
         today: this.today,
         currentMonth: this.m + 1

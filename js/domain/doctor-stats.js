@@ -4,7 +4,9 @@
  * One pass over the on-call log, cross-referenced with the roster, produces per
  * resident: shift counts (total / completed / remaining), group breakdown with
  * the exact dates behind each number, holiday and night counts, hours worked and
- * hours planned, plus praise count and rotations done so far.
+ * hours planned, plus praise count and rotations done so far. Bonus/penalty
+ * rows from the adjustments tab then nudge the shift and holiday counts by ±1
+ * each, with no date or hours involved.
  *
  * This function is PURE: it takes parsed models and returns a new array. That is
  * what makes it verifiable outside the browser (see 5-أدوات/verify-data.mjs) and
@@ -18,7 +20,6 @@
   const { extractDate, daysSinceDate } = AUH.dates;
   const { isJoined } = AUH.status;
   const schedule = AUH.domain.oncallSchedule;
-  const { overrideKey } = AUH.domain.adjustments;
 
   function blankEntry(fields) {
     return Object.assign(
@@ -41,13 +42,12 @@
         night: 0,
         hoursCompleted: 0,
         hoursTotal: 0,
-        // Shift hours on their own, so the card can show "منها بونص".
+        // Shift hours on their own, kept for the Excel export.
         hoursShiftsCompleted: 0,
         hoursShiftsTotal: 0,
-        bonusHours: 0,
-        bonusCompleted: 0,
-        bonusByMonth: {},
-        bonusEntries: [],
+        // Bonus/penalty shift counts — never hours, never dated (see schema.js).
+        bonusShiftsCount: 0,
+        penaltyShiftsCount: 0,
         firstOncall: '',
         lastOncall: '',
         groupDetails: { wards: {}, icu: {}, emergency: {}, misc: {}, other: {} },
@@ -103,8 +103,8 @@
    * @param {object} ctx.residents residents model
    * @param {object} ctx.oncall year-1 on-call model
    * @param {object} ctx.evaluation evaluation model
-   * @param {Map} ctx.overrides adjustment hour overrides
-   * @param {Array} ctx.additions adjustment volunteer shifts
+   * @param {Array} ctx.bonuses resolved bonus rows ({name, abbr, isHoliday})
+   * @param {Array} ctx.penalties resolved penalty rows ({name, abbr, isHoliday})
    * @param {Set} ctx.annualHolidays
    * @param {string} ctx.today ISO date
    * @param {number} ctx.currentMonth 1–12, used for "rotations so far"
@@ -114,8 +114,6 @@
     const residents = ctx.residents;
     const oncall = ctx.oncall;
     const evaluation = ctx.evaluation;
-    const overrides = ctx.overrides || new Map();
-    const additions = ctx.additions || [];
     const holidays = ctx.annualHolidays;
     const today = ctx.today;
 
@@ -182,34 +180,14 @@
             statsMap.set(key, entry);
           }
 
-          const ok = overrideKey(date, key, category);
-          const hours = overrides.has(ok) ? overrides.get(ok) : standardHours;
-          addAssignment(entry, { date, category, hours, isHoliday, isNight, group, isCompleted });
+          addAssignment(entry, { date, category, hours: standardHours, isHoliday, isNight, group, isCompleted });
         });
       }
     });
 
-    // 3. Volunteer/extra shifts from the adjustments tab.
-    additions.forEach(add => {
-      const key = add.abbr || add.name;
-      let entry = statsMap.get(key);
-      if (!entry) {
-        entry = blankEntry({ name: add.name, abbr: add.abbr || '' });
-        statsMap.set(key, entry);
-      }
-      addAssignment(entry, {
-        date: add.date,
-        category: add.category,
-        hours: add.hours,
-        isHoliday: schedule.isHolidayDate(add.date, holidays),
-        isNight: schedule.isNightCategory(add.category),
-        group: schedule.classifyGroup(add.category),
-        isCompleted: add.date < today
-      });
-    });
-
-    // 4. Bonus hours: credited to the person without creating an assignment.
-    //    An undated bonus counts as already earned; a dated one follows its date.
+    // 3. Bonus/penalty shifts: ±1 on the cumulative count, and ±1 on the
+    //    holiday count too when the row was flagged as a holiday shift
+    //    (hours === 24 in the sheet). No date, no category, no hours math.
     (ctx.bonuses || []).forEach(bonus => {
       const key = bonus.abbr || bonus.name;
       let entry = statsMap.get(key);
@@ -217,33 +195,39 @@
         entry = blankEntry({ name: bonus.name, abbr: bonus.abbr || '' });
         statsMap.set(key, entry);
       }
-
-      const hours = bonus.hours || 0;
-      const earned = !bonus.date || bonus.date <= today;
-
-      entry.bonusHours += hours;
-      entry.hoursTotal += hours;
-      if (earned) {
-        entry.bonusCompleted += hours;
-        entry.hoursCompleted += hours;
-      }
-      if (bonus.date) {
-        const month = bonus.date.slice(0, 7);
-        entry.bonusByMonth[month] = (entry.bonusByMonth[month] || 0) + hours;
-      }
-      entry.bonusEntries.push({ date: bonus.date || '', hours, label: bonus.label || 'Bonus' });
+      entry.bonusShiftsCount++;
+      entry.total++;
+      entry.completed++;
+      if (bonus.isHoliday) entry.holiday++;
     });
 
-    // 5. Ranks by hours (worked, then planned) — bonus included.
+    (ctx.penalties || []).forEach(penalty => {
+      const key = penalty.abbr || penalty.name;
+      let entry = statsMap.get(key);
+      if (!entry) {
+        entry = blankEntry({ name: penalty.name, abbr: penalty.abbr || '' });
+        statsMap.set(key, entry);
+      }
+      entry.penaltyShiftsCount++;
+      entry.total--;
+      entry.completed--;
+      if (penalty.isHoliday) entry.holiday--;
+    });
+
+    // 4. Ranks — by shift count now, not by hours.
     const list = Array.from(statsMap.values());
     list
       .slice()
-      .sort((a, b) => b.hoursCompleted - a.hoursCompleted)
+      .sort((a, b) => b.completed - a.completed)
       .forEach((e, i) => (e.rankCompleted = i + 1));
     list
       .slice()
-      .sort((a, b) => b.hoursTotal - a.hoursTotal)
+      .sort((a, b) => b.total - a.total)
       .forEach((e, i) => (e.rankTotal = i + 1));
+    list
+      .slice()
+      .sort((a, b) => b.holiday - a.holiday)
+      .forEach((e, i) => (e.rankHoliday = i + 1));
 
     return list;
   }

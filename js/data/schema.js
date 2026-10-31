@@ -220,18 +220,21 @@
     },
 
     /**
-     * Hour corrections, volunteer shifts and bonus hours — everything that
-     * cannot be expressed inside the on-call table itself.
+     * Bonus/penalty shift adjustments — the only way to add or remove a shift
+     * from someone's cumulative count without a real row in the on-call table.
      *
-     * A row is a BONUS when the date or the type cell says `Bonus` (or `بونص`):
-     *   • date + `Bonus` → bonus hours belonging to that month
-     *   • `Bonus` + `Bonus` → undated bonus hours (counted in the totals only)
-     * Anything else is a shift row: an hours override if the person is already
-     * on that shift, otherwise a volunteer addition.
+     * Every row is read the same way, regardless of date or category text:
+     *   • type cell says Bonus (`بونص`/`مكافأة`/…) → +1 shift
+     *   • type cell says عقوبة (`penalty`/…)        → −1 shift
+     *   • anything else                              → row ignored, logged
+     * The hours cell is not a duration anymore — it is only checked for the
+     * exact value 24, which flags the shift as a holiday shift (±1 on the
+     * holiday counter too). The date column is kept in the sheet for the
+     * admin's own bookkeeping; the app never reads it.
      */
     oncallAdjustments: {
       key: 'oncallAdjustments',
-      label: 'تعديل الساعات والبونص',
+      label: 'تعديل المناوبات (بونص/عقوبة)',
       spreadsheet: 'main',
       gid: '1181737768',
       format: 'csv',
@@ -239,12 +242,14 @@
       columns: {
         name: { labels: ['الاسم', 'الاسم الثلاثي'], required: true, fallbackIndex: 0, type: 'text' },
         abbr: { labels: ['الاختصار'], fallbackIndex: 1, type: 'text' },
-        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'تاريخ المناوبة، أو Bonus لساعات Bonus غير مؤرخة' },
-        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'اسم فئة المناوبة، أو Bonus لإضافة ساعات Bonus (تُقبل صيغ مختلفة وأخطاء إملائية بسيطة)' },
-        hours: { labels: ['عدد الساعات', 'الساعات'], required: true, fallbackIndex: 4, type: 'number' }
+        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'غير مستخدَم — للتوثيق اليدوي فقط' },
+        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'Bonus لإضافة مناوبة، أو عقوبة لحذف مناوبة (تُقبل صيغ مختلفة وأخطاء إملائية بسيطة)' },
+        hours: { labels: ['عدد الساعات', 'الساعات'], required: true, fallbackIndex: 4, type: 'number', note: '24 فقط ⇐ مناوبة عطلة؛ أي قيمة أخرى ⇐ مناوبة عادية' }
       },
-      /** Words that turn a row into bonus hours instead of a shift. */
-      bonusKeywords: ['bonus', 'بونص', 'بونس', 'بونوس', 'مكافأة', 'اضافي']
+      /** Words that mark a row as +1 shift. */
+      bonusKeywords: ['bonus', 'بونص', 'بونس', 'بونوس', 'مكافأة', 'اضافي'],
+      /** Words that mark a row as −1 shift. */
+      penaltyKeywords: ['penalty', 'عقوبة', 'عقوبه']
     },
 
     /* ----------------------------------------------------------- evaluation */

@@ -271,8 +271,6 @@
         if (isPast) badges.push(`<span style="background:${C.greenSoft};color:${C.green};border:1px solid ${C.greenLine};border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">تمّت ✓</span>`);
         const holidayName = o.holidayName ? o.holidayName(item.date) : '';
         if (holiday) badges.push(`<span style="background:${C.redSoft};color:${C.red};border:1px solid #f0b7b1;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">${holidayName ? '★ ' + escapeHtml(holidayName) : 'عطلة'}</span>`);
-        if (item.schedule && item.schedule.isVolunteer) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">تطوعية</span>`);
-        else if (item.schedule && item.schedule.isAdjusted) badges.push(`<span style="background:${C.goldSoft};color:${C.gold};border:1px solid #e6cd9a;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:800;">ساعات معدّلة</span>`);
 
         const clock = formatDutyTime(item.schedule && item.schedule.time);
         const time = item.schedule && (clock || item.schedule.duration)

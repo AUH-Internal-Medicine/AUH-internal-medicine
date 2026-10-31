@@ -98,44 +98,27 @@
    * ones the resident is actually on call for (those pay holiday hours).
    */
   /**
-   * ساعات Bonus — hours credited from the "تعديل الساعات والبونص" sheet.
-   * Shown per month (dated bonuses) and as an undated total, with the running
-   * grand total, so the numbers in the statistics card can be traced back.
+   * مناوبات Bonus/عقوبة — shift-count adjustments from "تعديل المناوبات"،
+   * غير مؤرَّخة وبلا ساعات: مجرد عدّاد يُضاف أو يُحذف من التراكمي.
    */
   renderMyInfoBonus(doctorStats) {
-    const total = doctorStats?.bonusHours || 0;
-    if (!total) return '';
+    const bonus = doctorStats?.bonusShiftsCount || 0;
+    const penalty = doctorStats?.penaltyShiftsCount || 0;
+    if (!bonus && !penalty) return '';
 
-    const entries = (doctorStats.bonusEntries || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const byMonth = Object.entries(doctorStats.bonusByMonth || {}).sort((a, b) => b[0].localeCompare(a[0]));
-    const undated = entries.filter(b => !b.date).reduce((sum, b) => sum + b.hours, 0);
-
-    const monthLabel = key => {
-      const [year, month] = key.split('-');
-      return `${AM[Math.max(0, parseInt(month, 10) - 1)] || key} ${year}`;
-    };
-
-    const monthRows = byMonth
-      .map(
-        ([key, hours]) =>
-          `<div class="bonus-row"><span class="bonus-month">${escapeHtml(monthLabel(key))}</span>` +
-          `<span class="bonus-hours">${this.formatNumDisplay(hours)} ساعة</span></div>`
-      )
-      .join('');
-
-    const undatedRow = undated
-      ? `<div class="bonus-row"><span class="bonus-month">Bonus غير مؤرّخ</span><span class="bonus-hours">${this.formatNumDisplay(undated)} ساعة</span></div>`
+    const bonusRow = bonus
+      ? `<div class="bonus-row bonus-row-positive"><span class="bonus-month"><i class="fas fa-gift"></i> مناوبات Bonus</span><span class="bonus-hours">+${this.formatNumDisplay(bonus)}</span></div>`
+      : '';
+    const penaltyRow = penalty
+      ? `<div class="bonus-row bonus-row-negative"><span class="bonus-month"><i class="fas fa-triangle-exclamation"></i> مناوبات عقوبة</span><span class="bonus-hours">−${this.formatNumDisplay(penalty)}</span></div>`
       : '';
 
     return (
       `<div class="collapsible-section bonus-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)">` +
-        `<span><i class="fas fa-gift"></i> ساعات Bonus (${this.formatNumDisplay(total)} ساعة)</span><i class="fas fa-chevron-down"></i></button>` +
+        `<span><i class="fas fa-gift"></i> مناوبات Bonus/عقوبة</span><i class="fas fa-chevron-down"></i></button>` +
         `<div class="collapsible-content show">` +
-          `<div class="bonus-total"><i class="fas fa-gift"></i> إجمالي Bonus: <strong>${this.formatNumDisplay(total)}</strong> ساعة` +
-          (doctorStats.bonusCompleted !== total ? ` <span class="bonus-pending">(المحتسب حتى الآن: ${this.formatNumDisplay(doctorStats.bonusCompleted)})</span>` : '') +
-          `</div>` +
-          `<div class="bonus-list">${monthRows}${undatedRow}</div>` +
-          `<div class="holiday-note"><i class="fas fa-circle-info"></i> ساعات Bonus مضافة إلى ساعاتك الإجمالية وإلى ترتيبك في الإحصائيات.</div>` +
+          `<div class="bonus-list">${bonusRow}${penaltyRow}</div>` +
+          `<div class="holiday-note"><i class="fas fa-circle-info"></i> مضافة/محذوفة من عدد مناوباتك التراكمي مباشرةً، بلا تاريخ ولا ساعات.</div>` +
         `</div></div>`
     );
   },
@@ -320,11 +303,6 @@
         const colleagues = this.getColleaguesForDateCategory(onc.date, cn, r.abbr);
 
         const schedule = this.getCategorySchedule(cn, onc.date);
-        const overrideKey = `${onc.date}|${r.abbr}|${normAr(cn)}`;
-        if (schedule && this.adjustmentOverrides.has(overrideKey)) {
-          schedule.duration = `${this.formatNumDisplay(this.adjustmentOverrides.get(overrideKey))} ساعة`;
-          schedule.isAdjusted = true;
-        }
         const year2Colleagues = this.getYear2ColleaguesForDate(onc.date, cn);
         allOncalls.push({
           date: onc.date,
@@ -337,21 +315,6 @@
         });
       }
     }
-
-    this.adjustmentAdditions
-      .filter(a => a.abbr === r.abbr || a.name === r.name)
-      .forEach(a => {
-        const colleagues = this.getColleaguesForDateCategory(a.date, a.category, r.abbr);
-        allOncalls.push({
-          date: a.date,
-          day: getDayName(a.date),
-          dayIdx: getDayIndex(a.date),
-          cat: a.category,
-          colleagues,
-          year2Colleagues: this.getYear2ColleaguesForDate(a.date, a.category),
-          schedule: { isHoliday: this.isHolidayDate(a.date), time: '', duration: `${this.formatNumDisplay(a.hours)} ساعة`, isAdjusted: true, isVolunteer: true }
-        });
-      });
 
     allOncalls.sort((a, b) => a.date.localeCompare(b.date));
 
@@ -399,18 +362,15 @@
       this.myInfoFocusedOncallDate = monthOncalls[0]?.date || '';
     }
 
-    const bonusTotal = doctorStats?.bonusHours || 0;
-    const bonusDone = doctorStats?.bonusCompleted || 0;
-    const bonusByMonth = doctorStats?.bonusByMonth || {};
-    const bonusThisMonth = bonusByMonth[this.myInfoMonthKey] || 0;
-    const bonusUndated = (doctorStats?.bonusEntries || []).filter(b => !b.date).reduce((a, b) => a + b.hours, 0);
+    const bonusCount = doctorStats?.bonusShiftsCount || 0;
+    const penaltyCount = doctorStats?.penaltyShiftsCount || 0;
 
     const cumTotal = doctorStats?.total ?? allOncalls.length;
-    const cumHours = doctorStats?.hoursTotal ?? 0;
+    const holidayCount = doctorStats?.holiday ?? 0;
     const doneTotal = doctorStats?.completed ?? allOncalls.filter(o => o.date < this.today).length;
-    const doneHours = doctorStats?.hoursCompleted ?? 0;
+    const remainingCount = doctorStats?.remaining ?? 0;
 
-    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub">${this.formatNumDisplay(cumHours)} ساعة</div>${bonusTotal ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusTotal)} ساعة Bonus</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">${this.formatNumDisplay(doneHours)} ساعة</div>${bonusDone ? `<div class="cum-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(bonusDone)} ساعة Bonus</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub"><i class="fas fa-umbrella-beach"></i> منها عطل: ${this.formatNumDisplay(holidayCount)}</div>${bonusCount ? `<div class="cum-bonus"><i class="fas fa-gift"></i> +${this.formatNumDisplay(bonusCount)} بونص</div>` : ''}${penaltyCount ? `<div class="cum-penalty"><i class="fas fa-triangle-exclamation"></i> −${this.formatNumDisplay(penaltyCount)} عقوبة</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">متبقية: ${this.formatNumDisplay(remainingCount)}</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
       const dates = (catDates[k] || []).slice().sort();
       const detId = `miCatDates-${miUid}-${idx}`;
       return `<button type="button" class="myinfo-breakdown-item" onclick="toggleCollapsible(this)"><span>${this.escapeHtml(k)}</span><strong>${v}</strong></button><div class="collapsible-content myinfo-breakdown-detail" id="${detId}">${dates.length ? dates.map(d => `<span class="dsc-detail-chip">${d}</span>`).join('') : '<span class="dsc-detail-empty">لا توجد تواريخ</span>'}</div>`;
@@ -458,11 +418,7 @@
         })
         .join('')}</select><button type="button" class="cal-nav-btn" aria-label="الشهر التالي" title="الشهر التالي"${nextDisabled} onclick="app.stepMyInfoMonth(1)"><i class="fas fa-chevron-left"></i></button></span><button type="button" class="download-btn download-btn-inline" onclick="app.downloadMyInfoCalendarImage(this)"><i class="fas fa-camera btn-icon"></i><span class="btn-spinner"></span> تحميل الرزنامة كصورة</button></div>`;
 
-      // Only shown when this particular month actually has bonus hours.
-      const bonusCard = bonusThisMonth
-        ? `<div class="stat-card myinfo-static-stat myinfo-bonus-box"><div class="stat-num">${this.formatNumDisplay(bonusThisMonth)}</div><div class="stat-lbl"><i class="fas fa-gift"></i> ساعات Bonus هذا الشهر</div></div>`
-        : '';
-      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div>${bonusCard}</div>`;
+      h += `<div class="myinfo-monthly-stats-grid"><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthOncalls.length}</div><div class="stat-lbl">عدد مناوبات الشهر</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthDone.length}</div><div class="stat-lbl">عدد المناوبات التي تمت</div></div><div class="stat-card myinfo-static-stat"><div class="stat-num">${monthRemaining.length}</div><div class="stat-lbl">عدد المناوبات المتبقية</div></div></div>`;
 
       h += this.renderMyInfoMonthBreakdown();
       h += this.renderMyInfoMonthCalendar(monthOncalls, this.myInfoMonthKey);
@@ -474,7 +430,7 @@
         const sch = o.schedule;
         const isPast = o.date < this.today;
         const rowId = `myInfoOncall-${o.date}-${idx}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-        h += `<div class="oncall-info-row${we ? ' holiday' : ''}${isPast ? ' past done' : ''}" id="${rowId}" data-oncall-date="${o.date}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot holiday"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}${we ? '<span class="oncall-holiday-badge">عطلة</span>' : ''}</span><span class="oc-type">${o.cat}${isPast ? ' <span class="oncall-done-badge"><i class="fas fa-check"></i> تم</span>' : ''}${sch && sch.isVolunteer ? ' <span class="oncall-volunteer-badge"><i class="fas fa-hand-holding-heart"></i> تطوعية</span>' : sch && sch.isAdjusted ? ' <span class="oncall-adjusted-badge"><i class="fas fa-pen"></i> ساعات معدّلة</span>' : ''}</span></div>`;
+        h += `<div class="oncall-info-row${we ? ' holiday' : ''}${isPast ? ' past done' : ''}" id="${rowId}" data-oncall-date="${o.date}"><div class="oc-header"><span class="oc-date${we ? ' weekend' : ''}">${we ? '<span class="day-dot holiday"></span>' : ''}<i class="fas fa-calendar-day"></i> ${o.date} - ${o.day}${we ? '<span class="oncall-holiday-badge">عطلة</span>' : ''}</span><span class="oc-type">${o.cat}${isPast ? ' <span class="oncall-done-badge"><i class="fas fa-check"></i> تم</span>' : ''}</span></div>`;
         if (sch && (sch.time || sch.duration)) h += `<div class="myinfo-oncall-meta${sch.isHoliday ? ' holiday' : ''}"><span><i class="fas fa-clock"></i> ${sch.time || '-'}</span><span><i class="fas fa-hourglass-half"></i> ${sch.duration || '-'}</span></div>`;
         if (o.colleagues.length) h += `<div class="colleague-row"><span class="cl-label"><i class="fas fa-users"></i> الزملاء:</span><span class="cl-names">${o.colleagues.map((c, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${mcn(c.name, c.phone, c.abbr)}`).join('')}</span></div>`;
         if (o.year2Colleagues && o.year2Colleagues.length) h += `<div class="colleague-row colleague-row-y2"><span class="cl-label"><i class="fas fa-user-graduate"></i> السنة الثانية:</span><span class="cl-names">${o.year2Colleagues.map((n, i) => `${i > 0 ? '<span class="cl-sep"> - </span>' : ''}${this.escapeHtml(n)}`).join('')}</span></div>`;

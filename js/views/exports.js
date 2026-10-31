@@ -337,15 +337,14 @@
         'الحالة': r.status || '',
         'أيام منذ الالتحاق': r.joinDaysSince ?? '',
         'مناوبات تراكمية': r.total || 0,
+        'ترتيب (تراكمية)': r.rankTotal || '',
         'مناوبات تمت': r.completed || 0,
+        'ترتيب (تمت)': r.rankCompleted || '',
         'مناوبات متبقية': r.remaining || 0,
-        'ساعات تمت': round1(r.hoursCompleted),
-        'ترتيب الساعات (تمت)': r.rankCompleted || '',
-        'ساعات تراكمية': round1(r.hoursTotal),
-        'ترتيب الساعات (تراكمية)': r.rankTotal || '',
-        'ساعات المناوبات فقط': round1(r.hoursShiftsTotal),
-        'ساعات Bonus': round1(r.bonusHours),
-        'ساعات Bonus محتسبة': round1(r.bonusCompleted)
+        'مناوبات عطل': r.holiday || 0,
+        'ترتيب (عطل)': r.rankHoliday || '',
+        'مناوبات Bonus': r.bonusShiftsCount || 0,
+        'مناوبات عقوبة (تعديل)': r.penaltyShiftsCount || 0
       };
 
       // Group totals, each followed by the breakdown that makes it up.
@@ -361,7 +360,6 @@
       // sortable and filterable by "who has how many عناية قلبية".
       categories.forEach(c => (row[c.name] = countOf(r, c.name)));
 
-      row['مناوبات عطل'] = r.holiday || 0;
       row['مناوبات ليلية'] = r.night || 0;
       row['ثناءات'] = r.praiseCount || 0;
       row['عقوبات'] = r.penaltyCount || 0;

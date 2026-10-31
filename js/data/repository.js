@@ -113,7 +113,7 @@
       ? AUH.parse.residents(source.residentsYear4, { schemaKey: 'residentsYear4', year: 4 })
       : prev.residentsYear4 || AUH.parse.emptyResidents();
 
-    const adjustments = source.adjustments ? AUH.parse.oncallAdjustments(source.adjustments) : prev.adjustments || { entries: [] };
+    const adjustments = source.adjustments ? AUH.parse.oncallAdjustments(source.adjustments) : prev.adjustments || { bonuses: [], penalties: [] };
     const evaluation = source.evaluation ? AUH.parse.evaluation(source.evaluation) : prev.evaluation || AUH.parse.emptyEvaluation();
     const links = source.links ? AUH.parse.links(source.links) : prev.links || { list: [] };
     const qa = source.qa ? AUH.parse.qa(source.qa) : prev.qa || { list: [], categories: [] };

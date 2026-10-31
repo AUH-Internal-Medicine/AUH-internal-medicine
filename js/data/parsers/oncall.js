@@ -122,7 +122,7 @@
       parsed.push({ date: iso, day: canonical[0], row: canonical });
     }
 
-    const merged = mergeEmergencyCenter(headers, parsed);
+    const merged = applyCategoryMerges(headers, parsed);
 
     headersApi.logResolution(source, resolution);
     if (skipped.length) log.warn('oncall', 'صفوف بتاريخ غير مقروء تم تجاهلها:', skipped.slice(0, 10));
@@ -132,70 +132,81 @@
   }
 
   /**
-   * إسعاف المركز — دمجُ العمودين في عمودٍ واحد من تاريخ الدمج وبعده.
+   * تطبيق كلّ قواعد الدمج (`AUH.domain.oncallSchedule.MERGE_RULES`) — عمودان
+   * حقيقيان في الشيت يصيران عموداً واحداً من تاريخ الدمج وبعده، **هنا في
+   * المُحلِّل لا في كلّ واجهة**: كلُّ ما يقرأ النموذجَ القانونيّ (الواجهات
+   * والإحصائيات و«معلوماتي» والتصدير) يرى النتيجةَ نفسَها بلا سطرٍ إضافيّ عنده.
    *
-   * الشيتُ يُبقي «إسعاف مركز صباحي» و«إسعاف مركز ليلي» عمودين، لكنّ المناوبةَ
-   * صارت كاملةً واحدة. فيُدمَجان **هنا، في المُحلِّل**، لا في كلّ واجهة: كلُّ ما
-   * يقرأ النموذجَ القانونيّ (الواجهات والإحصائيات و«معلوماتي» والتصدير) يرى
-   * النتيجةَ نفسَها بلا سطرٍ إضافيّ عنده.
-   *
-   * والدمجُ **لكلّ يومٍ على حدة**:
-   *   يومٌ قبل التاريخ → العمودان كما هما، والعمودُ المدموج فارغ
-   *   يومٌ من التاريخ  → العمودُ المدموج فيه الاسمان معاً، والعمودان فارغان
+   * كلّ قاعدةٍ تُطبَّق **لكلّ يومٍ على حدة**:
+   *   يومٌ قبل تاريخ الدمج → العمودان كما هما، والعمودُ المدموج فارغ
+   *   يومٌ من تاريخ الدمج  → العمودُ المدموج فيه الاسمان معاً، والعمودان فارغان
    * فالخلايا الفارغة يتجاهلها كلُّ المستهلكين أصلاً، فيظهر لكلّ يومٍ شكلُه
    * الصحيح دون أن يعرف أحدٌ منهم بالقاعدة.
    *
-   * ولو غاب أحدُ العمودين عن الشيت لا يحدث شيء — تُعاد المدخلاتُ كما جاءت.
+   * ولو غاب أحدُ عمودَي قاعدةٍ عن الشيت لا يحدث شيء لتلك القاعدة بعينها —
+   * تُعاد المدخلاتُ كما جاءت وتُكمَل بقيّةُ القواعد.
    */
-  function mergeEmergencyCenter(headers, rows) {
+  function applyCategoryMerges(headers, rows) {
     const rules = AUH.domain && AUH.domain.oncallSchedule;
-    if (!rules || !rules.EMERGENCY_CENTER_PARTS) return { headers, rows };
+    const mergeRules = (rules && rules.MERGE_RULES) || [];
 
-    const partCols = rules.EMERGENCY_CENTER_PARTS
-      .map(name => headers.findIndex((h, i) => i >= 2 && normAr(h || '') === normAr(name)))
-      .filter(i => i >= 0);
-    if (partCols.length < 2) return { headers, rows };
+    let curHeaders = headers;
+    let curRows = rows;
 
-    const at = Math.max.apply(null, partCols) + 1;   // بعد الليلي، مع عائلته
-    const newHeaders = headers.slice();
-    newHeaders.splice(at, 0, rules.EMERGENCY_CENTER_MERGED);
+    mergeRules.forEach(rule => {
+      const partCols = rule.parts
+        .map(name => curHeaders.findIndex((h, i) => i >= 2 && normAr(h || '') === normAr(name)))
+        .filter(i => i >= 0);
+      if (partCols.length < 2) return;
 
-    let mergedDays = 0;
-    const newRows = rows.map(r => {
-      const cells = r.row.slice();
-      let mergedCell = '';
+      const at = Math.max.apply(null, partCols) + 1;   // بعد آخر عمودٍ من عائلته
+      const newHeaders = curHeaders.slice();
+      newHeaders.splice(at, 0, rule.merged);
 
-      let halves = null;
-      if (r.date >= rules.MERGE_DATE_EMERGENCY_CENTER) {
-        const names = [];
-        const parts = [];
-        partCols.forEach(c => {
-          const own = [];
-          splitNames(cells[c] || '').forEach(nm => {
-            own.push(nm);
-            if (!names.some(x => normAr(x) === normAr(nm))) names.push(nm);
+      let mergedDays = 0;
+      const newRows = curRows.map(r => {
+        const cells = r.row.slice();
+        let mergedCell = '';
+
+        let halves = null;
+        if (r.date >= rule.mergeDate) {
+          const names = [];
+          const parts = [];
+          partCols.forEach(c => {
+            const own = [];
+            splitNames(cells[c] || '').forEach(nm => {
+              own.push(nm);
+              if (!names.some(x => normAr(x) === normAr(nm))) names.push(nm);
+            });
+            if (own.length) parts.push({ label: curHeaders[c], names: own });
           });
-          if (own.length) parts.push({ label: headers[c], names: own });
-        });
-        if (names.length) {
-          mergedCell = names.join('\n');
-          partCols.forEach(c => { cells[c] = ''; });
-          // النصفان يُحفظان مع اليوم: المناوبةُ واحدةٌ الآن، لكنّ الشهرَ
-          // الانتقاليّ يحتاج أن يُظهر داخل البطاقة من كان نهارياً ومن ليلياً.
-          // (تُعاد الحسبةُ في كل تحليل، فلا تتعلّق بالنسخة المؤقتة.)
-          if (parts.length > 1) halves = parts;
-          mergedDays++;
+          if (names.length) {
+            mergedCell = names.join('\n');
+            partCols.forEach(c => { cells[c] = ''; });
+            // الأنصاف تُحفظ مع اليوم: المناوبةُ واحدةٌ الآن، لكنّ الشهرَ
+            // الانتقاليّ (إن وُجد) يحتاج أن يُظهر داخل البطاقة من كان في أيّ نصف.
+            if (parts.length > 1) halves = parts;
+            mergedDays++;
+          }
         }
-      }
 
-      cells.splice(at, 0, mergedCell);
-      const out = { date: r.date, day: r.day, row: cells };
-      if (halves) out.emergencyCenterHalves = halves;
-      return out;
+        cells.splice(at, 0, mergedCell);
+        const out = { date: r.date, day: r.day, row: cells };
+        if (halves) {
+          out.mergeHalves = r.mergeHalves || {};
+          out.mergeHalves[rule.key] = halves;
+        } else if (r.mergeHalves) {
+          out.mergeHalves = r.mergeHalves;
+        }
+        return out;
+      });
+
+      log.debug('oncall', `${rule.merged}: دُمج في ${mergedDays} يوماً من ${rule.mergeDate}`);
+      curHeaders = newHeaders;
+      curRows = newRows;
     });
 
-    log.debug('oncall', `إسعاف المركز: دُمج في ${mergedDays} يوماً من ${rules.MERGE_DATE_EMERGENCY_CENTER}`);
-    return { headers: newHeaders, rows: newRows };
+    return { headers: curHeaders, rows: curRows };
   }
 
   /* ------------------------------------------------------------------ year two */
@@ -315,32 +326,31 @@
   /* --------------------------------------------------------------- adjustments */
 
   /**
-   * Manual adjustments: per-person hour corrections, volunteer shifts, and
-   * bonus hours.
-   *
-   * Row kinds (see the schema for the exact wording):
-   *   'shift' — a real date + a duty category
-   *   'bonus' — the date or the category says "Bonus"; hours are credited to the
-   *             person without creating an on-call assignment. A bonus row that
-   *             still carries a real date belongs to that month; one written as
-   *             `Bonus | Bonus` is undated and only affects the totals.
+   * Bonus/penalty shift adjustments (see schema.js for the full rule). Every
+   * row becomes exactly one of:
+   *   'bonus'   — type cell matches a bonus keyword   → +1 shift
+   *   'penalty' — type cell matches a penalty keyword → −1 shift
+   * The date column is never read. The hours column is only checked for the
+   * exact value 24 (⇒ holiday shift); anything else means "not a holiday".
    */
   function parseOncallAdjustments(table) {
     const source = AUH.data.schema.oncallAdjustments;
     const rows = Array.isArray(table) ? table : [];
-    if (!rows.length) return { entries: [], bonuses: [], issues: [] };
+    if (!rows.length) return { bonuses: [], penalties: [], issues: [] };
 
     const resolution = headersApi.resolveColumns(rows[0] || [], source);
     const get = headersApi.createAccessor(resolution.map);
     const bonusWords = source.bonusKeywords || ['bonus'];
-    // Forgiving on purpose: "Bonus", "bonus ", "BONUS", "bouns", "بونص", "بونس"
-    // and "مكافأة" all mean the same thing to whoever is filling the sheet.
+    const penaltyWords = source.penaltyKeywords || ['عقوبة'];
+    // Forgiving on purpose: "Bonus", "bonus ", "BONUS", "بونص", "بونس" and
+    // "مكافأة" all mean the same thing to whoever is filling the sheet.
     const isBonusWord = value => matchesKeyword(value, bonusWords);
+    const isPenaltyWord = value => matchesKeyword(value, penaltyWords);
 
     // If the first row is not a header (no recognizable labels), treat it as data.
     const firstIsHeader = normAr((rows[0] || [])[resolution.map.name || 0] || '').includes(normAr('الاسم'));
-    const entries = [];
     const bonuses = [];
+    const penalties = [];
     const skipped = [];
 
     for (let i = firstIsHeader ? 1 : 0; i < rows.length; i++) {
@@ -351,7 +361,6 @@
       const abbr = get(row, 'abbr');
       if (!name && !abbr) continue;
 
-      const rawDate = get(row, 'date');
       const category = get(row, 'category');
       const hoursRaw = get(row, 'hours');
       if (!hoursRaw) {
@@ -359,25 +368,22 @@
         continue;
       }
       const hours = safeNum(hoursRaw);
-      const date = extractDate(rawDate) || '';
+      const isHoliday = hours === 24;
 
-      if (isBonusWord(category) || isBonusWord(rawDate)) {
-        bonuses.push({ kind: 'bonus', name, abbr, date, hours, label: category });
-        continue;
-      }
-
-      if (!date || !category) {
+      if (isBonusWord(category)) {
+        bonuses.push({ name, abbr, isHoliday });
+      } else if (isPenaltyWord(category)) {
+        penalties.push({ name, abbr, isHoliday });
+      } else {
         skipped.push(row);
-        continue;
       }
-      entries.push({ kind: 'shift', name, abbr, date, category, hours });
     }
 
     headersApi.logResolution(source, resolution);
-    log.debug('oncall', `تعديلات: ${entries.length} صف مناوبة، ${bonuses.length} صف بونص`);
-    if (skipped.length) log.warn('oncall', 'صفوف تعديل غير مقروءة تم تجاهلها:', skipped);
+    log.debug('oncall', `تعديلات: ${bonuses.length} بونص، ${penalties.length} عقوبة`);
+    if (skipped.length) log.warn('oncall', 'صفوف تعديل غير مقروءة تم تجاهلها (لا Bonus ولا عقوبة، أو بلا عدد ساعات):', skipped);
 
-    return { entries, bonuses, issues: resolution.issues, skipped };
+    return { bonuses, penalties, issues: resolution.issues, skipped };
   }
 
   AUH.parse.oncall = parseOncall;

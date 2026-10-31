@@ -104,18 +104,18 @@
       list = list.filter(x => this.shiftFilterCount(x) > 0);
     }
 
-    const key = this.doctorStatsSort.key || 'hoursCompleted';
+    const key = this.doctorStatsSort.key || 'completed';
     const dir = this.doctorStatsSort.dir === 'asc' ? 1 : -1;
     const valueOf = key === 'shiftFilterCount'
       ? entry => this.shiftFilterCount(entry)
       : entry => safeNum(entry[key]) || 0;
 
-    // Ties keep a stable, meaningful order: more hours first, then by name.
+    // Ties keep a stable, meaningful order: more shifts first, then by name.
     list.sort((a, b) => {
       const d = (valueOf(a) - valueOf(b)) * dir;
       if (d) return d;
-      const h = (b.hoursCompleted || 0) - (a.hoursCompleted || 0);
-      return h || (a.name || '').localeCompare(b.name || '', 'ar');
+      const c = (b.completed || 0) - (a.completed || 0);
+      return c || (a.name || '').localeCompare(b.name || '', 'ar');
     });
 
     return list;
@@ -135,7 +135,7 @@
     if (this.doctorStatsShiftFilter) {
       this.doctorStatsSort.key = 'shiftFilterCount';
     } else if (this.doctorStatsSort.key === 'shiftFilterCount') {
-      this.doctorStatsSort.key = 'hoursCompleted';
+      this.doctorStatsSort.key = 'completed';
     }
     this.renderDoctorStats();
   },
@@ -145,7 +145,7 @@
     return !!(this.doctorStatsShiftFilter ||
       this.doctorStatsSearchTerm ||
       !this.doctorStatsOnlyWithShift ||
-      this.doctorStatsSort.key !== 'hoursCompleted' ||
+      this.doctorStatsSort.key !== 'completed' ||
       this.doctorStatsSort.dir !== 'desc');
   },
 
@@ -154,7 +154,7 @@
     this.doctorStatsShiftFilter = '';
     this.doctorStatsOnlyWithShift = true;
     this.doctorStatsSearchTerm = '';
-    this.doctorStatsSort = { key: 'hoursCompleted', dir: 'desc' };
+    this.doctorStatsSort = { key: 'completed', dir: 'desc' };
     const search = document.getElementById('doctorStatsSearch');
     if (search) search.value = '';
     this.renderDoctorStats();
@@ -233,7 +233,7 @@
   doctorStatCardHtml(r) {
     const uid = `${(r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_')}`;
     const detached = !!r.isDetachedOrNotJoined;
-    return `<div class="doctor-stat-card${detached ? ' detached-card' : ''}"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div>${detached ? `<span class="dsc-status-badge"><i class="fas fa-user-slash"></i> ${this.escapeHtml(r.status) || 'غير ملتحق/منفك'}</span>` : ''}</div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}${this.shiftFocusHtml(r)}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursCompleted)}</div><div class="dsc-hours-lbl">ساعة (مناوبات تمّت)</div><div class="dsc-hours-rank">الترتيب: #${r.rankCompleted}</div>${r.bonusCompleted ? `<div class="dsc-hours-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(r.bonusCompleted)} Bonus</div>` : ''}</div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.hoursTotal)}</div><div class="dsc-hours-lbl">ساعة (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div>${r.bonusHours ? `<div class="dsc-hours-bonus"><i class="fas fa-gift"></i> منها ${this.formatNumDisplay(r.bonusHours)} Bonus</div>` : ''}</div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.total)}</span><span class="dsc-mini-lbl">مناوبات تراكمية</span></div><div class="dsc-mini dsc-mini-done"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}<span class="dsc-done-check" title="مناوبات مكتملة"><i class="fas fa-check"></i></span></span><span class="dsc-mini-lbl">تمّت</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}${Object.keys(r.groupDetails.other || {}).length ? this.groupDetailHtml('other', r.groupDetails, uid) : ''}${this.rotationsDetailHtml(r, uid)}</div><div class="dsc-bottom-row"><span><i class="fas fa-umbrella-beach"></i> عطل: ${this.formatNumDisplay(r.holiday)}</span><span class="dsc-praise-badge"><i class="fas fa-star"></i> ثناءات: ${this.formatNumDisplay(r.praiseCount)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row">${r.bonusHours ? `<span class="dsc-bonus-badge"><i class="fas fa-gift"></i> ساعات Bonus: ${this.formatNumDisplay(r.bonusHours)}</span>` : ''}<span><i class="fas fa-stopwatch"></i> ساعات المناوبات: ${this.formatNumDisplay(r.hoursShiftsTotal)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
+    return `<div class="doctor-stat-card${detached ? ' detached-card' : ''}"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div>${detached ? `<span class="dsc-status-badge"><i class="fas fa-user-slash"></i> ${this.escapeHtml(r.status) || 'غير ملتحق/منفك'}</span>` : ''}</div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}${this.shiftFocusHtml(r)}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.total)}</div><div class="dsc-hours-lbl">مناوبات (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div>${r.bonusShiftsCount ? `<div class="dsc-hours-bonus"><i class="fas fa-gift"></i> +${this.formatNumDisplay(r.bonusShiftsCount)} بونص</div>` : ''}${r.penaltyShiftsCount ? `<div class="dsc-hours-penalty"><i class="fas fa-triangle-exclamation"></i> −${this.formatNumDisplay(r.penaltyShiftsCount)} عقوبة</div>` : ''}</div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.holiday)}</div><div class="dsc-hours-lbl">مناوبات (عطل)</div><div class="dsc-hours-rank">الترتيب: #${r.rankHoliday}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini dsc-mini-done"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}<span class="dsc-done-check" title="مناوبات مكتملة"><i class="fas fa-check"></i></span></span><span class="dsc-mini-lbl">تمّت</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.remaining)}</span><span class="dsc-mini-lbl">متبقية</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}${Object.keys(r.groupDetails.other || {}).length ? this.groupDetailHtml('other', r.groupDetails, uid) : ''}${this.rotationsDetailHtml(r, uid)}</div><div class="dsc-bottom-row"><span class="dsc-praise-badge"><i class="fas fa-star"></i> ثناءات: ${this.formatNumDisplay(r.praiseCount)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
   },
 
   /** Fills the shift-type <select> with optgroups: group first, then each shift. */
