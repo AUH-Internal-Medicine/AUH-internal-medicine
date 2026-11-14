@@ -338,7 +338,7 @@
       const stat = AUH.domain.doctorStats.findStatsFor(this.doctorStats, r.name, r.abbr);
       (stat ? stat.assignments : []).forEach(a => {
         if (a.date !== dstr) return;
-        entries.push(Object.assign({ name: r.name, abbr: r.abbr, phone: r.phone }, a));
+        entries.push(Object.assign({ name: r.name, abbr: r.abbr, phone: r.phone, phone2: r.phone2 }, a));
       });
     });
 
@@ -348,7 +348,7 @@
     const dayEmergency = entries.filter(e => e.group === 'emergency' && !e.isNight);
     const rest = entries.filter(e => e.group !== 'emergency');
 
-    const rowHtml = e => `<div class="shift-group-row${e.isCompleted ? ' is-done' : ''}"><span class="sg-name">${mcn(e.name, e.phone, e.abbr)}</span><span class="sg-cat">${this.escapeHtml(e.category)}</span>${e.isCompleted ? '<i class="fas fa-check sg-done-icon" title="تمّت"></i>' : ''}</div>`;
+    const rowHtml = e => `<div class="shift-group-row${e.isCompleted ? ' is-done' : ''}"><span class="sg-name">${mcn(e.name, e.phone, e.abbr, e.phone2)}</span><span class="sg-cat">${this.escapeHtml(e.category)}</span>${e.isCompleted ? '<i class="fas fa-check sg-done-icon" title="تمّت"></i>' : ''}</div>`;
 
     const section = (title, icon, list, mod) => list.length
       ? `<div class="shift-group-section${mod ? ' ' + mod : ''}"><h5><i class="fas ${icon}"></i> ${title} <span class="count-badge">${list.length}</span></h5>${list.map(rowHtml).join('')}</div>`
@@ -427,10 +427,11 @@
           const resident = this.findRbyExact(n, yearId);
           const fn = resident ? resident.name : n;
           const ph = resident ? resident.phone : '';
+          const ph2 = resident ? resident.phone2 : '';
           const ab = resident ? resident.abbr : n;
           if (cats[cn].find(x => x.abbr === ab)) continue;
 
-          cats[cn].push({ abbr: ab, name: fn, phone: ph, resAbbr: ab });
+          cats[cn].push({ abbr: ab, name: fn, phone: ph, phone2: ph2, resAbbr: ab });
         }
       }
     }
@@ -479,7 +480,7 @@
       const schedule = isYear1 ? this.getCategorySchedule(cn, dstr) : null;
       const scheduleHtml = schedule && (schedule.time || schedule.duration) ? `<div class="oncall-schedule-meta${schedule.isHoliday ? ' holiday' : ''}"><span>${schedule.time || '-'}</span><span>${schedule.duration || '-'}</span></div>` : '';
 
-      const nameTag = n => `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr)}</span>`;
+      const nameTag = n => `<span class="oncall-name-tag">${mcn(n.name, n.phone, n.resAbbr, n.phone2)}</span>`;
 
       const halves = isYear1 ? this.categoryMergeHalves(cn, dstr, names) : null;
       const teamed = !halves && this.teamedCategory(cn, isYear1) && names.length > 3;
@@ -524,7 +525,7 @@
             const cr = this.findRbyExact(n, this.yearForTab ? this.yearForTab('oncall') : 1);
             const abbr = cr ? cr.abbr || cr.name : n;
             if (abbr === excludeAbbr) return;
-            if (!list.find(x => x.abbr === abbr)) list.push({ name: cr ? cr.name : n, abbr, phone: cr ? cr.phone : '' });
+            if (!list.find(x => x.abbr === abbr)) list.push({ name: cr ? cr.name : n, abbr, phone: cr ? cr.phone : '', phone2: cr ? cr.phone2 : '' });
           });
         }
       }

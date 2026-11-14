@@ -10,7 +10,7 @@
   'use strict';
 
   const AUH = global.AUH;
-  const { escapeHtml, escapeJsString } = AUH.text;
+  const { escapeHtml, escapeJsString, splitPhones, waLink } = AUH.text;
   const doc = global.document;
 
   /* ---------------------------------------------------------------- dark mode */
@@ -32,34 +32,38 @@
 
   /* ------------------------------------------------------------ phone tooltip */
 
-  let tooltipPhone = '';
+  /** صفّ رقمٍ واحد داخل بطاقة التواصل: الرقم + اتصال + واتساب + نسخ. */
+  function phoneRow(phone) {
+    return `<span class="tt-phone-row"><span class="tt-num">${escapeHtml(phone)}</span>` +
+      `<span class="tt-pbtns">` +
+      `<a href="tel:${escapeHtml(phone)}" class="tt-pbtn" title="اتصال" onclick="event.stopPropagation()"><i class="fas fa-phone"></i></a>` +
+      `<a href="${waLink(phone)}" target="_blank" rel="noopener" class="tt-pbtn wa" title="واتساب" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i></a>` +
+      `<button type="button" class="tt-pbtn copy" onclick="copyPhone('${escapeJsString(phone)}',this)" title="نسخ الرقم"><i class="fas fa-copy"></i></button>` +
+      `</span></span>`;
+  }
 
-  function showTooltip(e, name, phone) {
+  function showTooltip(e, name, phonesStr) {
     e.stopPropagation();
     const tt = doc.getElementById('nameTooltip');
     doc.getElementById('ttName').textContent = name;
-    doc.getElementById('ttPhone').textContent = 'هاتف: ' + phone;
-    tooltipPhone = phone;
+    const phones = (phonesStr || '').split('|').filter(Boolean);
+    doc.getElementById('ttPhone').innerHTML = phones.length
+      ? phones.map(phoneRow).join('')
+      : '<span class="tt-none">لا يوجد رقم في اللائحة</span>';
     tt.classList.add('show');
 
+    // قد يحمل رقمان فأكثر، فارتفاع البطاقة يتغيّر — يُقاس بعد وضع المحتوى
+    // كي لا تخرج من أسفل الشاشة عند رقمين أو أكثر.
     const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
     const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-    tt.style.left = Math.min(x - 100, global.innerWidth - 220) + 'px';
-    tt.style.top = y - 110 + 'px';
+    const h = tt.offsetHeight || 100;
+    tt.style.left = Math.max(10, Math.min(x - 100, global.innerWidth - 290)) + 'px';
+    tt.style.top = Math.max(10, Math.min(y - h - 10, global.innerHeight - h - 10)) + 'px';
   }
 
   function hideTooltip() {
     const tt = doc.getElementById('nameTooltip');
     if (tt) tt.classList.remove('show');
-  }
-
-  function copyTooltipPhone() {
-    if (!tooltipPhone) return;
-    navigator.clipboard.writeText(tooltipPhone);
-    const btn = doc.getElementById('ttCopyBtn');
-    btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ';
-    showToast('تم نسخ الرقم!');
-    setTimeout(() => (btn.innerHTML = '<i class="fas fa-copy"></i> نسخ الرقم'), 1500);
   }
 
   function copyPhone(phone, btn) {
@@ -80,14 +84,17 @@
   }
 
   /**
-   * Renders a resident name that opens the phone tooltip when clicked.
-   * `abbr` is appended in parentheses when given.
+   * Renders a resident name that opens the phone tooltip (اتصال + واتساب + نسخ)
+   * when clicked. `abbr` is appended in parentheses when given. `phone`/`phone2`
+   * may each hold more than one number (e.g. "093… / 094…") — all are merged,
+   * split and deduplicated before being handed to the tooltip.
    */
-  function mcn(name, phone, abbr) {
+  function mcn(name, phone, abbr, phone2) {
     let display = escapeHtml(name);
     if (abbr) display += ' (' + escapeHtml(abbr) + ')';
-    if (!phone) return display;
-    return `<span class="name-clickable" onclick="event.stopPropagation();showTooltip(event,'${escapeJsString(name)}','${escapeJsString(phone)}')">${display}</span>`;
+    const numbers = [...new Set([...splitPhones(phone), ...splitPhones(phone2)])];
+    if (!numbers.length) return display;
+    return `<span class="name-clickable" onclick="event.stopPropagation();showTooltip(event,'${escapeJsString(name)}','${escapeJsString(numbers.join('|'))}')">${display}</span>`;
   }
 
   /* ------------------------------------------------------ collapsibles + Q&A */
@@ -182,7 +189,6 @@
     restoreDarkMode,
     showTooltip,
     hideTooltip,
-    copyTooltipPhone,
     copyPhone,
     mcn,
     toggleCollapsible,
@@ -200,7 +206,6 @@
   global.toggleDarkMode = toggleDarkMode;
   global.showTooltip = showTooltip;
   global.hideTooltip = hideTooltip;
-  global.copyTooltipPhone = copyTooltipPhone;
   global.copyPhone = copyPhone;
   global.toggleCollapsible = toggleCollapsible;
   global.toggleQACard = toggleQACard;

@@ -29,6 +29,11 @@
     return client.postAndPoll('myRequests', { token: token }, QUICK);
   }
 
+  /** @returns {Promise<{state:'ok'}|{state:'error', message}>} */
+  function cancelRequest(token, id) {
+    return client.postAndPoll('cancelRequest', { token: token, id: id }, QUICK);
+  }
+
   /** @returns {Promise<{state:'ok', requests:Array}|{state:'error', message}>} */
   function adminListRequests(passcode) {
     return client.postAndPoll('adminListRequests', { passcode: passcode }, QUICK);
@@ -39,5 +44,5 @@
     return client.postAndPoll('adminDecideRequest', { passcode: passcode, id: id, decision: decision, note: note }, HEAVY);
   }
 
-  AUH.data.swapRequests = { submitRequest, myRequests, adminListRequests, adminDecideRequest };
+  AUH.data.swapRequests = { submitRequest, myRequests, cancelRequest, adminListRequests, adminDecideRequest };
 })(typeof window !== 'undefined' ? window : globalThis);

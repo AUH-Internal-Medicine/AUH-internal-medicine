@@ -71,7 +71,7 @@
 
       grid.innerHTML = sorted
         .map(([shiftName, members]) => {
-          const list = members.map(m => `<li>${mcn(m.name, m.phone, m.abbr)}</li>`).join('');
+          const list = members.map(m => `<li>${mcn(m.name, m.phone, m.abbr, m.phone2)}</li>`).join('');
           const dropdown = members.length
             ? `<div class="names-dropdown"><button class="names-dropdown-btn"><span><i class="fas fa-users"></i> ${yearLabel} (${members.length})</span><i class="fas fa-chevron-down"></i></button><ul class="names-dropdown-content">${list}</ul></div>`
             : '';

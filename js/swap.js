@@ -458,13 +458,20 @@
     return out;
   }
 
+  const ELIG_PAGE = 30;
+
   function renderEligible() {
     const host = $('elig');
     if (!host) return;
-    if (!S.shift) { host.innerHTML = ''; return; }
+    if (!S.shift) { host.innerHTML = ''; S._eligShown = 0; S._eligKey = null; return; }
 
     const mutual = S.kind === 'تبديل';
     const list = eligibleFor(S.shift, S.from);
+
+    // عدد الخيارات المعروضة يُحفظ طالما المناوبة/الكاتب نفسهما؛ يُعاد لأول
+    // صفحة فقط حين يختار المستخدم مناوبة أو صاحب مناوبة جديدين.
+    const eligKey = mutual + '|' + S.shift.date + '|' + S.shift.cat + '|' + (S.from ? keyOf(S.from) : '');
+    if (S._eligKey !== eligKey) { S._eligKey = eligKey; S._eligShown = ELIG_PAGE; }
     const late = S.shift.date < today
       ? '<div class="late-note"><i class="fas fa-clock-rotate-left"></i> <b>مناوبة مضت</b> — ' +
         'الطلب سيُرسل موسوماً بأنه <b>طلب متأخر</b>، والخيارات المعروضة مناوبات مضت أيضاً.</div>'
@@ -508,13 +515,18 @@
         '</div>';
     };
 
+    const shown = Math.min(S._eligShown || ELIG_PAGE, list.length);
+    const remaining = list.length - shown;
+
     host.innerHTML = late +
       `<div class="elig-head"><i class="fas fa-user-check"></i> <b>${list.length}</b> ${mutual ? 'زميلاً يمكن التبادل معهم' : 'طبيباً يمكنهم أخذ هذه المناوبة'}` +
       `<span class="elig-note">${mutual
         ? 'يستطيعون أخذ مناوبتك، ولديهم مناوبة تستطيع أنت أخذها'
         : 'لا مناوبة لديهم في نفس اليوم ولا في اليوم السابق أو التالي'} — مرتّبون من الأخفّ عبئاً</span></div>` +
-      `<div class="cands">${list.slice(0, 30).map(chip).join('')}</div>` +
-      (list.length > 30 ? `<div class="elig-note" style="margin-top:8px">…و${list.length - 30} آخرون — اكتب الاسم في المربع أعلاه.</div>` : '');
+      `<div class="cands">${list.slice(0, shown).map(chip).join('')}</div>` +
+      (remaining > 0
+        ? `<button type="button" class="elig-more-btn" id="eligMoreBtn"><i class="fas fa-chevron-down"></i> عرض المزيد (${remaining} آخرون)</button>`
+        : '');
 
     host.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -522,6 +534,12 @@
         .then(() => toast(`نُسخ الرقم ${btn.dataset.phone}`))
         .catch(() => toast('تعذّر النسخ', true));
     }));
+
+    const moreBtn = $('eligMoreBtn');
+    if (moreBtn) moreBtn.addEventListener('click', () => {
+      S._eligShown = (S._eligShown || ELIG_PAGE) + ELIG_PAGE;
+      renderEligible();
+    });
 
     const choose = el => {
       const doc = S.roster.find(r => keyOf(r) === el.dataset.key);
@@ -1140,10 +1158,12 @@
   const STATUS_LABEL = {
     pending_admin: 'بانتظار اعتماد الأدمن',
     approved: 'اعتُمِد',
-    rejected_by_admin: 'رفضه الأدمن'
+    rejected_by_admin: 'رفضه الأدمن',
+    cancelled_by_requester: 'ألغيتَه'
   };
   const STATUS_CLASS = {
-    pending_admin: 'pending', approved: 'approved', rejected_by_admin: 'rejected'
+    pending_admin: 'pending', approved: 'approved', rejected_by_admin: 'rejected',
+    cancelled_by_requester: 'rejected'
   };
 
   function loadMyRequests() {
@@ -1158,8 +1178,11 @@
     }).catch(() => { host.innerHTML = '<p class="step-hint">تعذّر التحميل — أعد تحميل الصفحة.</p>'; });
   }
 
+  let disarmCancelBtns = null; // listener الوحيد النشط — يُستبدَل لا يتراكم عبر الرسمات
+
   function renderMyRequests(list) {
     const host = $('myRequestsList');
+    if (disarmCancelBtns) { document.removeEventListener('click', disarmCancelBtns); disarmCancelBtns = null; }
     if (!list.length) { host.innerHTML = '<p class="step-hint">لا طلبات بعد.</p>'; return; }
 
     host.innerHTML = list.map(r => {
@@ -1167,13 +1190,54 @@
       const cls = STATUS_CLASS[r.status] || 'pending';
       const label = STATUS_LABEL[r.status] || r.status;
       const urgentBadge = r.urgent ? '<span class="req-badge urgent"><i class="fas fa-triangle-exclamation"></i> عاجل</span>' : '';
+      // الإلغاء متاحٌ لصاحب الطلب وحده (لا للطرف الآخر)، وما دام لم يبتّ فيه الأدمن بعد.
+      const cancelBtn = (r.perspective === 'mine' && r.status === 'pending_admin')
+        ? `<button type="button" class="req-cancel-btn" data-id="${escapeHtml(r.id)}" title="إلغاء الطلب" aria-label="إلغاء الطلب"><i class="fas fa-xmark"></i></button>`
+        : '';
 
       return `<div class="req-item">
         <div><div class="who">${dir}</div>
         <div class="what">${escapeHtml(r.kind)} — ${escapeHtml(r.shiftType)} يوم ${escapeHtml(fmt(r.shiftDate))}</div></div>
-        ${urgentBadge}<span class="req-badge ${cls}">${escapeHtml(label)}</span>
+        <div class="req-actions">${urgentBadge}<span class="req-badge ${cls}">${escapeHtml(label)}</span>${cancelBtn}</div>
       </div>`;
     }).join('');
+
+    // ضغطةٌ أولى تُسلِّح الزرّ (يتّسع ويحمر ويطلب تأكيداً)، وضغطةٌ ثانية خلال
+    // ٤ ثوانٍ تُنفِّذ الإلغاء فعلاً — بلا confirm() أصليّ، اتّساقاً مع بقية
+    // الموقع. أيّ نقرٍ آخر في الصفحة أو انتهاء المهلة يُلغي التسليح.
+    let armedBtn = null, armedTimer = null;
+    const disarm = () => {
+      if (armedBtn) { armedBtn.classList.remove('armed'); armedBtn.innerHTML = '<i class="fas fa-xmark"></i>'; }
+      armedBtn = null;
+      clearTimeout(armedTimer);
+    };
+
+    host.querySelectorAll('.req-cancel-btn').forEach(btn => btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (btn !== armedBtn) {
+        disarm();
+        armedBtn = btn;
+        btn.classList.add('armed');
+        btn.innerHTML = '<i class="fas fa-triangle-exclamation"></i> تأكيد الإلغاء';
+        armedTimer = setTimeout(disarm, 4000);
+        return;
+      }
+
+      disarm();
+      btn.disabled = true;
+      const token = AUH.storage.get(TOKEN_KEY);
+      AUH.data.swapRequests.cancelRequest(token, btn.dataset.id).then(res => {
+        if (!res || res.state !== 'ok') {
+          toast((res && res.message) || 'تعذّر إلغاء الطلب.', true);
+          btn.disabled = false;
+          return;
+        }
+        toast('أُلغي الطلب.');
+        loadMyRequests();
+      }).catch(() => { toast('تعذّر إلغاء الطلب — حاول مجدداً.', true); btn.disabled = false; });
+    }));
+    disarmCancelBtns = disarm;
+    document.addEventListener('click', disarmCancelBtns);
   }
 
   /**

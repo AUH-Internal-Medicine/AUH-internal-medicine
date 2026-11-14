@@ -138,12 +138,14 @@
       const statusBadge = `<span class="status-badge ${ok ? 'status-joined' : statusClass}">${ok ? '<i class="fas fa-circle-check"></i>' : '<i class="fas fa-hourglass-half"></i>'} ${escapeHtml(res.st || 'غير محدد')}</span>`;
       const copyBtn = phone ? `<button class="copy-btn" onclick="copyPhone('${phoneJs}',this)"><i class="fas fa-copy"></i></button>` : '';
 
-      // A cell may carry two numbers ("093… / 094…"); each gets its own line,
-      // its own call link and its own copy button.
-      const numbers = AUH.text.splitPhones(phone);
+      // A cell may carry two numbers ("093… / 094…") plus a separate "رقم هاتف
+      // 2" column; each gets its own line, its own call/واتساب link and its
+      // own copy button.
+      const numbers = [...new Set([...AUH.text.splitPhones(phone), ...AUH.text.splitPhones(res.phone2)])];
       const phoneCell = numbers.length
         ? `<div class="phone-cell">${numbers.map(n =>
             `<span class="phone-one"><a href="tel:${escapeHtml(n)}" dir="ltr">${escapeHtml(n)}</a>` +
+            `<a href="${AUH.text.waLink(n)}" target="_blank" rel="noopener" title="واتساب" class="wa-btn"><i class="fab fa-whatsapp"></i></a>` +
             `<button class="copy-btn" title="نسخ" onclick="copyPhone('${escapeJsString(n)}',this)"><i class="fas fa-copy"></i></button></span>`
           ).join('')}</div>`
         : '<span class="muted">-</span>';
@@ -152,7 +154,7 @@
         rows.push(
           `<tr><td class="seq-cell">${res.seq}</td>` +
             `<td><input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')"></td>` +
-            `<td style="text-align:right;">${mcn(res.name, phone)}</td>` +
+            `<td style="text-align:right;">${mcn(res.name, phone, '', res.phone2)}</td>` +
             `<td>${orNone(res.abbr)}</td>` +
             `<td>${orNone(res.spec)}</td>` +
             `<td>${numbers.length ? phoneCell : '<span class="none-val">لا يوجد</span>'}</td></tr>`
@@ -162,7 +164,7 @@
             `<span class="seq-badge">${res.seq}</span>` +
             `<input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')">` +
             `<div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;">` +
-            `<span class="card-name" style="word-break:break-word;">${mcn(res.name, phone)}</span>` +
+            `<span class="card-name" style="word-break:break-word;">${mcn(res.name, phone, '', res.phone2)}</span>` +
             `<span class="card-abbr">${escapeHtml(res.abbr || '')}</span></div></div>` +
             `<div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${orNone(res.spec)}</span></div>` +
             `<div class="card-row"><span class="card-label">الهاتف</span><span class="card-value">${numbers.length ? phoneCell : '<span class="none-val">لا يوجد</span>'}</span></div>` +
@@ -174,7 +176,7 @@
       rows.push(
         `<tr><td class="seq-cell">${res.seq}</td>` +
           `<td><input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')"></td>` +
-          `<td style="text-align:right;">${mcn(res.name, phone)}</td>` +
+          `<td style="text-align:right;">${mcn(res.name, phone, '', res.phone2)}</td>` +
           `<td>${escapeHtml(res.abbr)}</td><td>${escapeHtml(res.spec)}</td>` +
           `<td>${phoneCell}</td>` +
           `<td>${escapeHtml(res.monthlyShift || '-')}</td><td>${escapeHtml(res.join || '-')}</td>` +
@@ -186,7 +188,7 @@
           `<span class="seq-badge">${res.seq}</span>` +
           `<input type="checkbox" class="contact-checkbox" data-name="${nameAttr}" ${checked} onchange="app.toggleResident('${nameJs}')">` +
           `<div class="card-header" style="flex:1;margin:0;padding:0;border:none;min-width:0;">` +
-          `<span class="card-name" style="word-break:break-word;">${mcn(res.name, phone)}</span>` +
+          `<span class="card-name" style="word-break:break-word;">${mcn(res.name, phone, '', res.phone2)}</span>` +
           `<span class="card-abbr">${escapeHtml(res.abbr)}</span></div></div>` +
           `<div class="card-row"><span class="card-label">الاختصاص</span><span class="card-value">${escapeHtml(res.spec || '-')}</span></div>` +
           `<div class="card-row"><span class="card-label">الهاتف</span><span class="card-value">${phoneCell}</span></div>` +

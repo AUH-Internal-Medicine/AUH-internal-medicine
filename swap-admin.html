@@ -215,11 +215,13 @@ h1{font-size:1.2em;margin:0 0 4px}
   const STATUS_LABEL = {
     pending_confirm: 'بانتظار تأكيد الطرف الآخر',
     pending_admin: 'بانتظار اعتماد الأدمن',
-    approved: 'اعتُمِد', rejected_by_target: 'رفضه الطرف الآخر', rejected_by_admin: 'رفضه الأدمن'
+    approved: 'اعتُمِد', rejected_by_target: 'رفضه الطرف الآخر', rejected_by_admin: 'رفضه الأدمن',
+    cancelled_by_requester: 'ألغاه مقدّم الطلب'
   };
   const STATUS_CLASS = {
     pending_confirm: 'status', pending_admin: 'status',
-    approved: 'approved', rejected_by_target: 'rejected', rejected_by_admin: 'rejected'
+    approved: 'approved', rejected_by_target: 'rejected', rejected_by_admin: 'rejected',
+    cancelled_by_requester: 'rejected'
   };
 
   function render() {

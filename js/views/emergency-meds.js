@@ -82,13 +82,18 @@
 
   /* ─────────────────────────── الرسم ─────────────────────────── */
 
+  /** اليوم المعروض حالياً في صندوق «اليوم» — يبقى بين الرسمات، ويُعاد لليوم
+   *  الحقيقي فقط بزرّ «اليوم» أو عند أوّل تحميل للصفحة. */
+  let selectedDate = null;
+
   function render() {
     const host = document.getElementById('emergMedsHost');
     if (!host) return;
     const app = global.app;
 
     const today = AUH.dates.todayIso();
-    const onDuty = dutiesToday(app, today);
+    if (!selectedDate) selectedDate = today;
+    const onDuty = dutiesToday(app, selectedDate);
     // مَن منهم مناوب اليوم يُوسم في القائمة أيضاً، لا في صندوق اليوم وحده:
     // من ينزل إلى القائمة ليتّصل بأقربهم يجب أن يرى من هو في المشفى الآن.
     const dutyNames = new Set(onDuty.map(d => normAr(d.name)));
@@ -105,7 +110,7 @@
       '<div class="section-header"><h2><i class="fas fa-kit-medical"></i> الأدوية الإسعافية</h2>' +
         '<span class="em-sub">مبادرة تطوّعية لتوفير الأدوية الإسعافية من التبرّعات</span></div>' +
 
-      todayBox(today, onDuty) +
+      todayBox(selectedDate, today, onDuty) +
 
       '<div class="em-grid">' +
         '<section class="em-card"><h3><i class="fas fa-user-doctor"></i> المتطوّعون من السنة الأولى</h3>' +
@@ -151,26 +156,44 @@
     const don = document.getElementById('emDonate');
     if (don) don.addEventListener('click', openDonation);
 
+    const prevBtn = document.getElementById('emDayPrev');
+    const nextBtn = document.getElementById('emDayNext');
+    const todayBtn = document.getElementById('emDayToday');
+    if (prevBtn) prevBtn.addEventListener('click', () => { selectedDate = AUH.dates.addDays(selectedDate, -1); render(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { selectedDate = AUH.dates.addDays(selectedDate, 1); render(); });
+    if (todayBtn) todayBtn.addEventListener('click', () => { selectedDate = today; render(); });
+
     wirePhoneButtons(host);
   }
 
-  /** صندوق اليوم — أكبر ما في الصفحة، لأنه سبب فتحها. */
-  function todayBox(iso, onDuty) {
+  /**
+   * صندوق اليوم — أكبر ما في الصفحة، لأنه سبب فتحها. `iso` هو اليوم المعروض
+   * (قد لا يكون اليوم الحقيقي بعد التنقّل بالأسهم)، و`todayIso` هو تاريخ
+   * اليوم الحقيقي — للمقارنة فقط، كي يظهر شارة «اليوم» وزرّ العودة إليه.
+   */
+  function todayBox(iso, todayIso, onDuty) {
     const d = new Date(iso + 'T00:00:00');
     const when = `${AUH.constants.DAY_NAMES[d.getDay()]} ${d.getDate()} ` +
                  `${AUH.constants.MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+    const isToday = iso === todayIso;
+
+    const nav = '<div class="em-today-head">' +
+      '<button type="button" class="em-day-arrow" id="emDayPrev" aria-label="اليوم السابق" title="اليوم السابق"><i class="fas fa-chevron-right"></i></button>' +
+      `<div class="em-today-date"><i class="fas fa-calendar-day"></i> ${esc(when)}` +
+        (isToday ? '<span class="em-today-badge">اليوم</span>' : '') + '</div>' +
+      '<button type="button" class="em-day-arrow" id="emDayNext" aria-label="اليوم التالي" title="اليوم التالي"><i class="fas fa-chevron-left"></i></button>' +
+      (isToday ? '' : '<button type="button" class="em-day-jump" id="emDayToday">العودة لليوم</button>') +
+    '</div>';
 
     if (!onDuty.length) {
-      return '<div class="em-today none">' +
-        `<div class="em-today-date"><i class="fas fa-calendar-day"></i> ${esc(when)}</div>` +
+      return '<div class="em-today none">' + nav +
         '<div class="em-today-empty"><i class="fas fa-user-slash"></i>' +
-          '<b>لا أحد من المسؤولين مناوب اليوم</b>' +
+          `<b>لا أحد من المسؤولين مناوب ${isToday ? 'اليوم' : 'هذا اليوم'}</b>` +
           '<span>تواصل مع أيٍّ منهم من القائمة أدناه.</span></div></div>';
     }
 
-    return '<div class="em-today">' +
-      `<div class="em-today-date"><i class="fas fa-calendar-day"></i> ${esc(when)}</div>` +
-      '<div class="em-today-label">المناوبون اليوم من المسؤولين عن الأدوية</div>' +
+    return '<div class="em-today">' + nav +
+      `<div class="em-today-label">${isToday ? 'المناوبون اليوم' : 'المناوبون هذا اليوم'} من المسؤولين عن الأدوية</div>` +
       '<div class="em-today-list">' + onDuty.map(p =>
         '<div class="em-duty">' +
           `<div class="em-duty-who"><b>${esc(p.name)}</b>` +

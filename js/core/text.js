@@ -216,8 +216,16 @@
       .filter(p => (p.match(/\d/g) || []).length >= 6);
   }
 
+  /** رقم محليّ سوري يبدأ بصفر — واتساب يحتاج رمز الدولة ٩٦٣ بدلاً من الصفر. */
+  function waLink(phone) {
+    const digits = (phone || '').replace(/[^\d]/g, '');
+    const intl = digits.startsWith('0') ? '963' + digits.slice(1) : digits;
+    return `https://wa.me/${intl}`;
+  }
+
   AUH.text = {
     splitPhones,
+    waLink,
     normAr,
     prepSearch,
     smartSearch,

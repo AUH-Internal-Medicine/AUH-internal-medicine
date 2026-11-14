@@ -101,6 +101,14 @@
     return toIso(new Date());
   }
 
+  /** `YYYY-MM-DD` shifted by `delta` days (negative goes back). */
+  function addDays(iso, delta) {
+    const [y, m, d] = String(iso || '').split('-').map(Number);
+    if (!y || !m || !d) return iso;
+    const dt = new Date(y, m - 1, d + delta);
+    return toIso(dt);
+  }
+
   /** `YYYY-MM-DD` → `YYYY-MM`. */
   function monthKey(iso) {
     return String(iso || '').slice(0, 7);
@@ -139,6 +147,7 @@
     daysSinceDate,
     toIso,
     todayIso,
+    addDays,
     monthKey,
     nowStamp
   };
