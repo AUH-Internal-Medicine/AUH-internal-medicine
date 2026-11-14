@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--primary:#1f6b4a;--primary-strong:#17543a;--ink:#1c2420;--ink-2:#5c6b63;--surface:#fff;
+:root{--primary:#1f6b4a;--primary-strong:#17543a;--primary-soft:#e5f1ec;--ink:#1c2420;--ink-2:#5c6b63;--surface:#fff;
   --surface-sunk:#f3f6f4;--rule:#dfe6e1;--radius:12px;--signal:#b3433b;--signal-soft:#fbe9e7;--shadow:0 6px 18px rgba(20,40,30,.08)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--surface-sunk);color:var(--ink);font-family:'IBM Plex Sans Arabic',sans-serif;font-size:14.5px}
@@ -36,6 +36,10 @@ h1{font-size:1.2em;margin:0 0 4px}
 .tabs button{flex:1;border:1px solid var(--rule);background:var(--surface);padding:9px;border-radius:999px;
   font-family:inherit;font-weight:700;font-size:12.8px;cursor:pointer}
 .tabs button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+#refreshBtn i{transition:transform .2s}
+#refreshBtn.spin i{animation:refreshSpin .7s linear infinite}
+@keyframes refreshSpin{to{transform:rotate(360deg)}}
+.last-refresh{font-size:11.5px;color:var(--ink-2);margin:-10px 0 12px;text-align:end}
 .req{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:14px;margin-bottom:10px}
 .req .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .req .who{font-weight:700;font-size:14px}
@@ -60,6 +64,51 @@ h1{font-size:1.2em;margin:0 0 4px}
 .actions .no{background:var(--signal);color:#fff}
 .actions input{flex:1;height:36px;border-radius:999px;border:1px solid var(--rule);padding:0 12px;font-size:12.5px}
 .empty{color:var(--ink-2);text-align:center;padding:30px 0}
+
+.doc-name-link{cursor:pointer;border-bottom:1px dashed var(--ink-2)}
+.doc-name-link:hover{color:var(--primary);border-color:var(--primary)}
+
+/* ------------------------------------------------- نافذة رزنامة الطبيب */
+.modal-overlay{position:fixed;inset:0;background:rgba(20,30,25,.55);display:flex;align-items:center;
+  justify-content:center;padding:16px;z-index:999}
+.modal-overlay[hidden]{display:none}
+.modal-box{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);max-width:480px;
+  width:100%;max-height:92vh;overflow-y:auto;padding:20px;position:relative}
+.modal-close{position:absolute;top:10px;left:12px;border:0;background:transparent;font-size:20px;line-height:1;
+  color:var(--ink-2);cursor:pointer}
+.modal-close:hover{color:var(--signal)}
+.modal-head{margin-bottom:14px;padding-inline-end:26px}
+.modal-name{font-weight:700;font-size:16px;margin-bottom:8px}
+.modal-phones{display:flex;flex-direction:column;gap:6px}
+.modal-nophone{font-size:12.5px;color:var(--ink-2)}
+.mp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;
+  background:var(--surface-sunk);border-radius:8px;padding:6px 10px}
+.mp-row .mp-num{font-weight:700;color:var(--ink);letter-spacing:.3px;font-variant-numeric:tabular-nums;direction:ltr}
+.mp-pbtns{display:flex;gap:5px;flex:none}
+.mp-pbtn{border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);border-radius:7px;
+  width:28px;height:26px;display:grid;place-items:center;cursor:pointer;font-size:11.5px;text-decoration:none}
+.mp-pbtn:hover{border-color:var(--primary);color:var(--primary)}
+.mp-pbtn.wa:hover{border-color:#25D366;color:#25D366}
+
+.cal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 11px}
+.cal-title{font-weight:700;font-size:14px}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:32px;height:32px;border-radius:9px;border:1px solid var(--rule);background:var(--surface-sunk);
+  color:var(--ink);cursor:pointer}
+.cal-nav button:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.cal-nav button:disabled{opacity:.35;cursor:not-allowed}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .dow{text-align:center;font-size:10.5px;font-weight:700;color:var(--ink-2);padding-bottom:3px}
+.cal .day{position:relative;min-height:56px;border:1px solid var(--rule);border-radius:9px;background:var(--surface);
+  padding:5px 4px;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.cal .day.pad{border:0;background:transparent;min-height:0}
+.cal .day .dn{font-size:11px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.cal .day .tag{font-size:9px;line-height:1.3;font-weight:700;padding:2px 4px;border-radius:5px;
+  background:var(--primary-soft);color:var(--primary-strong);align-self:flex-start}
+.cal .day.duty{border-color:var(--primary);background:var(--primary-soft)}
+.cal .day.hol .tag{background:var(--signal-soft);color:var(--signal)}
+.empty-cal{grid-column:1/-1;padding:26px 14px;text-align:center;color:var(--ink-2);font-size:13px;
+  background:var(--surface-sunk);border-radius:var(--radius)}
 </style>
 </head>
 <body>
@@ -83,9 +132,29 @@ h1{font-size:1.2em;margin:0 0 4px}
   <div class="tabs" id="tabs">
     <button type="button" data-f="pending" class="on">بانتظار القرار</button>
     <button type="button" data-f="all">الكل</button>
+    <button type="button" id="refreshBtn" style="flex:0 0 auto;background:var(--surface);border-color:var(--rule);color:var(--ink)"><i class="fas fa-rotate"></i> تحديث</button>
     <button type="button" id="exportBtn" style="flex:0 0 auto;background:var(--surface);border-color:var(--rule);color:var(--ink)"><i class="fas fa-file-excel"></i> تحميل السجل Excel</button>
   </div>
+  <div class="last-refresh" id="lastRefresh"></div>
   <div id="list"><p class="empty">جارٍ التحميل...</p></div>
+</div>
+
+<div class="modal-overlay" id="docModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="docModalName">
+    <button type="button" class="modal-close" id="docModalClose" aria-label="إغلاق">&times;</button>
+    <div class="modal-head">
+      <div class="modal-name" id="docModalName"></div>
+      <div class="modal-phones" id="docModalPhones"></div>
+    </div>
+    <div class="cal-top">
+      <div class="cal-title" id="docCalTitle">—</div>
+      <div class="cal-nav">
+        <button type="button" id="docCalPrev" aria-label="الشهر السابق"><i class="fas fa-chevron-right"></i></button>
+        <button type="button" id="docCalNext" aria-label="الشهر التالي"><i class="fas fa-chevron-left"></i></button>
+      </div>
+    </div>
+    <div class="cal" id="docCalGrid"></div>
+  </div>
 </div>
 
 <script src="js/core/namespace.js?v=__BUILD_ID__"></script>
@@ -123,7 +192,7 @@ h1{font-size:1.2em;margin:0 0 4px}
   let requests = [];
   let filter = 'pending';
 
-  /** قواعدُ توازن الجنس لكل فئة — معاينةٌ فقط، لا تمنع الاعتماد. */
+  /** قواعدُ توازن ذكور وإناث لكل فئة — معاينةٌ فقط، لا تمنع الاعتماد. */
   const BALANCE_RULES = [
     { cats: ['عناية قلبية', 'عناية مركز', 'عناية داخلية', 'سابع', 'رابع', 'إسعاف مركز', 'اسعاف مركز'], minM: 2, minF: 2 },
     { cats: ['إسعاف داخلي نهاري', 'اسعاف داخلي نهاري', 'إسعاف داخلي ليلي', 'اسعاف داخلي ليلي'], minM: 5, minF: 0 }
@@ -183,7 +252,7 @@ h1{font-size:1.2em;margin:0 0 4px}
     };
   }
 
-  /** معاينةُ أثر النقلة على توازن الجنس في خانة واحدة — null إن لا قاعدة لهذه الفئة. */
+  /** معاينةُ أثر النقلة على توازن ذكور وإناث في خانة واحدة — null إن لا قاعدة لهذه الفئة. */
   function genderPreview(date, cat, fromAbbr, toAbbr) {
     const rule = ruleFor(cat);
     if (!rule || !CTX.ready) return null;
@@ -203,10 +272,10 @@ h1{font-size:1.2em;margin:0 0 4px}
 
   function genderBoxHtml(g) {
     if (!g) return '';
-    if (g.error) return `<div class="gender-box"><span class="g-head">⚠ توازن الجنس (${escapeHtml(g.cat)})</span><div class="g-row">تعذّر إيجاد هذا اليوم/الفئة في الجدول الحالي.</div></div>`;
+    if (g.error) return `<div class="gender-box"><span class="g-head">⚠ توازن ذكور وإناث (${escapeHtml(g.cat)})</span><div class="g-row">تعذّر إيجاد هذا اليوم/الفئة في الجدول الحالي.</div></div>`;
     const need = g.rule.minF > 0 ? `حدٌّ أدنى: ${g.rule.minM} ذكور و${g.rule.minF} إناث` : `حدٌّ أدنى: ${g.rule.minM} ذكور`;
     return `<div class="gender-box ${g.violatesAfter ? 'warn' : 'ok'}">
-      <span class="g-head">${g.violatesAfter ? '⚠' : '✓'} توازن الجنس — ${escapeHtml(g.cat)} (${escapeHtml(g.date)})</span>
+      <span class="g-head">${g.violatesAfter ? '⚠' : '✓'} توازن ذكور وإناث — ${escapeHtml(g.cat)} (${escapeHtml(g.date)})</span>
       <div class="g-row"><span>الآن: ${g.before.m} ذكور، ${g.before.f} إناث</span>
       <span>بعد الاعتماد: <b>${g.after.m} ذكور، ${g.after.f} إناث</b></span><span>${need}</span></div>
     </div>`;
@@ -224,6 +293,11 @@ h1{font-size:1.2em;margin:0 0 4px}
     cancelled_by_requester: 'rejected'
   };
 
+  /** اسمٌ قابلٌ للضغط — يفتح نافذة رزنامة هذا الطبيب (انظر openDoctorModal). */
+  function nameLink(name, abbr) {
+    return `<span class="doc-name-link" data-name="${escapeHtml(name)}" data-abbr="${escapeHtml(abbr)}">${escapeHtml(name)} (${escapeHtml(abbr)})</span>`;
+  }
+
   function render() {
     const host = el('list');
     const shown = filter === 'pending'
@@ -237,7 +311,7 @@ h1{font-size:1.2em;margin:0 0 4px}
       const canDecide = r.status === 'pending_admin';
       return `<div class="req" data-id="${escapeHtml(r.id)}">
         <div class="top">
-          <div><div class="who">${escapeHtml(r.fromName)} (${escapeHtml(r.fromAbbr)}) ← ${escapeHtml(r.toName)} (${escapeHtml(r.toAbbr)})</div>
+          <div><div class="who">${nameLink(r.fromName, r.fromAbbr)} ← ${nameLink(r.toName, r.toAbbr)}</div>
           <div class="meta">${escapeHtml(r.kind)} — ${escapeHtml(r.shiftType)} يوم ${escapeHtml(r.shiftDate)}
             ${r.kind === 'تبديل' && r.backDate ? ` · مقابل: ${escapeHtml(r.backType)} يوم ${escapeHtml(r.backDate)}` : ''}</div></div>
           <div>${r.urgent ? '<span class="badge urgent"><i class="fas fa-triangle-exclamation"></i> عاجل</span> ' : ''}<span class="badge ${cls}">${escapeHtml(label)}</span></div>
@@ -274,16 +348,132 @@ h1{font-size:1.2em;margin:0 0 4px}
         });
       });
     });
+
+    host.querySelectorAll('.doc-name-link').forEach(s => {
+      s.addEventListener('click', () => openDoctorModal(s.dataset.name, s.dataset.abbr));
+    });
   }
 
+  /* ------------------------------------------------- نافذة رزنامة الطبيب */
+
+  /** رقم محليّ سوري يبدأ بصفر — واتساب يحتاج رمز الدولة ٩٦٣ بدلاً من الصفر. */
+  const phoneRowHtml = phone => `<div class="mp-row"><span class="mp-num">${escapeHtml(phone)}</span>` +
+    `<span class="mp-pbtns">` +
+    `<a href="tel:${escapeHtml(phone)}" class="mp-pbtn" title="اتصال"><i class="fas fa-phone"></i></a>` +
+    `<a href="${AUH.text.waLink(phone)}" target="_blank" rel="noopener" class="mp-pbtn wa" title="واتساب"><i class="fab fa-whatsapp"></i></a>` +
+    `<button type="button" class="mp-pbtn copy" data-phone="${escapeHtml(phone)}" title="نسخ الرقم"><i class="fas fa-copy"></i></button>` +
+    `</span></div>`;
+
+  let docMonths = [];
+  let docMonthIdx = 0;
+  let docEntry = null;
+
+  function findResident(name, abbr) {
+    const residents = CTX.dataset && CTX.dataset.residents;
+    if (!residents) return null;
+    return residents.findByNameOrAbbr(abbr) || residents.findByNameOrAbbr(name) || null;
+  }
+
+  function openDoctorModal(name, abbr) {
+    el('docModalName').textContent = `${name} (${abbr})`;
+
+    const resident = findResident(name, abbr);
+    const phones = [...new Set([
+      ...AUH.text.splitPhones(resident && resident.phone),
+      ...AUH.text.splitPhones(resident && resident.phone2)
+    ])];
+    el('docModalPhones').innerHTML = phones.length
+      ? phones.map(phoneRowHtml).join('')
+      : '<span class="modal-nophone"><i class="fas fa-phone-slash"></i> لا رقم في اللائحة</span>';
+    el('docModalPhones').querySelectorAll('.mp-pbtn.copy').forEach(btn => btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(btn.dataset.phone).then(() => {
+        const icon = btn.querySelector('i');
+        icon.className = 'fas fa-check';
+        setTimeout(() => { icon.className = 'fas fa-copy'; }, 1200);
+      }).catch(() => {});
+    }));
+
+    docEntry = CTX.ready ? AUH.domain.doctorStats.findStatsFor(CTX.doctorStats, name, abbr) : null;
+    docMonths = docEntry ? [...new Set(docEntry.assignments.map(a => a.date.slice(0, 7)))].sort() : [];
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const idx = docMonths.indexOf(thisMonth);
+    docMonthIdx = idx >= 0 ? idx : Math.max(docMonths.length - 1, 0);
+
+    renderDocCalendar();
+    el('docModal').hidden = false;
+  }
+
+  function renderDocCalendar() {
+    el('docCalPrev').disabled = docMonthIdx <= 0;
+    el('docCalNext').disabled = docMonthIdx >= docMonths.length - 1;
+
+    const month = docMonths[docMonthIdx];
+    if (!month || !docEntry) {
+      el('docCalTitle').textContent = '—';
+      el('docCalGrid').innerHTML = '<div class="empty-cal"><i class="fas fa-calendar-xmark"></i> لا توجد بيانات مناوباتٍ لهذا الطبيب.</div>';
+      return;
+    }
+
+    const [y, m] = month.split('-').map(Number);
+    el('docCalTitle').textContent = `${AUH.constants.MONTH_NAMES[m - 1]} ${y}`;
+
+    const byDate = {};
+    docEntry.assignments.forEach(a => { if (a.date.startsWith(month)) (byDate[a.date] = byDate[a.date] || []).push(a); });
+
+    const first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const cells = [];
+    for (let i = 0; i < 7; i++) cells.push(`<div class="dow">${AUH.constants.DAY_NAMES[i]}</div>`);
+    for (let i = 0; i < first; i++) cells.push('<div class="day pad"></div>');
+    for (let d = 1; d <= days; d++) {
+      const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const mine = byDate[iso] || [];
+      const cls = ['day'];
+      if (mine.length) cls.push('duty');
+      if (mine.some(x => x.isHoliday)) cls.push('hol');
+      const tags = mine.map(x => `<span class="tag">${escapeHtml(x.category)}</span>`).join('');
+      cells.push(`<div class="${cls.join(' ')}"><span class="dn">${d}</span>${tags}</div>`);
+    }
+    el('docCalGrid').innerHTML = cells.join('');
+  }
+
+  el('docCalPrev').addEventListener('click', () => { if (docMonthIdx > 0) { docMonthIdx--; renderDocCalendar(); } });
+  el('docCalNext').addEventListener('click', () => { if (docMonthIdx < docMonths.length - 1) { docMonthIdx++; renderDocCalendar(); } });
+  el('docModalClose').addEventListener('click', () => { el('docModal').hidden = true; });
+  el('docModal').addEventListener('click', e => { if (e.target.id === 'docModal') el('docModal').hidden = true; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !el('docModal').hidden) el('docModal').hidden = true; });
+
+  /**
+   * يُستدعى عند الضغط على «تحديث»، وتلقائياً كل ٣٠ ثانية بعد الدخول.
+   * لا يمسح القائمة أثناء الجلب (فقط أيقونة الزرّ تدور) كي لا يفقد الأدمن
+   * مكانه أو ملاحظةً بدأ كتابتها — التحديث التلقائي يتخطّى نفسه بالكامل إن
+   * كان قرارٌ قيد التنفيذ الآن أو كانت إحدى حقول الملاحظة غير فارغة.
+   */
   function load() {
-    el('list').innerHTML = '<p class="empty">جارٍ التحميل...</p>';
+    const btn = el('refreshBtn');
+    if (btn) btn.classList.add('spin');
     AUH.data.swapRequests.adminListRequests(passcode).then(res => {
       if (!res || res.state !== 'ok') { el('list').innerHTML = `<p class="empty">${escapeHtml((res && res.message) || 'تعذّر التحميل.')}</p>`; return; }
       requests = res.requests || [];
       render();
-    }).catch(() => { el('list').innerHTML = '<p class="empty">تعذّر التحميل — أعد المحاولة.</p>'; });
+      const ts = el('lastRefresh');
+      if (ts) ts.textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }).catch(() => { el('list').innerHTML = '<p class="empty">تعذّر التحميل — أعد المحاولة.</p>'; })
+      .finally(() => { if (btn) btn.classList.remove('spin'); });
   }
+
+  function autoRefreshTick() {
+    if (document.querySelector('.actions button:disabled')) return; // قرارٌ قيد التنفيذ الآن — لا تزاحمه
+    if ([...document.querySelectorAll('.note-input')].some(i => i.value.trim())) return; // ملاحظةٌ قيد الكتابة
+    load();
+  }
+  let autoRefreshTimer = null;
+  function startAutoRefresh() {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = setInterval(autoRefreshTick, 30000);
+  }
+
+  el('refreshBtn').addEventListener('click', load);
 
   function exportLogExcel() {
     if (!requests.length) { alert('لا طلبات لتصديرها بعد.'); return; }
@@ -328,7 +518,9 @@ h1{font-size:1.2em;margin:0 0 4px}
       el('page').hidden = false;
       if (res.created) alert('تم إنشاء كلمة سرّ الأدمن الآن — احفظها، لا استرجاع لها إن نُسيت (راجع تعليق CONFIG في نظام-التبديل.gs للاسترجاع من المحرّر).');
       render();
+      el('lastRefresh').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       loadScheduleContext().then(render); // الإحصائيات تصل لاحقاً ولا تؤخّر ظهور القائمة
+      startAutoRefresh();
     }).catch(err => { el('gateBtn').disabled = false; el('gateErr').textContent = err.message || 'تعذّر الدخول.'; });
   });
 })();

@@ -13,11 +13,14 @@
   }
 
   const client = AUH.data.appsScriptClient.createClient(endpoint);
-  const QUICK = { tries: 12, gapMs: 800, timeoutMs: 10000 };
+  // timeoutMs قصيرةٌ عمداً (مهلة كل محاولة وحدها، لا مهلة الانتظار الكلية):
+  // إن حُجبت إحدى القناتين (fetch أو JSONP بالتناوب) تُكتشف المحاولة
+  // الميّتة بسرعة فتتحوّل للقناة الأخرى، بدل عشر ثوانٍ صامتة على كل محاولة.
+  const QUICK = { tries: 14, gapMs: 700, timeoutMs: 5000 };
   // adminDecideRequest قد يكتب على جدول المناوبات أيضاً (موافقة) — أثقل من
   // باقي الإجراءات، فميزانية صبرٍ أكبر تمنع رسالة "لم يُجب الخادم" المُضلِّلة
   // بينما القرار نفَّذ فعلاً على الخادم.
-  const HEAVY = { tries: 20, gapMs: 800, timeoutMs: 10000 };
+  const HEAVY = { tries: 24, gapMs: 700, timeoutMs: 5000 };
 
   /** @returns {Promise<{state:'ok', id}|{state:'error', message}>} */
   function submitRequest(token, data) {

@@ -27,9 +27,13 @@
   // فجوةٌ أقصر بين كل استطلاع = شعورٌ أسرع، ومحاولاتٌ أكثر = صمودٌ أمام
   // بطء Apps Script العابر (أول تشغيلٍ بعد نشرٍ جديد تحديداً أبطأ من المعتاد)
   // بدل الفشل المبكر بـ«تعذّر الوصول إلى الخادم» بينما الخادم لا يزال يعمل.
-  const QUICK = { tries: 12, gapMs: 800, timeoutMs: 10000 };
+  // و`timeoutMs` قصيرةٌ عمداً (مهلة محاولةٍ واحدة، لا المهلة الكلية): القناتان
+  // (fetch وJSONP) تتناوبان في `apps-script-client.js`، فمحاولةٌ محجوبة (حجب
+  // إعلانات يمنع fetch أو <script src>) تُكتشَف خلال ثوانٍ قليلة بدل عشر —
+  // وهذا هو سبب شعور «تسجيل الدخول التلقائي» بالبطء أو التكرار سابقاً.
+  const QUICK = { tries: 14, gapMs: 700, timeoutMs: 5000 };
   // completeRegister هو الأثقل: تحقّق الرمز + قراءة اللائحة + قفلٌ + كتابتا صفّ.
-  const HEAVY = { tries: 20, gapMs: 900, timeoutMs: 10000 };
+  const HEAVY = { tries: 24, gapMs: 700, timeoutMs: 5000 };
 
   /** @returns {Promise<{state:'ok'}|{state:'error', message}>} */
   function startRegister(abbr, email) {

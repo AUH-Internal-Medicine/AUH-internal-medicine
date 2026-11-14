@@ -58,6 +58,9 @@ body{margin:0;background:var(--paper);color:var(--ink);
 .step-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;
   display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
 .step-head h2{margin:0;font-size:1.03em;font-weight:700}
+.req-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;
+  padding:0 6px;border-radius:999px;background:var(--primary);color:#fff;font-size:11px;font-weight:700;
+  font-variant-numeric:tabular-nums;margin-inline-start:4px;vertical-align:middle}
 .step-hint{margin:2px 0 15px 0;padding-inline-start:41px;font-size:12.7px;color:var(--ink-2)}
 .card.locked{opacity:.5;pointer-events:none;filter:saturate(.6)}
 .card.done .step-n{background:var(--primary-strong)}
@@ -735,7 +738,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
     <i class="fas fa-circle-check"></i>
     <h2>تم إرسال الطلب</h2>
     <p>وصل طلبُك إلى الأدمن مباشرةً للاعتماد. تبقى مسؤولية المناوبة عليك حتى الاعتماد والتنفيذ الفعلي — تابع الحالة في «طلباتي».</p>
-    <div style="margin-top:20px"><button type="button" class="btn btn-ghost" onclick="location.reload()">
+    <div style="margin-top:20px"><button type="button" class="btn btn-ghost" onclick="AUH.swap.resetForNewRequest()">
       <i class="fas fa-rotate-right"></i> طلب جديد</button></div>
   </div>
   </div>
@@ -743,7 +746,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   <!-- طلباتي — بجانب النموذج دائماً، لا في آخر الصفحة ------------------>
   <aside class="side-col">
     <section class="card" id="myRequestsCard">
-      <div class="step-head"><div class="step-n"><i class="fas fa-list-check"></i></div><h2>طلباتي</h2></div>
+      <div class="step-head"><div class="step-n"><i class="fas fa-list-check"></i></div><h2>طلباتي <span class="req-count" id="myReqCount" hidden></span></h2></div>
       <div id="myRequestsList"><p class="step-hint">جارٍ التحميل...</p></div>
     </section>
   </aside>

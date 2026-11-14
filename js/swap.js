@@ -1178,10 +1178,22 @@
     }).catch(() => { host.innerHTML = '<p class="step-hint">تعذّر التحميل — أعد تحميل الصفحة.</p>'; });
   }
 
+  let myRequestsAutoRefreshTimer = null;
+  /** تحديثٌ تلقائيٌّ كل ٣٠ ثانية — يتخطّى نفسه إن كان زرّ إلغاءٍ مسلَّحاً الآن. */
+  function startMyRequestsAutoRefresh() {
+    clearInterval(myRequestsAutoRefreshTimer);
+    myRequestsAutoRefreshTimer = setInterval(() => {
+      if (document.querySelector('.req-cancel-btn.armed')) return;
+      loadMyRequests();
+    }, 30000);
+  }
+
   let disarmCancelBtns = null; // listener الوحيد النشط — يُستبدَل لا يتراكم عبر الرسمات
 
   function renderMyRequests(list) {
     const host = $('myRequestsList');
+    const countEl = $('myReqCount');
+    if (countEl) { countEl.textContent = list.length; countEl.hidden = !list.length; }
     if (disarmCancelBtns) { document.removeEventListener('click', disarmCancelBtns); disarmCancelBtns = null; }
     if (!list.length) { host.innerHTML = '<p class="step-hint">لا طلبات بعد.</p>'; return; }
 
@@ -1389,6 +1401,30 @@
     refresh();
   }
 
+  /**
+   * «طلب جديد» بعد الإرسال — بلا `location.reload()` ولا أي اتصال بالخادم: لا
+   * داعي لإعادة التحقّق من الجلسة أو إعادة تحميل الجدول، فالمستخدم لا يزال
+   * مسجَّلاً دخوله في نفس الصفحة فعلياً. كان إعادةُ التحميل سابقاً تُظهر
+   * شاشة «التحقّق من الجلسة» مجدداً — يبدو للمستخدم وكأنه يسجّل الدخول من
+   * جديد في كل مرة، رغم أنه لم يخرج فعلاً.
+   */
+  function resetForNewRequest() {
+    S.to = null; S.shift = null; S.back = null;
+    $('q2').value = ''; $('ab2').value = ''; $('ch2').innerHTML = '';
+    $('notes').value = ''; $('phone').value = '';
+    $('reason').value = ''; $('reasonOther').value = ''; $('reasonOther').hidden = true;
+    if ($('agree')) $('agree').checked = false;
+    if ($('urgent')) $('urgent').checked = false;
+
+    const upcoming = S.months.findIndex(m => m >= today.slice(0, 7));
+    S.m1 = S.m2 = upcoming < 0 ? Math.max(0, S.months.length - 1) : upcoming;
+
+    $('done').hidden = true;
+    $('form').hidden = false;
+    refresh();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   document.addEventListener('DOMContentLoaded', boot);
   if (document.readyState !== 'loading') boot();
 
@@ -1396,7 +1432,8 @@
     setAuthIdentity(identity) {
       authIdentity = identity || null;
       applyAuthIdentity();
-      if (identity) loadMyRequests();
-    }
+      if (identity) { loadMyRequests(); startMyRequestsAutoRefresh(); }
+    },
+    resetForNewRequest
   };
 })(typeof window !== 'undefined' ? window : globalThis);
