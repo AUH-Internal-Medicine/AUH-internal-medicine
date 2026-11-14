@@ -47,17 +47,27 @@
   }
 
   /**
-   * Fetches every source in parallel.
+   * Fetches every source in parallel — or, with `opts.only`, just the
+   * schemaKeys a page actually uses. `index.html` needs nearly everything, but
+   * `swap.html`/`swap-admin.html` only ever read `ds.residents`/`ds.oncall`
+   * (and a couple more for the admin's stats preview); fetching all 14 tabs
+   * there was pure wasted latency — the page waits on the slowest of 14
+   * parallel sheet reads instead of the slowest of 3. `parseAll` already
+   * falls back to an empty model for any dataset key not in `tables` (the
+   * same path a failed fetch takes), so omitting a source here is safe.
+   * @param {{only?: string[]}} [opts]
    * @returns {{tables:Object, ok:string[], failed:string[], source:string}}
    *          A failed source is simply absent from `tables` — the caller keeps
    *          whatever it already had for it.
    */
-  async function fetchAll() {
+  async function fetchAll(opts) {
     const schema = AUH.data.schema;
     const { primary, fallback } = clientFor();
+    const only = opts && opts.only;
+    const sources = only ? SOURCES.filter(s => only.includes(s.schemaKey)) : SOURCES;
 
     const results = await Promise.all(
-      SOURCES.map(async s => {
+      sources.map(async s => {
         const source = schema[s.schemaKey];
         let table = await primary.fetchSource(source);
         if (!table && fallback) table = await fallback.fetchSource(source);
@@ -68,7 +78,7 @@
     const tables = {};
     const ok = [];
     const failed = [];
-    SOURCES.forEach((s, i) => {
+    sources.forEach((s, i) => {
       if (results[i]) {
         tables[s.datasetKey] = results[i];
         ok.push(s.schemaKey);

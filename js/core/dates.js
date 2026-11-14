@@ -129,6 +129,16 @@
     return `${d}/${m}/${y}`;
   }
 
+  /** `YYYY-MM-DD` → `DD-MM-YYYY <day name>`, e.g. "14-11-2026 السبت". */
+  function formatDisplayDateWithDay(iso) {
+    const raw = String(iso || '').trim();
+    const parts = raw.split('-');
+    if (parts.length !== 3) return raw;
+    const [y, m, d] = parts;
+    const dayName = getDayName(raw);
+    return `${d}-${m}-${y}${dayName ? ' ' + dayName : ''}`;
+  }
+
   /** Human timestamp used on exported images. */
   function nowStamp() {
     const now = new Date();
@@ -138,6 +148,7 @@
 
   AUH.dates = {
     formatDisplayDate,
+    formatDisplayDateWithDay,
     isoFromParts,
     parseGvizDate,
     extractDate,

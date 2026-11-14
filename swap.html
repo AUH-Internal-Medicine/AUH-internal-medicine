@@ -339,6 +339,8 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .req-badge.approved{background:#dcf3e3;color:#1f7a42}
 .req-badge.rejected{background:var(--signal-soft);color:var(--signal)}
 .req-badge.urgent{background:var(--signal-soft);color:var(--signal);margin-inline-end:6px}
+.req-badge.kind-shel{background:var(--primary-soft);color:var(--primary-strong);margin-inline-end:6px}
+.req-badge.kind-swap{background:#e3edf7;color:#2a5a8c;margin-inline-end:6px}
 .req-actions{display:flex;gap:8px;align-items:center}
 .req-cancel-btn{border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);width:26px;height:26px;
   border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;
@@ -608,6 +610,9 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
     <section class="card step" id="s1">
       <div class="step-head"><div class="step-n"><span>1</span></div><h2>نوع الطلب</h2></div>
       <p class="step-hint">ابدأ هنا: «شيل مناوبة» يعني أن زميلك يأخذ مناوبتك كاملةً دون أن تأخذ أنت شيئاً بالمقابل. «تبديل» يعني أن كلّ واحدٍ منكما يأخذ مناوبة الآخر — ستختار مناوبتك أولاً، ثم مناوبته التي تأخذها أنت.</p>
+      <div class="resp-note" style="margin:0 0 14px;margin-inline-start:41px"><i class="fas fa-circle-info"></i>
+        <span>طلب «شيل مناوبة» يقدّمه <b>حصراً صاحب المناوبة الأصلية</b> — من يريد التخلّي عن مناوبته، لا من سيأخذها. لا يمكن لزميلك تقديم الطلب نيابةً عنك.</span>
+      </div>
       <div style="padding-inline-start:41px">
         <div class="seg" id="kind">
           <button type="button" data-kind="شيل" class="on"><i class="fas fa-hand-holding-medical"></i> شيل مناوبة</button>
@@ -755,29 +760,29 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 
 <div class="toast" id="toast"></div>
 
-<script src="js/core/namespace.js?v=__BUILD_ID__"></script>
-<script src="js/core/storage.js?v=__BUILD_ID__"></script>
-<script src="js/core/config.js?v=__BUILD_ID__"></script>
-<script src="js/core/logger.js?v=__BUILD_ID__"></script>
-<script src="js/core/text.js?v=__BUILD_ID__"></script>
-<script src="js/core/status.js?v=__BUILD_ID__"></script>
-<script src="js/core/dates.js?v=__BUILD_ID__"></script>
-<script src="js/data/schema.js?v=__BUILD_ID__"></script>
-<script src="js/data/header-map.js?v=__BUILD_ID__"></script>
-<script src="js/data/gviz-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/api-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/apps-script-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/accounts-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/swap-requests-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/residents.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/rotations-year2.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/oncall.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/evaluation.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/lectures.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/holidays.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/content.js?v=__BUILD_ID__"></script>
-<script src="js/data/repository.js?v=__BUILD_ID__"></script>
-<script src="js/domain/oncall-schedule.js?v=__BUILD_ID__"></script>
+<script src="js/core/namespace.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/storage.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/config.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/logger.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/text.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/status.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/dates.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/schema.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/header-map.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/gviz-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/api-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/apps-script-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/accounts-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/swap-requests-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/residents.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/rotations-year2.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/oncall.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/evaluation.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/lectures.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/holidays.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/content.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/repository.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/oncall-schedule.js?v=__BUILD_ID__" defer></script>
 <div class="img-modal" id="imgModal" hidden>
   <div class="img-box" role="dialog" aria-modal="true" aria-label="معاينة صورة الجدول">
     <div class="img-head">
@@ -792,7 +797,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   </div>
 </div>
 
-<script src="js/views/swap-auth.js?v=__BUILD_ID__"></script>
-<script src="js/swap.js?v=__BUILD_ID__"></script>
+<script src="js/views/swap-auth.js?v=__BUILD_ID__" defer></script>
+<script src="js/swap.js?v=__BUILD_ID__" defer></script>
 </body>
 </html>

@@ -42,8 +42,22 @@ h1{font-size:1.2em;margin:0 0 4px}
 .last-refresh{font-size:11.5px;color:var(--ink-2);margin:-10px 0 12px;text-align:end}
 .req{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:14px;margin-bottom:10px}
 .req .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.req .who{font-weight:700;font-size:14px}
+.req .who{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .req .meta{color:var(--ink-2);font-size:12.5px;margin-top:3px}
+
+/* نوع الطلب — لونٌ مختلف لكلٍّ من «شيل» و«تبديل» لتمييزٍ فوريّ بنظرة. */
+.kind-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;flex:none}
+.kind-badge.kind-shel{background:var(--primary-soft);color:var(--primary-strong)}
+.kind-badge.kind-swap{background:#e3edf7;color:#2a5a8c}
+
+/* نوع المناوبة وتاريخها — شارات واضحة بدل سطر نصّي متواصل. */
+.shift-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.shift-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-sunk);
+  border:1px solid var(--rule);border-radius:8px;padding:4px 9px;font-size:12px;color:var(--ink)}
+.shift-chip i{color:var(--ink-2);font-size:11px}
+.shift-chip.date{font-variant-numeric:tabular-nums}
+.shift-chip.back{background:#e3edf7;border-color:#c7d9ec;color:#1f466e}
+.shift-chip.back i{color:#2a5a8c}
 .req .notes{font-size:12.5px;margin-top:8px;background:var(--surface-sunk);border-radius:8px;padding:8px 10px}
 .stat-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--ink-2)}
 .stat-row b{color:var(--ink);font-variant-numeric:tabular-nums}
@@ -207,7 +221,11 @@ h1{font-size:1.2em;margin:0 0 4px}
   const CTX = { ready: false, dataset: null, doctorStats: [] };
 
   function loadScheduleContext() {
-    return AUH.data.repository.fetchAll()
+    // هذه اللوحة تحتاج هذه المصادر الستّة فقط لحساب الإحصائيات ومعاينة
+    // التوازن — لا الـ١٤ مصدراً كاملةً التي يحتاجها index.html.
+    return AUH.data.repository.fetchAll({
+      only: ['residents', 'oncall', 'evaluation', 'oncallAdjustments', 'holidays', 'oncallRules']
+    })
       .then(fetched => {
         const ds = AUH.data.repository.parseAll(fetched.tables);
         const resolved = AUH.domain.adjustments.resolveAdjustments({
@@ -275,7 +293,7 @@ h1{font-size:1.2em;margin:0 0 4px}
     if (g.error) return `<div class="gender-box"><span class="g-head">⚠ توازن ذكور وإناث (${escapeHtml(g.cat)})</span><div class="g-row">تعذّر إيجاد هذا اليوم/الفئة في الجدول الحالي.</div></div>`;
     const need = g.rule.minF > 0 ? `حدٌّ أدنى: ${g.rule.minM} ذكور و${g.rule.minF} إناث` : `حدٌّ أدنى: ${g.rule.minM} ذكور`;
     return `<div class="gender-box ${g.violatesAfter ? 'warn' : 'ok'}">
-      <span class="g-head">${g.violatesAfter ? '⚠' : '✓'} توازن ذكور وإناث — ${escapeHtml(g.cat)} (${escapeHtml(g.date)})</span>
+      <span class="g-head">${g.violatesAfter ? '⚠' : '✓'} توازن ذكور وإناث — ${escapeHtml(g.cat)} (${fmtDayDate(g.date)})</span>
       <div class="g-row"><span>الآن: ${g.before.m} ذكور، ${g.before.f} إناث</span>
       <span>بعد الاعتماد: <b>${g.after.m} ذكور، ${g.after.f} إناث</b></span><span>${need}</span></div>
     </div>`;
@@ -298,6 +316,16 @@ h1{font-size:1.2em;margin:0 0 4px}
     return `<span class="doc-name-link" data-name="${escapeHtml(name)}" data-abbr="${escapeHtml(abbr)}">${escapeHtml(name)} (${escapeHtml(abbr)})</span>`;
   }
 
+  /** "2026-11-14" ← "14-11-2026 السبت" — التاريخ مع اسم اليوم، بنظرةٍ واحدة. */
+  function fmtDayDate(iso) {
+    return escapeHtml(AUH.dates.formatDisplayDateWithDay(iso));
+  }
+
+  const KIND_CLASS = { 'شيل': 'kind-shel', 'تبديل': 'kind-swap' };
+  function kindBadge(kind) {
+    return `<span class="kind-badge ${KIND_CLASS[kind] || ''}">${escapeHtml(kind)}</span>`;
+  }
+
   function render() {
     const host = el('list');
     const shown = filter === 'pending'
@@ -311,9 +339,12 @@ h1{font-size:1.2em;margin:0 0 4px}
       const canDecide = r.status === 'pending_admin';
       return `<div class="req" data-id="${escapeHtml(r.id)}">
         <div class="top">
-          <div><div class="who">${nameLink(r.fromName, r.fromAbbr)} ← ${nameLink(r.toName, r.toAbbr)}</div>
-          <div class="meta">${escapeHtml(r.kind)} — ${escapeHtml(r.shiftType)} يوم ${escapeHtml(r.shiftDate)}
-            ${r.kind === 'تبديل' && r.backDate ? ` · مقابل: ${escapeHtml(r.backType)} يوم ${escapeHtml(r.backDate)}` : ''}</div></div>
+          <div><div class="who">${kindBadge(r.kind)} ${nameLink(r.fromName, r.fromAbbr)} ← ${nameLink(r.toName, r.toAbbr)}</div>
+          <div class="shift-meta">
+            <span class="shift-chip"><i class="fas fa-stethoscope"></i> ${escapeHtml(r.shiftType)}</span>
+            <span class="shift-chip date"><i class="fas fa-calendar-day"></i> ${fmtDayDate(r.shiftDate)}</span>
+            ${r.kind === 'تبديل' && r.backDate ? `<span class="shift-chip back"><i class="fas fa-right-left"></i> مقابل: ${escapeHtml(r.backType)} — ${fmtDayDate(r.backDate)}</span>` : ''}
+          </div></div>
           <div>${r.urgent ? '<span class="badge urgent"><i class="fas fa-triangle-exclamation"></i> عاجل</span> ' : ''}<span class="badge ${cls}">${escapeHtml(label)}</span></div>
         </div>
         ${r.reason ? `<div class="notes"><b>السبب:</b> ${escapeHtml(r.reason)}</div>` : ''}

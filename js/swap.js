@@ -2,56 +2,23 @@
  * طلب تبديل / شيل مناوبة — the swap request page (swap.html).
  *
  * Reads the SAME live sheets the dashboard reads (no second source of truth),
- * then does three things a Google Form cannot:
+ * then does three things a plain form cannot:
  *   1. type-ahead on the real roster, filling the abbreviation automatically
  *   2. draws each doctor's actual duty calendar to pick from
  *   3. refuses a swap that would break the department's own scheduling rules
  *      (two duties on the same day, or on two consecutive days)
  *
- * The submission itself still goes to the existing Google Form, so the sheet
- * and the green/red review workflow stay exactly as they are.
+ * The submission goes through the accounts system (`accounts-client.js` +
+ * `نظام-التبديل.gs`), which on admin approval writes the swap directly onto
+ * the live schedule tab by column header — so `shiftType`/`backType` below
+ * MUST be the category's exact raw text as it appears in that sheet, never a
+ * translated/aliased label. (A `formCategory()` helper used to rewrite it
+ * into the now-defunct Google Form's wording — e.g. "تالت" → "ثالث" — which
+ * silently broke the live write for any category it touched: the Apps
+ * Script looked up a column that no longer matched anything. Removed.)
  */
 (function (global) {
   'use strict';
-
-  /* ------------------------------------------------------------------ config
-   * Fill these in from the Google Form (see 4-التوثيق/نظام-التبديل.md):
-   *   action  — the form's /formResponse URL
-   *   fields  — the entry.NNNN id of each question, in the same order below
-   * Leave `action` empty and the page still works end-to-end; it just hands the
-   * doctor a copyable summary instead of posting.                            */
-  const SWAP_FORM = {
-    action: 'https://docs.google.com/forms/d/e/1FAIpQLSclXHWjHBOg82PmFW9l8MXeikxAca66qTNDnNl1BegWYumVQw/formResponse',
-    fields: {
-      fromName:  'entry.859931834',    // اسم صاحب المناوبة الاساسي
-      fromAbbr:  'entry.59272369',     // اختصار صاحب المناوبة الاساسي
-      shiftType: 'entry.13175464',     // نوع المناوبة (اختيار من متعدد)
-      shiftDate: 'entry.4419424',      // تاريخ المناوبة (سؤال تاريخ)
-      reason:    'entry.1810277956',   // سبب التبديل
-      kind:      'entry.153438464',    // شيل أم تبديل
-      toName:    'entry.567645653',    // اسم المناوب الجديد
-      toAbbr:    'entry.1808162085',   // اختصار المناوب الجديد
-      conditions:'entry.796695184',    // هل تحقق الشرطين (نعم/لا)
-      backType:  'entry.1367484913',   // نوع المناوبة المقابلة
-      backDate:  'entry.59105158',     // التاريخ المقابل (سؤال تاريخ)
-      notes:     'entry.311724736'     // ملاحظات
-    },
-    // Google date questions arrive as three parameters, not one string.
-    dateFields: ['shiftDate', 'backDate'],
-    /**
-     * The form's "نوع المناوبة" is a fixed choice list whose wording differs
-     * from the sheet's headers in two places. Anything else matches once the
-     * hamza is normalised, so only the genuine exceptions are listed here.
-     */
-    categoryAliases: {
-      'تالت': 'ثالث',
-      'إسعاف باب نهاري': 'اسعاف باب صباحي'
-    },
-    categoryOptions: ['عناية قلبية', 'عناية مركز', 'عناية داخلية', 'تاني رجال', 'تاني نساء',
-      'ثالث', 'رابع', 'سابع',
-      'خارجيات', 'ديال', 'أورام', 'اسعاف مركز', 'اسعاف مركز صباحي', 'اسعاف مركز ليلي', 'اسعاف بارد صباحي',
-      'اسعاف بارد ليلي', 'اسعاف باب صباحي', 'اسعاف باب ليلي', 'اسعاف داخلي نهاري', 'اسعاف داخلي ليلي']
-  };
 
   const AUH = global.AUH;
   const { normAr, smartSearch, splitNames, escapeHtml } = AUH.text;
@@ -116,7 +83,10 @@
 
   async function boot() {
     try {
-      const fetched = await AUH.data.repository.fetchAll();
+      // هذه الصفحة تحتاج اللائحة والمناوبات والعطل فقط — لا الـ١١ مصدراً
+      // الأخرى التي يحتاجها index.html، فتحميلها كان ينتظر أبطأ ١٤ طلباً
+      // متوازياً بدل أبطأ ٣ فقط.
+      const fetched = await AUH.data.repository.fetchAll({ only: ['residents', 'oncall', 'holidays'] });
       const ds = AUH.data.repository.parseAll(fetched.tables);
       index(ds);
       $('boot').hidden = true;
@@ -187,16 +157,6 @@
     // open on the month that actually matters: the first one with a future duty
     const upcoming = S.months.findIndex(m => m >= today.slice(0, 7));
     S.m1 = S.m2 = upcoming < 0 ? Math.max(0, S.months.length - 1) : upcoming;
-  }
-
-  /** The sheet's category name in the exact wording the Google Form expects. */
-  function formCategory(cat) {
-    const raw = (cat || '').trim();
-    const alias = Object.keys(SWAP_FORM.categoryAliases)
-      .find(k => normAr(k) === normAr(raw));
-    if (alias) return SWAP_FORM.categoryAliases[alias];
-    const exact = SWAP_FORM.categoryOptions.find(o => normAr(o) === normAr(raw));
-    return exact || raw;
   }
 
   /**
@@ -1109,9 +1069,13 @@
     return {
       kind: S.kind,
       fromName: S.from.name, fromAbbr: S.from.abbr,
-      shiftDate: S.shift.date, shiftType: formCategory(S.shift.cat),
+      // النصّ الخام تماماً كما في عمود الجدول — لا تحويلٍ ولا كنية. كان
+      // `formCategory()` يُترجم الاسمَ لصيغة نموذج Google القديم المهجور
+      // (مثلاً "تالت" ← "ثالث")، فيصل الخادمَ اسمٌ لا يطابق أيّ عمودٍ حقيقيّ
+      // في الجدول الحيّ فيفشل التنفيذ — راجع تعليق الحذف تحت الدالّة.
+      shiftDate: S.shift.date, shiftType: S.shift.cat,
       toName: S.to.name, toAbbr: S.to.abbr,
-      backDate: back.date, backType: formCategory(back.cat),
+      backDate: back.date, backType: back.cat || '',
       // The department reads "نفس نوع المناوبة" as the same GROUP
       // (عنايات / إسعاف / أجنحة), not the exact category.
       conditions: (S.kind !== 'تبديل' || !S.back || S.back.group === S.shift.group) ? 'نعم' : 'لا',
@@ -1190,6 +1154,8 @@
 
   let disarmCancelBtns = null; // listener الوحيد النشط — يُستبدَل لا يتراكم عبر الرسمات
 
+  const MY_KIND_CLASS = { 'شيل': 'kind-shel', 'تبديل': 'kind-swap' };
+
   function renderMyRequests(list) {
     const host = $('myRequestsList');
     const countEl = $('myReqCount');
@@ -1209,7 +1175,7 @@
 
       return `<div class="req-item">
         <div><div class="who">${dir}</div>
-        <div class="what">${escapeHtml(r.kind)} — ${escapeHtml(r.shiftType)} يوم ${escapeHtml(fmt(r.shiftDate))}</div></div>
+        <div class="what"><span class="req-badge ${MY_KIND_CLASS[r.kind] || ''}">${escapeHtml(r.kind)}</span>${escapeHtml(r.shiftType)} — ${escapeHtml(AUH.dates.formatDisplayDateWithDay(r.shiftDate))}</div></div>
         <div class="req-actions">${urgentBadge}<span class="req-badge ${cls}">${escapeHtml(label)}</span>${cancelBtn}</div>
       </div>`;
     }).join('');
