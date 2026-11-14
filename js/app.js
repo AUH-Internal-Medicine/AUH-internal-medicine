@@ -208,7 +208,10 @@
       this.activateTab = activateTab;
       this.activeTab = AUH.storage.get('activeTab') || 'residents';
 
-      document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab, true)));
+      // [data-tab] يستثني روابطَ الصفحات المستقلّة (`<a href>` بلا data-tab،
+      // مثل زرّ التبديل) — لولاه لمرّ `tabId` بقيمة undefined فيُخزَّن
+      // `activeTab` في AUH.storage كالنصّ الحرفي "undefined".
+      document.querySelectorAll('.nav-btn[data-tab]').forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab, true)));
 
       const stored = AUH.storage.get('activeTab');
       if (stored) activateTab(stored, false);

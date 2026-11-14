@@ -43,6 +43,7 @@
         seq: { labels: ['ت', 'م', '#', 'التسلسل', 'الرقم'], match: ['exact'], type: 'number', fallbackIndex: 0, note: 'الترقيم كما في الشيت (العمود الأول عادةً بلا عنوان)' },
         name: { labels: ['الاسم الثلاثي', 'الاسم الكامل', 'الاسم'], required: true, type: 'text' },
         phone: { labels: ['رقم الهاتف', 'الهاتف', 'الموبايل', 'الجوال'], type: 'text' },
+        phone2: { labels: ['رقم هاتف 2', 'رقم الهاتف 2', 'الهاتف 2'], type: 'text', silentIfMissing: true },
         abbr: { labels: ['الاختصار', 'الكنية'], required: true, type: 'text', note: 'المفتاح المستخدم لربط المقيم بجداول المناوبات' },
         gender: { labels: ['الجنس'], type: 'text' },
         spec: { labels: ['الاختصاص'], type: 'text' },
@@ -242,13 +243,13 @@
       columns: {
         name: { labels: ['الاسم', 'الاسم الثلاثي'], required: true, fallbackIndex: 0, type: 'text' },
         abbr: { labels: ['الاختصار'], fallbackIndex: 1, type: 'text' },
-        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'غير مستخدَم — للتوثيق اليدوي فقط' },
-        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'Bonus لإضافة مناوبة، أو عقوبة لحذف مناوبة (تُقبل صيغ مختلفة وأخطاء إملائية بسيطة)' },
-        hours: { labels: ['عدد الساعات', 'الساعات'], required: true, fallbackIndex: 4, type: 'number', note: '24 فقط ⇐ مناوبة عطلة؛ أي قيمة أخرى ⇐ مناوبة عادية' }
+        date: { labels: ['تاريخ المناوبة', 'التاريخ'], fallbackIndex: 2, type: 'date', note: 'اختياري — يُستخدم مع «الفئة الحقيقية» لمطابقة الصفّ بجدول الطبيب الفعلي؛ اتركه فارغاً لبونص/عقوبة تقليدية بلا ربطٍ بمناوبةٍ محدَّدة' },
+        category: { labels: ['نوع المناوبة', 'المناوبة', 'النوع'], required: true, fallbackIndex: 3, type: 'text', note: 'Bonus لإضافة مناوبة، أو عقوبة لحذف مناوبة. أيّ قيمةٍ أخرى أو فارغة تُعامَل كـBonus أيضاً — عقوبة فقط تحتاج كلمةً صريحة' },
+        realCategory: { labels: ['الفئة الحقيقية'], type: 'text', note: 'فئة المناوبة الحقيقية كما في جدول المناوبات (مثل «عناية قلبية») — مع عمود التاريخ، تُستخدم لمعرفة: هل هذه مناوبة تطوعية غير موجودة في جدول الطبيب (تُحتسَب كمناوبةٍ كاملة بتفاصيلها)، أم مناوبةٌ موجودة أصلاً واحتاجت فقط زيادة ساعات (تُضاف كمناوبة Bonus واحدة فوقها). فارغ = بونص/عقوبة تقليدية.' },
+        hours: { labels: ['عدد الساعات', 'الساعات'], required: true, fallbackIndex: 4, type: 'number', note: '24 فقط ⇐ مناوبة عطلة؛ أي قيمة أخرى ⇐ مناوبة عادية. يُستخدم فقط حين لا توجد «الفئة الحقيقية»/تاريخ' },
+        notes: { labels: ['ملاحظات'], type: 'text', note: 'سببُ هذا البونص/العقوبة — يظهر في الإحصائيات عند الضغط على أيقونة بجانب الشارة' }
       },
-      /** Words that mark a row as +1 shift. */
-      bonusKeywords: ['bonus', 'بونص', 'بونس', 'بونوس', 'مكافأة', 'اضافي'],
-      /** Words that mark a row as −1 shift. */
+      /** Words that mark a row as −1 shift — كل ما عداها يُعامَل كـBonus. */
       penaltyKeywords: ['penalty', 'عقوبة', 'عقوبه']
     },
 

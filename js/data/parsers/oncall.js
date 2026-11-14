@@ -328,10 +328,14 @@
   /**
    * Bonus/penalty shift adjustments (see schema.js for the full rule). Every
    * row becomes exactly one of:
-   *   'bonus'   — type cell matches a bonus keyword   → +1 shift
    *   'penalty' — type cell matches a penalty keyword → −1 shift
-   * The date column is never read. The hours column is only checked for the
-   * exact value 24 (⇒ holiday shift); anything else means "not a holiday".
+   *   'bonus'   — anything else (explicit "Bonus", blank, any other text)
+   * A bonus row with both `date` and `realCategory` filled gets resolved
+   * against the resident's actual schedule in computeDoctorStats: missing
+   * there → counted as a real, full duty (a volunteer shift); already there
+   * → the old flat +1 (an hours-only correction). Without those two fields
+   * it's a traditional flat +1/−1, and `hours` only matters for the holiday
+   * flag (exactly 24 ⇒ holiday shift).
    */
   function parseOncallAdjustments(table) {
     const source = AUH.data.schema.oncallAdjustments;
@@ -340,11 +344,8 @@
 
     const resolution = headersApi.resolveColumns(rows[0] || [], source);
     const get = headersApi.createAccessor(resolution.map);
-    const bonusWords = source.bonusKeywords || ['bonus'];
     const penaltyWords = source.penaltyKeywords || ['عقوبة'];
-    // Forgiving on purpose: "Bonus", "bonus ", "BONUS", "بونص", "بونس" and
-    // "مكافأة" all mean the same thing to whoever is filling the sheet.
-    const isBonusWord = value => matchesKeyword(value, bonusWords);
+    // عقوبةٌ فقط تحتاج كلمةً صريحة — كل ما عداها (Bonus، فارغ، أي نصٍّ آخر) بونص.
     const isPenaltyWord = value => matchesKeyword(value, penaltyWords);
 
     // If the first row is not a header (no recognizable labels), treat it as data.
@@ -362,20 +363,24 @@
       if (!name && !abbr) continue;
 
       const category = get(row, 'category');
+      const realCategory = (get(row, 'realCategory') || '').trim();
+      const date = (get(row, 'date') || '').trim();
       const hoursRaw = get(row, 'hours');
-      if (!hoursRaw) {
+      const notes = (get(row, 'notes') || '').trim();
+
+      // صفٌّ بفئةٍ حقيقية وتاريخٍ لا يحتاج عدد ساعات — المُحدِّد هناك هو
+      // وجود المناوبة في جدول الطبيب من عدمه، لا قيمة ٢٤ الخاصّة بالبونص التقليدي.
+      if (!hoursRaw && !(realCategory && date)) {
         skipped.push(row);
         continue;
       }
       const hours = safeNum(hoursRaw);
       const isHoliday = hours === 24;
 
-      if (isBonusWord(category)) {
-        bonuses.push({ name, abbr, isHoliday });
-      } else if (isPenaltyWord(category)) {
-        penalties.push({ name, abbr, isHoliday });
+      if (isPenaltyWord(category)) {
+        penalties.push({ name, abbr, isHoliday, notes });
       } else {
-        skipped.push(row);
+        bonuses.push({ name, abbr, isHoliday, date, realCategory, notes });
       }
     }
 

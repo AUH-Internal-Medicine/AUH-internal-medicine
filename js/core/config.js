@@ -107,6 +107,23 @@
     },
 
     /**
+     * حسابات نظام تبديل المناوبات الجديد — `swap.html` (المرحلة ١ من ٤:
+     * تسجيل بإيميل + رمز تحقّق + كلمة سرّ، دخول، تذكّرني. لا تصفّح/تقديم
+     * طلبات بعد — تلك مراحل لاحقة).
+     *
+     * الكتابةُ تَمرّ عبر سكربتِ Apps Script خاصٍّ بهذا النظام وحدَه، على شيتٍ
+     * منفصلٍ يملكه مُشغّل الموقع (لا شيت الروزنامة). خطواتُ النشر كاملةً في
+     * أعلى `5-أدوات/apps-script/نظام-التبديل.gs`.
+     */
+    swapAccounts: {
+      /**
+       * رابطُ تطبيقِ الويب من Apps Script، المنتهي بـ `/exec`.
+       * فارغاً ← صفحةُ التبديل تعرض «لم يُفتح النظامُ بعد» بلا أيِّ عطل.
+       */
+      endpoint: 'https://script.google.com/macros/s/AKfycbw5ZUsA1la8BE30LuvfaiFk-8136S6MxqeDIUzUYF8B3zN6KWWTMgZof46n-DmAtQGevQ/exec'
+    },
+
+    /**
      * The residency years the site covers. Each year is a self-contained set of
      * sources: its own roster, its own on-call sheet, its own rotations. They
      * are never merged — a name or an abbreviation is only ever resolved inside
@@ -187,17 +204,23 @@
    */
   const TABS = [
     { id: 'residents', icon: '<i class="fas fa-user-doctor"></i>', label: 'لائحة المقيمين' },
-    // استبيانُ الشهر — مُوقَّتٌ بطبعه: يُعبَّأ مرّةً في الشهر ثم يُغلق. ولذلك
-    // زرُّه مميَّزٌ بلونٍ خاصٍّ لا بلونِ «الأدوية الإسعافية»، فلا يُزاحمه في
-    // جلبِ النظر. وإخفاؤه بعد انتهاء الشهر بسطرٍ واحد: `hidden: true`.
-    { id: 'survey11', icon: '<i class="fas fa-clipboard-question"></i>', label: 'استبيان شهر 11', highlight: 'survey' },
+    // استبيانُ الشهر — مُوقَّتٌ بطبعه: يُعبَّأ مرّةً في الشهر ثم يُغلق. أُخفي
+    // 2026-11-07 ليحلّ زرّ التبديل محلّه (نفس اللون المميَّز)؛ لإعادته احذف
+    // `hidden: true` فقط.
+    { id: 'survey11', icon: '<i class="fas fa-clipboard-question"></i>', label: 'استبيان شهر 11', highlight: 'survey', hidden: true },
+    // تبديل المناوبات — صفحةٌ منفصلة (`swap.html`) لا تبويبٌ داخل هذه
+    // الصفحة، فلها `href` بدل `id` فعليّ في التوجيه: `buildNav()` في
+    // `views/layout.js` يرسمها رابطاً `<a>` لا زرّ `<button data-tab>`،
+    // و`setupTabs()` في `app.js` يستثنيها من مستمع `.nav-btn[data-tab]`
+    // (لولا ذلك لفسد `activeTab` المحفوظ إلى النصّ الحرفي "undefined").
+    { id: 'swap', href: 'swap.html', icon: '<i class="fas fa-right-left"></i>', label: 'تبديل المناوبات', highlight: 'swap' },
     { id: 'lectures', icon: '<i class="fas fa-calendar-check"></i>', label: 'رزنامة المحاضرات', hidden: true },
     { id: 'shifts', icon: '<i class="fas fa-clipboard-list"></i>', label: 'الفروز' },
     { id: 'oncall', icon: '<i class="fas fa-calendar-days"></i>', label: 'المناوبات' },
     { id: 'exams', icon: '<i class="fas fa-file-pen"></i>', label: 'الامتحانات والاختبارات', hidden: true },
     { id: 'clinicalcases', icon: '<i class="fas fa-stethoscope"></i>', label: 'مشروع الحالات السريرية', hidden: true },
-    { id: 'doctorstats', icon: '<i class="fas fa-chart-column"></i>', label: 'احصائيات الأطباء' },
-    { id: 'evaluation', icon: '<i class="fas fa-chart-line"></i>', label: 'التقييم السنوي' },
+    { id: 'doctorstats', icon: '<i class="fas fa-chart-column"></i>', label: 'العدادة' },
+    { id: 'evaluation', icon: '<i class="fas fa-chart-line"></i>', label: 'التقييم السنوي', hidden: true },
     // مبادرة الأدوية الإسعافية — تُعرض عالياً لأن الحاجة إليها لحظية: زميل
     // في الإسعاف يحتاج دواءً الآن، فيفتح الموقع ليجد رقم المناوب اليوم.
     { id: 'emergencymeds', icon: '<i class="fas fa-kit-medical"></i>', label: 'أدوية إسعافية', highlight: true },

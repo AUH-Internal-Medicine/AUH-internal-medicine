@@ -75,6 +75,7 @@
         abbr: get(row, 'abbr'),
         spec: get(row, 'spec'),
         phone: get(row, 'phone'),
+        phone2: get(row, 'phone2'),
         gender: get(row, 'gender'),
         join: get(row, 'join'),
         st: get(row, 'status'),

@@ -70,11 +70,13 @@
   const isoOf = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   const fmt = iso => `${iso.slice(8)}/${iso.slice(5, 7)}`;
   const today = new Date().toISOString().slice(0, 10);
+  // نفس حدّ الخادم في submitRequest_ — يومان رحمةً بمن يقدّم الطلب متأخراً
+  // قليلاً، وما قبلهما مرفوضٌ منعاً للعبث بالجدول. التحقّق الحقيقيّ على
+  // الخادم؛ هذا فقط يمنع اختيار تاريخٍ سيُرفَض لاحقاً.
+  const minShiftDate = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
 
   /* -------------------------------------------------------------- app state */
   const S = {
-    /** true once the resident confirms they have permission for a ستريب. */
-    stripOk: false,
     roster: [],          // [{name, abbr, spec, status}]
     duties: new Map(),   // key -> [{date, cat, group, night, holiday, hard, hours}]
     months: [],          // ['2026-07', ...] present in the on-call sheet
@@ -86,6 +88,32 @@
   };
 
   /* ---------------------------------------------------------------- loading */
+  let authIdentity = null; // {abbr, name} من swap-auth.js بعد تسجيل الدخول
+
+  /**
+   * صاحبُ الطلب في الواجهة الجديدة هو صاحبُ الحساب نفسُه دائماً — لا يُكتب
+   * باسم أحدٍ آخر. يُستدعى من `swap-auth.js` فور معرفة الهوية (دخولٌ جديد
+   * أو جلسةٌ محفوظة)، ويُعاد استدعاؤه من `boot()` أيضاً لتغطية ترتيب أيٍّ
+   * من الحدثين يسبق الآخر. يفوز دائماً على أي `?from=` في الرابط.
+   */
+  function applyAuthIdentity() {
+    if (!authIdentity || !S.roster.length || !$('q1')) return;
+    const doc = S.roster.find(r => normAr(r.abbr) === normAr(authIdentity.abbr));
+    if (!doc) return;
+    S.from = doc;
+    $('q1').value = doc.name;
+    $('q1').disabled = true;
+    chosenBox($('ch1'), doc, () => {});
+    const x = $('ch1').querySelector('.x');
+    if (x) x.remove();
+    const note = document.createElement('div');
+    note.className = 'step-hint';
+    note.style.marginTop = '6px';
+    note.innerHTML = '<i class="fas fa-lock"></i> هذا حسابُك — لا يمكن تقديم طلبٍ باسم شخصٍ آخر.';
+    $('ch1').appendChild(note);
+    if (typeof refresh === 'function') refresh();
+  }
+
   async function boot() {
     try {
       const fetched = await AUH.data.repository.fetchAll();
@@ -95,6 +123,7 @@
       $('form').hidden = false;
       wire();
       applyLink();
+      applyAuthIdentity();
     } catch (err) {
       $('boot').innerHTML =
         '<div class="verdict no"><h3><i class="fas fa-triangle-exclamation"></i> تعذر تحميل البيانات</h3>' +
@@ -113,7 +142,7 @@
       .filter(r => r && r.name)
       .map(r => ({
         name: r.name, abbr: r.abbr || '', spec: r.spec || '', status: r.st || '',
-        phone: r.phone || '',
+        phone: r.phone || '', phone2: r.phone2 || '',
         gender: r.gender || '',   // «طبيب» / «طبيبة» — decides باب eligibility
         // Only residents actually on the job may be offered a duty. A blank
         // status used to default to "joined", which quietly let detached and
@@ -389,10 +418,6 @@
     const month = shift.date.slice(0, 7);
     const mutual = S.kind === 'تبديل';
     const out = [];
-    // How many colleagues are held back ONLY by a strip that survives the
-    // trade. They used to vanish with no explanation, which read as if the
-    // exchange were being ignored — so the count is surfaced under the list.
-    let stripOnly = 0;
 
     const myGroup = dutyGroup(shift.cat);
     const myMale = isMale(from);
@@ -404,21 +429,8 @@
       let options = null;
       if (mutual) {
         options = feasibleSwaps(from, shift, doc);
-        if (!options.length) {
-          // would it work as an exceptional request? say so, don't hide it
-          if (!S.exceptional) {
-            const save = S.exceptional; S.exceptional = true;
-            if (feasibleSwaps(from, shift, doc).length) stripOnly++;
-            S.exceptional = save;
-          }
-          return;
-        }
+        if (!options.length) return;
       } else if (!coverFeasible(shift, doc)) {
-        if (!S.exceptional && !genderBlocked(shift.cat, doc)) {
-          const save = S.exceptional; S.exceptional = true;
-          if (coverFeasible(shift, doc)) stripOnly++;
-          S.exceptional = save;
-        }
         return;
       }
 
@@ -442,7 +454,6 @@
     // same family + same gender first, then the lightest month within each tier
     out.sort((a, b) => a.rank - b.rank || a.monthCount - b.monthCount ||
       (a.doc.name || '').localeCompare(b.doc.name || '', 'ar'));
-    out.stripOnly = stripOnly;
     out.myGroup = myGroup;
     return out;
   }
@@ -459,25 +470,30 @@
         'الطلب سيُرسل موسوماً بأنه <b>طلب متأخر</b>، والخيارات المعروضة مناوبات مضت أيضاً.</div>'
       : '';
 
-    // Colleagues kept out only by a strip are named as such, with the way in.
-    const stripNote = list.stripOnly
-      ? `<div class="elig-strip"><i class="fas fa-circle-info"></i> ` +
-        `و<b>${list.stripOnly}</b> ${mutual ? 'زميلاً يمكن التبادل معهم' : 'طبيباً يمكنهم أخذها'} ` +
-        `لولا أنّ ذلك يُنتج مناوبتين متتاليتين (ستريب) لأحد الطرفين. ` +
-        `فعّل «لديّ إذن بمناوبتين متتاليتين» أعلاه ليظهروا.</div>`
-      : '';
-
     if (!list.length) {
       host.innerHTML = late + '<div class="verdict no" style="margin-top:0"><h3><i class="fas fa-user-slash"></i> لا يوجد طبيب متاح</h3>' +
         `<div>${mutual
           ? 'لا يوجد زميل يستطيع أخذ هذه المناوبة ولديه في المقابل مناوبة تستطيع أنت أخذها. جرّب «شيل مناوبة» بدلاً من التبديل المتبادل.'
-          : 'كل الأطباء لديهم مناوبة في هذا اليوم أو في اليوم الذي قبله أو بعده. جرّب مناوبة أخرى.'}</div>` +
-        `${stripNote}</div>`;
+          : 'كل الأطباء لديهم مناوبة في هذا اليوم أو في اليوم الذي قبله أو بعده. جرّب مناوبة أخرى.'}</div></div>`;
       return;
     }
 
+    /** رقم محليّ سوري يبدأ بصفر — واتساب يحتاج رمز الدولة ٩٦٣ بدلاً من الصفر. */
+    const waLink = phone => {
+      const digits = phone.replace(/[^\d]/g, '');
+      const intl = digits.startsWith('0') ? '963' + digits.slice(1) : digits;
+      return `https://wa.me/${intl}`;
+    };
+
+    const phoneRow = phone => `<span class="cand-phone-row"><span class="num">${escapeHtml(phone)}</span>` +
+      `<span class="pbtns">` +
+      `<a href="tel:${escapeHtml(phone)}" class="pbtn" title="اتصال" onclick="event.stopPropagation()"><i class="fas fa-phone"></i></a>` +
+      `<a href="${waLink(phone)}" target="_blank" rel="noopener" class="pbtn wa" title="واتساب" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i></a>` +
+      `<button type="button" class="pbtn copy" data-phone="${escapeHtml(phone)}" title="نسخ الرقم"><i class="fas fa-copy"></i></button>` +
+      `</span></span>`;
+
     const chip = x => {
-      const phone = (x.doc.phone || '').trim();
+      const phones = [x.doc.phone, x.doc.phone2].map(p => (p || '').trim()).filter(Boolean);
       const opts = mutual
         ? `<span class="cm-alt"><i class="fas fa-right-left"></i> <span class="num">${x.options.length}</span> مناوبة قابلة للتبادل</span>`
         : '';
@@ -486,10 +502,9 @@
         `<span class="cn">${escapeHtml(x.doc.name)}</span>` +
         `<span class="cm"><span class="num">${x.monthCount}</span> مناوبة هذا الشهر</span>${opts}` +
         (tags ? `<span class="ctags">${tags}</span>` : '') +
-        (phone
-          ? `<span class="cand-phone"><a href="tel:${escapeHtml(phone)}" class="num" onclick="event.stopPropagation()">${escapeHtml(phone)}</a>` +
-            `<button type="button" class="copy" data-phone="${escapeHtml(phone)}" title="نسخ الرقم"><i class="fas fa-copy"></i></button></span>`
-          : '<span class="cand-phone none"><i class="fas fa-phone-slash"></i> لا يوجد رقم في اللائحة</span>') +
+        (phones.length
+          ? `<span class="cand-phones">${phones.map(phoneRow).join('')}</span>`
+          : '<span class="cand-phones none"><i class="fas fa-phone-slash"></i> لا يوجد رقم في اللائحة</span>') +
         '</div>';
     };
 
@@ -499,8 +514,7 @@
         ? 'يستطيعون أخذ مناوبتك، ولديهم مناوبة تستطيع أنت أخذها'
         : 'لا مناوبة لديهم في نفس اليوم ولا في اليوم السابق أو التالي'} — مرتّبون من الأخفّ عبئاً</span></div>` +
       `<div class="cands">${list.slice(0, 30).map(chip).join('')}</div>` +
-      (list.length > 30 ? `<div class="elig-note" style="margin-top:8px">…و${list.length - 30} آخرون — اكتب الاسم في المربع أعلاه.</div>` : '') +
-      stripNote;
+      (list.length > 30 ? `<div class="elig-note" style="margin-top:8px">…و${list.length - 30} آخرون — اكتب الاسم في المربع أعلاه.</div>` : '');
 
     host.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -568,11 +582,15 @@
 
       if (opts.mode === 'pick') {
         // Past duties are selectable too: residents often swap by agreement,
-        // work the shift, and only file the request afterwards.
-        if (mine.length) {
+        // work the shift, and only file the request afterwards — لكن ليس
+        // أقدم من يومين، يرفضه الخادم بلا شرط (منعاً للعبث بالجدول).
+        if (mine.length && iso >= minShiftDate) {
           cls.push('pick');
           click = ` data-date="${iso}"`;
           if (iso < today) { cls.push('late'); why = 'مضت'; }
+        } else if (mine.length) {
+          cls.push('blocked');
+          why = 'قديمةٌ جداً';
         }
         if (iso === opts.selected) cls.push('sel');
       } else {
@@ -666,6 +684,13 @@
     done('s4', !!S.to);
     lock('s5', !S.to);
     lock('s6', !(S.from && S.to && S.shift));
+
+    // تمييزُ الخطوة الحالية بنبضةٍ لطيفة — إرشادٌ بصريّ لمن لا يقرأ التلميحات.
+    ['s2', 's3', 's4', 's5', 's6'].forEach(id => $(id).classList.remove('current'));
+    const mutualNow = S.kind === 'تبديل';
+    const currentStep = !S.from ? 's2' : !S.shift ? 's3' : !S.to ? 's4'
+      : (mutualNow && !S.back) ? 's5' : 's6';
+    $(currentStep).classList.add('current');
 
     $('ab1').value = S.from ? S.from.abbr : '';
     $('ab2').value = S.to ? S.to.abbr : '';
@@ -884,7 +909,7 @@
     c.textAlign = 'left';
     c.font = font(13, 600);
     c.fillStyle = '#1b5e43';
-    c.fillText(mutual ? 'تبديل متبادل' : 'شيل مناوبة', PAD, 34);
+    c.fillText(mutual ? 'تبديل' : 'شيل مناوبة', PAD, 34);
     c.fillStyle = '#5c6b64';
     c.font = font(12, 400);
     const gives = `${S.shift.cat} — ${fmt(S.shift.date)}`;
@@ -1080,59 +1105,75 @@
     };
   }
 
+  const TOKEN_KEY = 'auh_swap_session';
+
+  /** يرسل عبر حسابات النظام الجديد (نظام-التبديل.gs) — لا نموذج Google بعد الآن. */
   function send() {
+    const token = AUH.storage.get(TOKEN_KEY);
+    if (!token) { toast('سجّل الدخول أولاً.', true); return; }
     const data = payload();
+    const btn = $('send');
+    btn.disabled = true; btn.classList.add('is-busy');
 
-    if (!SWAP_FORM.action) {
-      const text =
-        `طلب ${data.kind} مناوبة\n` +
-        `صاحب المناوبة: ${data.fromName} (${data.fromAbbr})\n` +
-        `المناوبة: ${data.shiftType} — ${data.shiftDate} (${getDayName(data.shiftDate)})\n` +
-        `الطبيب الجديد: ${data.toName} (${data.toAbbr})\n` +
-        `المناوبة المقابلة: ${data.backType} — ${data.backDate}\n` +
-        `السبب: ${data.reason}\n` +
-        (data.notes ? `ملاحظات: ${data.notes}\n` : '');
-      navigator.clipboard.writeText(text)
-        .then(() => toast('لم يُربط النموذج بعد — نُسخت تفاصيل الطلب، أرسلها للمسؤول.'))
-        .catch(() => toast('لم يُربط النموذج بعد. راجع 4-التوثيق/نظام-التبديل.md', true));
-      return;
-    }
-
-    // Posting through a hidden iframe keeps Google's cross-origin response out
-    // of the way — the request still reaches the sheet.
-    const frameName = 'swapSink';
-    let frame = document.getElementById(frameName);
-    if (!frame) {
-      frame = document.createElement('iframe');
-      frame.name = frameName; frame.id = frameName; frame.style.display = 'none';
-      document.body.appendChild(frame);
-    }
-    const form = document.createElement('form');
-    form.action = SWAP_FORM.action;
-    form.method = 'POST';
-    form.target = frameName;
-    const add = (name, value) => {
-      const input = document.createElement('input');
-      input.type = 'hidden'; input.name = name; input.value = value;
-      form.appendChild(input);
-    };
-    Object.entries(SWAP_FORM.fields).forEach(([key, entry]) => {
-      if (!entry || data[key] === undefined || data[key] === '') return;
-      if (SWAP_FORM.dateFields.indexOf(key) >= 0) {
-        // a date question wants entry.N_year / _month / _day
-        const [y, m, d] = data[key].split('-');
-        add(`${entry}_year`, y); add(`${entry}_month`, String(+m)); add(`${entry}_day`, String(+d));
-      } else {
-        add(entry, data[key]);
-      }
+    AUH.data.swapRequests.submitRequest(token, {
+      kind: data.kind,
+      shiftDate: data.shiftDate, shiftType: data.shiftType,
+      toAbbr: data.toAbbr, toName: data.toName,
+      backDate: data.backDate, backType: data.backType,
+      reason: data.reason, notes: data.notes, phone: $('phone').value.trim(),
+      urgent: $('urgent') && $('urgent').checked,
+      agreedResponsibility: $('agree') && $('agree').checked
+    }).then(res => {
+      btn.disabled = false; btn.classList.remove('is-busy');
+      if (!res || res.state !== 'ok') { toast((res && res.message) || 'تعذّر إرسال الطلب.', true); return; }
+      $('form').hidden = true;
+      $('done').hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      loadMyRequests();
+    }).catch(err => {
+      btn.disabled = false; btn.classList.remove('is-busy');
+      toast(err.message || 'تعذّر إرسال الطلب.', true);
     });
-    document.body.appendChild(form);
-    form.submit();
-    setTimeout(() => form.remove(), 1500);
+  }
 
-    $('form').hidden = true;
-    $('done').hidden = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  /* ------------------------------------------------------------- طلباتي */
+  const STATUS_LABEL = {
+    pending_admin: 'بانتظار اعتماد الأدمن',
+    approved: 'اعتُمِد',
+    rejected_by_admin: 'رفضه الأدمن'
+  };
+  const STATUS_CLASS = {
+    pending_admin: 'pending', approved: 'approved', rejected_by_admin: 'rejected'
+  };
+
+  function loadMyRequests() {
+    const host = $('myRequestsList');
+    if (!host) return;
+    const token = AUH.storage.get(TOKEN_KEY);
+    if (!token) { host.innerHTML = '<p class="step-hint">سجّل الدخول لترى طلباتك.</p>'; return; }
+
+    AUH.data.swapRequests.myRequests(token).then(res => {
+      if (!res || res.state !== 'ok') { host.innerHTML = `<p class="step-hint">${escapeHtml((res && res.message) || 'تعذّر التحميل.')}</p>`; return; }
+      renderMyRequests(res.requests || []);
+    }).catch(() => { host.innerHTML = '<p class="step-hint">تعذّر التحميل — أعد تحميل الصفحة.</p>'; });
+  }
+
+  function renderMyRequests(list) {
+    const host = $('myRequestsList');
+    if (!list.length) { host.innerHTML = '<p class="step-hint">لا طلبات بعد.</p>'; return; }
+
+    host.innerHTML = list.map(r => {
+      const dir = r.perspective === 'toMe' ? `${escapeHtml(r.fromName)} ← يطلب منك` : `أنت ← ${escapeHtml(r.toName)}`;
+      const cls = STATUS_CLASS[r.status] || 'pending';
+      const label = STATUS_LABEL[r.status] || r.status;
+      const urgentBadge = r.urgent ? '<span class="req-badge urgent"><i class="fas fa-triangle-exclamation"></i> عاجل</span>' : '';
+
+      return `<div class="req-item">
+        <div><div class="who">${dir}</div>
+        <div class="what">${escapeHtml(r.kind)} — ${escapeHtml(r.shiftType)} يوم ${escapeHtml(fmt(r.shiftDate))}</div></div>
+        ${urgentBadge}<span class="req-badge ${cls}">${escapeHtml(label)}</span>
+      </div>`;
+    }).join('');
   }
 
   /**
@@ -1242,13 +1283,6 @@
       $('s4').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    $('stripOk').addEventListener('change', e => {
-      S.exceptional = e.target.checked;
-      // the whole judgement changes, so the colleague list and the picker
-      // are both rebuilt — and a choice that is no longer valid is dropped
-      if (S.back && !feasibleSwaps(S.from, S.shift, S.to).some(d => sameDuty(d, S.back))) S.back = null;
-      refresh();
-    });
 
     $('reason').addEventListener('change', () => {
       const other = $('reason').value === 'سبب آخر';
@@ -1293,4 +1327,12 @@
 
   document.addEventListener('DOMContentLoaded', boot);
   if (document.readyState !== 'loading') boot();
+
+  AUH.swap = {
+    setAuthIdentity(identity) {
+      authIdentity = identity || null;
+      applyAuthIdentity();
+      if (identity) loadMyRequests();
+    }
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -296,7 +296,11 @@
   renderShiftGroupFinder() {
     const wrap = document.getElementById('shiftGroupFinderWrap');
     if (!wrap) return;
-    const head = '<div class="oncall-raw-modal-head"><h4><i class="fas fa-people-group"></i> مناوبو نفس الفرز</h4><button class="oncall-raw-close-btn" onclick="app.toggleShiftGroupFinder()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button></div>';
+    const head = '<div class="oncall-raw-modal-head"><h4><i class="fas fa-people-group"></i> مناوبو نفس الفرز</h4>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+      '<button class="shift-group-save-btn" id="shiftGroupSaveBtn" onclick="app.downloadShiftGroupImage(this)" title="حفظ كصورة" aria-label="حفظ كصورة"><i class="fas fa-camera"></i></button>' +
+      '<button class="oncall-raw-close-btn" onclick="app.toggleShiftGroupFinder()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>' +
+      '</div></div>';
     const dstr = this.selectedOncallDate || this.today;
     const dayLine = `<div class="shift-group-day"><i class="fas fa-calendar-day"></i> اليوم المختار: <strong>${getDayName(dstr)} ${dstr}</strong> — غيّره من التقويم فوق.</div>`;
     const search = `<div class="shift-group-search"><input type="text" id="shiftGroupInput" list="shiftGroupOptionsList" placeholder="اكتب اسم الفرز أو اختره — مثلاً: سابع" value="${this.escapeHtml(this.shiftGroupQuery || '')}" oninput="app.searchShiftGroup(this.value)"><datalist id="shiftGroupOptionsList"></datalist></div><div id="shiftGroupResults" class="shift-group-results"></div>`;
@@ -346,16 +350,16 @@
 
     const rowHtml = e => `<div class="shift-group-row${e.isCompleted ? ' is-done' : ''}"><span class="sg-name">${mcn(e.name, e.phone, e.abbr)}</span><span class="sg-cat">${this.escapeHtml(e.category)}</span>${e.isCompleted ? '<i class="fas fa-check sg-done-icon" title="تمّت"></i>' : ''}</div>`;
 
-    const section = (title, icon, list) => list.length
-      ? `<div class="shift-group-section"><h5><i class="fas ${icon}"></i> ${title} <span class="count-badge">${list.length}</span></h5>${list.map(rowHtml).join('')}</div>`
+    const section = (title, icon, list, mod) => list.length
+      ? `<div class="shift-group-section${mod ? ' ' + mod : ''}"><h5><i class="fas ${icon}"></i> ${title} <span class="count-badge">${list.length}</span></h5>${list.map(rowHtml).join('')}</div>`
       : '';
 
     const summary = `<div class="shift-group-summary"><i class="fas fa-circle-info"></i> <strong>${this.formatNumDisplay(residentsInGroup.length)}</strong> مقيم بفرز «${this.escapeHtml(matchKey)}» — <strong>${this.formatNumDisplay(entries.length)}</strong> منهم مناوبون يوم ${getDayName(dstr)} ${dstr}.</div>`;
 
     el.innerHTML = summary +
-      section('إسعاف ليلي', 'fa-moon', nightEmergency) +
+      section('إسعاف ليلي', 'fa-moon', nightEmergency, 'sg-night') +
       section('باقي المناوبات', 'fa-layer-group', rest) +
-      section('إسعاف نهاري', 'fa-sun', dayEmergency) +
+      section('إسعاف نهاري', 'fa-sun', dayEmergency, 'sg-day') +
       (entries.length ? '' : '<p class="shift-group-empty">لا أحد منهم مناوبٌ في هذا اليوم.</p>');
   },
 
@@ -453,6 +457,21 @@
     return teams;
   },
 
+  /**
+   * طلبُ المالك: في «اسعاف داخلي ليلي» تحديداً، إن اكتمل الفريق الثالث
+   * بثلاثة أشخاص يُنقَل آخرُ اسمٍ فيه إلى الفريق الرابع — فيصبح الفريق ٣
+   * شخصين، والفريق ٤ يكسب شخصاً إضافياً (ينشأ إن لم يكن موجوداً). لا
+   * يمسّ الفريقين ١ و٢، ولا ينطبق على «اسعاف داخلي نهاري».
+   */
+  rebalanceNightInternalTeams(categoryName, teams) {
+    if (normAr(categoryName || '') !== normAr('اسعاف داخلي ليلي')) return teams;
+    if (!teams[2] || teams[2].length !== 3) return teams;
+    const moved = teams[2].pop();
+    if (!teams[3]) teams[3] = [];
+    teams[3].unshift(moved);
+    return teams;
+  },
+
   oncallCategoriesSectionHtml(catEntries, dstr, isYear1) {
     if (!catEntries.length) return '';
     let h = '<div class="oncall-categories-grid">';
@@ -476,7 +495,7 @@
         h += '</div><p class="oncall-halves-note"><i class="fas fa-circle-info"></i> ' +
           'المناوبة كاملة من ٦/١٠، والتقسيم نهاري/ليلي معروضٌ هذا الشهر كما هو في الجدول.</p>';
       } else if (teamed) {
-        const teams = this.splitIntoTeams(names, 3);
+        const teams = this.rebalanceNightInternalTeams(cn, this.splitIntoTeams(names, 3));
         h += '<div class="oncall-teams">';
         teams.forEach((team, i) => {
           h += `<div class="oncall-team"><span class="team-label">فريق ${i + 1}</span>` +

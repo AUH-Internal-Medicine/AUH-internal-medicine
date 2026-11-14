@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>لوحة طلبات التبديل — الأدمن</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗂️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--primary:#1f6b4a;--primary-strong:#17543a;--ink:#1c2420;--ink-2:#5c6b63;--surface:#fff;
+  --surface-sunk:#f3f6f4;--rule:#dfe6e1;--radius:12px;--signal:#b3433b;--signal-soft:#fbe9e7;--shadow:0 6px 18px rgba(20,40,30,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-sunk);color:var(--ink);font-family:'IBM Plex Sans Arabic',sans-serif;font-size:14.5px}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px}
+.gate{min-height:100vh;display:grid;place-items:center;padding:20px}
+.gate[hidden]{display:none}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.gate .card{max-width:360px;width:100%;text-align:center}
+.gate .lock{font-size:30px;color:var(--primary);margin-bottom:8px}
+input[type=password],input[type=text]{width:100%;height:46px;border:1px solid var(--rule);border-radius:999px;
+  padding:0 16px;font-family:inherit;font-size:14px;text-align:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border:0;
+  border-radius:999px;background:var(--primary);color:#fff;font-family:inherit;font-size:14.5px;font-weight:700;
+  cursor:pointer;width:100%;margin-top:12px}
+.btn:disabled{background:#c9ccd0;cursor:not-allowed}
+.err{color:var(--signal);font-size:12.5px;margin-top:10px;min-height:1em}
+h1{font-size:1.2em;margin:0 0 4px}
+.sub{color:var(--ink-2);font-size:13px;margin-bottom:18px}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tabs button{flex:1;border:1px solid var(--rule);background:var(--surface);padding:9px;border-radius:999px;
+  font-family:inherit;font-weight:700;font-size:12.8px;cursor:pointer}
+.tabs button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.req{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.req .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.req .who{font-weight:700;font-size:14px}
+.req .meta{color:var(--ink-2);font-size:12.5px;margin-top:3px}
+.req .notes{font-size:12.5px;margin-top:8px;background:var(--surface-sunk);border-radius:8px;padding:8px 10px}
+.stat-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--ink-2)}
+.stat-row b{color:var(--ink);font-variant-numeric:tabular-nums}
+.gender-box{margin-top:8px;border:1px solid var(--rule);border-radius:8px;padding:8px 10px;font-size:12.3px}
+.gender-box .g-head{font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.gender-box .g-row{display:flex;gap:14px;color:var(--ink-2)}
+.gender-box.ok{border-color:#bfe3cc;background:#f3fbf5}
+.gender-box.warn{border-color:#f0cfcb;background:var(--signal-soft)}
+.gender-box.warn .g-head{color:var(--signal)}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.badge.urgent{background:var(--signal-soft);color:var(--signal)}
+.badge.status{background:#fdf1d6;color:#8a6a1f}
+.badge.approved{background:#dcf3e3;color:#1f7a42}
+.badge.rejected{background:var(--signal-soft);color:var(--signal)}
+.actions{display:flex;gap:8px;margin-top:10px}
+.actions button{height:36px;padding:0 16px;border-radius:999px;border:0;font-weight:700;font-size:12.8px;cursor:pointer}
+.actions .ok{background:var(--primary);color:#fff}
+.actions .no{background:var(--signal);color:#fff}
+.actions input{flex:1;height:36px;border-radius:999px;border:1px solid var(--rule);padding:0 12px;font-size:12.5px}
+.empty{color:var(--ink-2);text-align:center;padding:30px 0}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="card">
+    <i class="fas fa-lock lock"></i>
+    <h2>لوحة طلبات التبديل</h2>
+    <p class="sub">أوّل دخولٍ يُنشئ كلمةَ السرّ (٤ أحرفٍ على الأقل)، وما بعده دخولٌ بها. تُفحَص على الخادم نفسِه — لا سترٌ محليّ هنا.</p>
+    <form id="gateForm" autocomplete="off">
+      <input id="gateInput" type="password" inputmode="numeric" autocomplete="off" aria-label="كلمة السرّ">
+      <button class="btn" id="gateBtn" type="submit"><i class="fas fa-right-to-bracket"></i> دخول</button>
+    </form>
+    <div class="err" id="gateErr" role="alert"></div>
+  </div>
+</div>
+
+<div id="page" hidden class="wrap">
+  <h1>لوحة طلبات التبديل</h1>
+  <div class="sub">موافقة/رفض — الاعتماد ينفّذ التبديل تلقائياً على الجدول.</div>
+  <div class="tabs" id="tabs">
+    <button type="button" data-f="pending" class="on">بانتظار القرار</button>
+    <button type="button" data-f="all">الكل</button>
+    <button type="button" id="exportBtn" style="flex:0 0 auto;background:var(--surface);border-color:var(--rule);color:var(--ink)"><i class="fas fa-file-excel"></i> تحميل السجل Excel</button>
+  </div>
+  <div id="list"><p class="empty">جارٍ التحميل...</p></div>
+</div>
+
+<script src="js/core/namespace.js?v=__BUILD_ID__"></script>
+<script src="js/core/storage.js?v=__BUILD_ID__"></script>
+<script src="js/core/config.js?v=__BUILD_ID__"></script>
+<script src="js/core/logger.js?v=__BUILD_ID__"></script>
+<script src="js/core/text.js?v=__BUILD_ID__"></script>
+<script src="js/core/status.js?v=__BUILD_ID__"></script>
+<script src="js/core/dates.js?v=__BUILD_ID__"></script>
+<script src="js/data/schema.js?v=__BUILD_ID__"></script>
+<script src="js/data/header-map.js?v=__BUILD_ID__"></script>
+<script src="js/data/gviz-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/api-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/apps-script-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/swap-requests-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/residents.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/rotations-year2.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/oncall.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/evaluation.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/lectures.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/holidays.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/content.js?v=__BUILD_ID__"></script>
+<script src="js/data/repository.js?v=__BUILD_ID__"></script>
+<script src="js/domain/oncall-schedule.js?v=__BUILD_ID__"></script>
+<script src="js/domain/oncall-adjustments.js?v=__BUILD_ID__"></script>
+<script src="js/domain/doctor-stats.js?v=__BUILD_ID__"></script>
+<script>
+(function () {
+  'use strict';
+  const AUH = window.AUH;
+  const { escapeHtml, normAr, splitNames } = AUH.text;
+  const el = id => document.getElementById(id);
+
+  let passcode = null; // في الذاكرة فقط — لا يُحفظ، يُطلب من جديد عند إعادة التحميل
+  let requests = [];
+  let filter = 'pending';
+
+  /** قواعدُ توازن الجنس لكل فئة — معاينةٌ فقط، لا تمنع الاعتماد. */
+  const BALANCE_RULES = [
+    { cats: ['عناية قلبية', 'عناية مركز', 'عناية داخلية', 'سابع', 'رابع', 'إسعاف مركز', 'اسعاف مركز'], minM: 2, minF: 2 },
+    { cats: ['إسعاف داخلي نهاري', 'اسعاف داخلي نهاري', 'إسعاف داخلي ليلي', 'اسعاف داخلي ليلي'], minM: 5, minF: 0 }
+  ];
+  function ruleFor(cat) {
+    const n = normAr(cat || '');
+    return BALANCE_RULES.find(r => r.cats.some(c => normAr(c) === n)) || null;
+  }
+
+  // سياقُ الجدول والإحصائيات — يُحمَّل مرّةً بعد نجاح كلمة السرّ، بمعزلٍ عن
+  // قائمة الطلبات (فشلُه لا يمنع رؤية الطلبات، فقط يُخفي المعاينة الإضافية).
+  const CTX = { ready: false, dataset: null, doctorStats: [] };
+
+  function loadScheduleContext() {
+    return AUH.data.repository.fetchAll()
+      .then(fetched => {
+        const ds = AUH.data.repository.parseAll(fetched.tables);
+        const resolved = AUH.domain.adjustments.resolveAdjustments({
+          residents: ds.residents, bonuses: ds.adjustments.bonuses, penalties: ds.adjustments.penalties
+        });
+        CTX.dataset = ds;
+        CTX.doctorStats = AUH.domain.doctorStats.computeDoctorStats({
+          residents: ds.residents, oncall: ds.oncall, evaluation: ds.evaluation,
+          bonuses: resolved.bonuses, penalties: resolved.penalties,
+          annualHolidays: new Set([...(ds.rules.annualHolidays || []), ...ds.holidays.dates]),
+          today: new Date().toISOString().slice(0, 10), currentMonth: new Date().getMonth() + 1
+        });
+        CTX.ready = true;
+      })
+      .catch(() => { CTX.ready = false; }); // لا عطل على القائمة الأساسية — فقط بلا إحصائيات
+  }
+
+  function statsLine(abbr, name) {
+    if (!CTX.ready) return '';
+    const s = AUH.domain.doctorStats.findStatsFor(CTX.doctorStats, name, abbr);
+    if (!s) return '';
+    return `${escapeHtml(name)}: <b>${s.total}</b> مناوبة إجمالاً (<b>${s.completed}</b> منفَّذة)`;
+  }
+
+  /** مَن في خانة (تاريخ×فئة) الآن — بأسماء اللائحة لمعرفة الجنس. */
+  function occupantsOn(date, cat) {
+    if (!CTX.ready) return null;
+    const oncall = CTX.dataset.oncall;
+    const colIdx = (oncall.headers || []).findIndex(h => normAr(h || '') === normAr(cat));
+    if (colIdx < 0) return null;
+    const dayRow = (oncall.rows || []).find(r => r.date === date);
+    if (!dayRow) return null;
+    const cell = (dayRow.row[colIdx] || '').trim();
+    if (!cell) return [];
+    return splitNames(cell).map(raw => CTX.dataset.residents.findByNameOrAbbr(raw)).filter(Boolean);
+  }
+
+  function countGender(list) {
+    return {
+      m: list.filter(r => normAr(r.gender) === normAr('طبيب')).length,
+      f: list.filter(r => normAr(r.gender) === normAr('طبيبة')).length
+    };
+  }
+
+  /** معاينةُ أثر النقلة على توازن الجنس في خانة واحدة — null إن لا قاعدة لهذه الفئة. */
+  function genderPreview(date, cat, fromAbbr, toAbbr) {
+    const rule = ruleFor(cat);
+    if (!rule || !CTX.ready) return null;
+    const occ = occupantsOn(date, cat);
+    if (!occ) return { error: true, cat, date };
+
+    const before = countGender(occ);
+    const after = occ.filter(r => normAr(r.abbr || r.name) !== normAr(fromAbbr));
+    const toResident = CTX.dataset.residents.findByNameOrAbbr(toAbbr);
+    if (toResident && !after.some(r => normAr(r.abbr || r.name) === normAr(toResident.abbr || toResident.name))) {
+      after.push(toResident);
+    }
+    const afterCount = countGender(after);
+    const violatesAfter = afterCount.m < rule.minM || (rule.minF > 0 && afterCount.f < rule.minF);
+    return { cat, date, rule, before, after: afterCount, violatesAfter };
+  }
+
+  function genderBoxHtml(g) {
+    if (!g) return '';
+    if (g.error) return `<div class="gender-box"><span class="g-head">⚠ توازن الجنس (${escapeHtml(g.cat)})</span><div class="g-row">تعذّر إيجاد هذا اليوم/الفئة في الجدول الحالي.</div></div>`;
+    const need = g.rule.minF > 0 ? `حدٌّ أدنى: ${g.rule.minM} ذكور و${g.rule.minF} إناث` : `حدٌّ أدنى: ${g.rule.minM} ذكور`;
+    return `<div class="gender-box ${g.violatesAfter ? 'warn' : 'ok'}">
+      <span class="g-head">${g.violatesAfter ? '⚠' : '✓'} توازن الجنس — ${escapeHtml(g.cat)} (${escapeHtml(g.date)})</span>
+      <div class="g-row"><span>الآن: ${g.before.m} ذكور، ${g.before.f} إناث</span>
+      <span>بعد الاعتماد: <b>${g.after.m} ذكور، ${g.after.f} إناث</b></span><span>${need}</span></div>
+    </div>`;
+  }
+
+  const STATUS_LABEL = {
+    pending_confirm: 'بانتظار تأكيد الطرف الآخر',
+    pending_admin: 'بانتظار اعتماد الأدمن',
+    approved: 'اعتُمِد', rejected_by_target: 'رفضه الطرف الآخر', rejected_by_admin: 'رفضه الأدمن'
+  };
+  const STATUS_CLASS = {
+    pending_confirm: 'status', pending_admin: 'status',
+    approved: 'approved', rejected_by_target: 'rejected', rejected_by_admin: 'rejected'
+  };
+
+  function render() {
+    const host = el('list');
+    const shown = filter === 'pending'
+      ? requests.filter(r => r.status === 'pending_admin')
+      : requests;
+    if (!shown.length) { host.innerHTML = '<p class="empty">لا طلبات هنا.</p>'; return; }
+
+    host.innerHTML = shown.map(r => {
+      const label = STATUS_LABEL[r.status] || r.status;
+      const cls = STATUS_CLASS[r.status] || 'status';
+      const canDecide = r.status === 'pending_admin';
+      return `<div class="req" data-id="${escapeHtml(r.id)}">
+        <div class="top">
+          <div><div class="who">${escapeHtml(r.fromName)} (${escapeHtml(r.fromAbbr)}) ← ${escapeHtml(r.toName)} (${escapeHtml(r.toAbbr)})</div>
+          <div class="meta">${escapeHtml(r.kind)} — ${escapeHtml(r.shiftType)} يوم ${escapeHtml(r.shiftDate)}
+            ${r.kind === 'تبديل' && r.backDate ? ` · مقابل: ${escapeHtml(r.backType)} يوم ${escapeHtml(r.backDate)}` : ''}</div></div>
+          <div>${r.urgent ? '<span class="badge urgent"><i class="fas fa-triangle-exclamation"></i> عاجل</span> ' : ''}<span class="badge ${cls}">${escapeHtml(label)}</span></div>
+        </div>
+        ${r.reason ? `<div class="notes"><b>السبب:</b> ${escapeHtml(r.reason)}</div>` : ''}
+        ${r.notes ? `<div class="notes">${escapeHtml(r.notes)}</div>` : ''}
+        ${r.phone ? `<div class="meta" style="margin-top:6px">هاتف مُقدّم الطلب: ${escapeHtml(r.phone)}</div>` : ''}
+        ${r.scheduleResult ? `<div class="notes"><b>تنفيذٌ على الجدول:</b> ${escapeHtml(r.scheduleResult)}</div>` : ''}
+        ${canDecide && CTX.ready ? `<div class="stat-row">
+            <span>${statsLine(r.fromAbbr, r.fromName)}</span><span>${statsLine(r.toAbbr, r.toName)}</span>
+          </div>
+          ${genderBoxHtml(genderPreview(r.shiftDate, r.shiftType, r.fromAbbr, r.toAbbr))}
+          ${r.kind === 'تبديل' && r.backDate ? genderBoxHtml(genderPreview(r.backDate, r.backType, r.toAbbr, r.fromAbbr)) : ''}` : ''}
+        ${canDecide ? `<div class="actions">
+            <input type="text" placeholder="ملاحظة (اختياري)" class="note-input">
+            <button type="button" class="ok" data-decision="approve">قبول</button>
+            <button type="button" class="no" data-decision="reject">رفض</button>
+          </div>` : ''}
+      </div>`;
+    }).join('');
+
+    host.querySelectorAll('.req').forEach(card => {
+      const id = card.dataset.id;
+      card.querySelectorAll('.actions button').forEach(btn => {
+        const originalLabel = btn.textContent;
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.actions button').forEach(b => { b.disabled = true; });
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ التنفيذ...';
+          const note = card.querySelector('.note-input').value.trim();
+          AUH.data.swapRequests.adminDecideRequest(passcode, id, btn.dataset.decision, note)
+            .then(res => { if (!res || res.state !== 'ok') alert((res && res.message) || 'تعذّر تنفيذ القرار.'); load(); })
+            .catch(err => { alert(err.message || 'تعذّر تنفيذ القرار.'); load(); })
+            .finally(() => { btn.textContent = originalLabel; });
+        });
+      });
+    });
+  }
+
+  function load() {
+    el('list').innerHTML = '<p class="empty">جارٍ التحميل...</p>';
+    AUH.data.swapRequests.adminListRequests(passcode).then(res => {
+      if (!res || res.state !== 'ok') { el('list').innerHTML = `<p class="empty">${escapeHtml((res && res.message) || 'تعذّر التحميل.')}</p>`; return; }
+      requests = res.requests || [];
+      render();
+    }).catch(() => { el('list').innerHTML = '<p class="empty">تعذّر التحميل — أعد المحاولة.</p>'; });
+  }
+
+  function exportLogExcel() {
+    if (!requests.length) { alert('لا طلبات لتصديرها بعد.'); return; }
+    const rows = requests.map(r => ({
+      'النوع': r.kind,
+      'من (اسم)': r.fromName, 'من (اختصار)': r.fromAbbr,
+      'إلى (اسم)': r.toName, 'إلى (اختصار)': r.toAbbr,
+      'تاريخ المناوبة': r.shiftDate, 'نوع المناوبة': r.shiftType,
+      'تاريخ المقابل': r.backDate || '', 'نوع المقابل': r.backType || '',
+      'عاجل': r.urgent ? 'نعم' : '',
+      'الحالة': STATUS_LABEL[r.status] || r.status,
+      'السبب': r.reason || '', 'ملاحظات مقدّم الطلب': r.notes || '', 'هاتف مقدّم الطلب': r.phone || '',
+      'تاريخ التقديم': r.createdAt || '', 'تاريخ قرار الأدمن': r.decidedAt || '',
+      'ملاحظة الأدمن': r.adminNote || '', 'نتيجة التنفيذ على الجدول': r.scheduleResult || ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'سجل التبديل والشيل');
+    XLSX.writeFile(wb, `سجل_تبديل_المناوبات_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+  el('exportBtn').addEventListener('click', exportLogExcel);
+
+  el('tabs').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-f]');
+    if (!btn) return;
+    filter = btn.dataset.f;
+    el('tabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+    render();
+  });
+
+  el('gateForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const tryCode = el('gateInput').value.trim();
+    if (!tryCode) return;
+    el('gateBtn').disabled = true;
+    AUH.data.swapRequests.adminListRequests(tryCode).then(res => {
+      el('gateBtn').disabled = false;
+      if (!res || res.state !== 'ok') { el('gateErr').textContent = (res && res.message) || 'تعذّر الدخول.'; return; }
+      passcode = tryCode;
+      requests = res.requests || [];
+      el('gate').hidden = true;
+      el('page').hidden = false;
+      if (res.created) alert('تم إنشاء كلمة سرّ الأدمن الآن — احفظها، لا استرجاع لها إن نُسيت (راجع تعليق CONFIG في نظام-التبديل.gs للاسترجاع من المحرّر).');
+      render();
+      loadScheduleContext().then(render); // الإحصائيات تصل لاحقاً ولا تؤخّر ظهور القائمة
+    }).catch(err => { el('gateBtn').disabled = false; el('gateErr').textContent = err.message || 'تعذّر الدخول.'; });
+  });
+})();
+</script>
+</body>
+</html>

@@ -233,7 +233,7 @@
   doctorStatCardHtml(r) {
     const uid = `${(r.abbr || r.name || '').replace(/[^a-zA-Z0-9أ-ي]/g, '_')}`;
     const detached = !!r.isDetachedOrNotJoined;
-    return `<div class="doctor-stat-card${detached ? ' detached-card' : ''}"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div>${detached ? `<span class="dsc-status-badge"><i class="fas fa-user-slash"></i> ${this.escapeHtml(r.status) || 'غير ملتحق/منفك'}</span>` : ''}</div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}${this.shiftFocusHtml(r)}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.total)}</div><div class="dsc-hours-lbl">مناوبات (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div>${r.bonusShiftsCount ? `<div class="dsc-hours-bonus"><i class="fas fa-gift"></i> +${this.formatNumDisplay(r.bonusShiftsCount)} بونص</div>` : ''}${r.penaltyShiftsCount ? `<div class="dsc-hours-penalty"><i class="fas fa-triangle-exclamation"></i> −${this.formatNumDisplay(r.penaltyShiftsCount)} عقوبة</div>` : ''}</div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.holiday)}</div><div class="dsc-hours-lbl">مناوبات (عطل)</div><div class="dsc-hours-rank">الترتيب: #${r.rankHoliday}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini dsc-mini-done"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}<span class="dsc-done-check" title="مناوبات مكتملة"><i class="fas fa-check"></i></span></span><span class="dsc-mini-lbl">تمّت</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.remaining)}</span><span class="dsc-mini-lbl">متبقية</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}${Object.keys(r.groupDetails.other || {}).length ? this.groupDetailHtml('other', r.groupDetails, uid) : ''}${this.rotationsDetailHtml(r, uid)}</div><div class="dsc-bottom-row"><span class="dsc-praise-badge"><i class="fas fa-star"></i> ثناءات: ${this.formatNumDisplay(r.praiseCount)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
+    return `<div class="doctor-stat-card${detached ? ' detached-card' : ''}"><div class="dsc-head"><div class="dsc-name"><i class="fas fa-user-doctor"></i> ${this.escapeHtml(r.name)} ${r.abbr ? `<span class="dsc-abbr">(${this.escapeHtml(r.abbr)})</span>` : ''}</div>${detached ? `<span class="dsc-status-badge"><i class="fas fa-user-slash"></i> ${this.escapeHtml(r.status) || 'غير ملتحق/منفك'}</span>` : ''}</div>${r.spec ? `<div class="dsc-spec">${this.escapeHtml(r.spec)}</div>` : ''}${this.shiftFocusHtml(r)}<div class="dsc-hours-row"><div class="dsc-hours-box dsc-hours-primary"><div class="dsc-hours-num">${this.formatNumDisplay(r.total)}</div><div class="dsc-hours-lbl">مناوبات (تراكمية)</div><div class="dsc-hours-rank">الترتيب: #${r.rankTotal}</div>${r.bonusShiftsCount ? `<div class="dsc-hours-bonus"><i class="fas fa-gift"></i> +${this.formatNumDisplay(r.bonusShiftsCount)} بونص${r.bonusNotes && r.bonusNotes.length ? ` <i class="fas fa-circle-info dsc-note-btn" title="اضغط لرؤية السبب" onclick="alert(${this.escapeHtml(JSON.stringify(r.bonusNotes.join('\n')))})"></i>` : ''}</div>` : ''}${r.penaltyShiftsCount ? `<div class="dsc-hours-penalty"><i class="fas fa-triangle-exclamation"></i> −${this.formatNumDisplay(r.penaltyShiftsCount)} عقوبة${r.penaltyNotes && r.penaltyNotes.length ? ` <i class="fas fa-circle-info dsc-note-btn" title="اضغط لرؤية السبب" onclick="alert(${this.escapeHtml(JSON.stringify(r.penaltyNotes.join('\n')))})"></i>` : ''}</div>` : ''}</div><div class="dsc-hours-box"><div class="dsc-hours-num">${this.formatNumDisplay(r.holiday)}</div><div class="dsc-hours-lbl">مناوبات (عطل)</div><div class="dsc-hours-rank">الترتيب: #${r.rankHoliday}</div></div></div><div class="dsc-top-row"><div class="dsc-mini"><span class="dsc-mini-num">${r.joinDaysSince ?? '-'}</span><span class="dsc-mini-lbl">يوم منذ الالتحاق</span></div><div class="dsc-mini dsc-mini-done"><span class="dsc-mini-num">${this.formatNumDisplay(r.completed)}<span class="dsc-done-check" title="مناوبات مكتملة"><i class="fas fa-check"></i></span></span><span class="dsc-mini-lbl">تمّت</span></div><div class="dsc-mini"><span class="dsc-mini-num">${this.formatNumDisplay(r.remaining)}</span><span class="dsc-mini-lbl">متبقية</span></div></div><div class="dsc-groups">${this.groupDetailHtml('wards', r.groupDetails, uid)}${this.groupDetailHtml('icu', r.groupDetails, uid)}${this.groupDetailHtml('emergency', r.groupDetails, uid)}${this.groupDetailHtml('misc', r.groupDetails, uid)}${Object.keys(r.groupDetails.other || {}).length ? this.groupDetailHtml('other', r.groupDetails, uid) : ''}${this.rotationsDetailHtml(r, uid)}</div><div class="dsc-bottom-row"><span class="dsc-praise-badge"><i class="fas fa-star"></i> ثناءات: ${this.formatNumDisplay(r.praiseCount)}</span><span><i class="fas fa-moon"></i> ليلية: ${this.formatNumDisplay(r.night)}</span></div><div class="dsc-bottom-row"><span><i class="fas fa-calendar-day"></i> أول مناوبة: ${r.firstOncall || '-'}</span><span><i class="fas fa-calendar-check"></i> آخر مناوبة: ${r.lastOncall || '-'}</span></div></div>`;
   },
 
   /** Fills the shift-type <select> with optgroups: group first, then each shift. */
@@ -344,6 +344,105 @@
     }
 
     grid.innerHTML = list.map(r => this.doctorStatCardHtml(r)).join('');
+    this.renderDoctorStatsCharts();
+  },
+
+  /** Mean + median of a plain number array. Empty input ⇒ both 0. */
+  medianMean(values) {
+    if (!values.length) return { mean: 0, median: 0 };
+    const sorted = values.slice().sort((a, b) => a - b);
+    const mean = sorted.reduce((s, v) => s + v, 0) / sorted.length;
+    const mid = Math.floor(sorted.length / 2);
+    const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    return { mean, median };
+  },
+
+  /**
+   * Histogram SVG: bars = how many residents fall in each count-bucket,
+   * dashed lines = mean/median. No charting library — the shape is simple
+   * enough (integer counts, small resident list) that plain SVG is both
+   * lighter and easier to theme (RTL, dark mode via CSS vars) than a dependency.
+   */
+  histogramSvg(values, opts) {
+    // عددٌ حقيقيّ لكل قيمةٍ موجودة فعلاً — لا مجالات مثل "40-45"، كل عمودٍ
+    // يحمل رقم المناوبات بالضبط. أعمدةٌ بعدد القيم المختلفة الموجودة فقط
+    // (لا عمود فارغ لقيمةٍ لا يملكها أحد)، فيبقى الرسم مضغوطاً ومقروءاً.
+    const counts = new Map();
+    values.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+    const xs = Array.from(counts.keys()).sort((a, b) => a - b);
+    const n = Math.max(1, xs.length);
+
+    const manyLabels = n > 14;
+    const W = Math.max(480, Math.min(900, n * 42));
+    const H = manyLabels ? 248 : 226;
+    const padL = 36, padR = 16, padT = 20, padB = manyLabels ? 56 : 36;
+    const innerW = W - padL - padR, innerH = H - padT - padB;
+
+    const peak = Math.max(...xs.map(v => counts.get(v)), 1);
+    const barW = innerW / n;
+    const centerOf = i => padL + barW * (i + 0.5);
+
+    const bars = xs.map((v, i) => {
+      const c = counts.get(v);
+      const bh = (c / peak) * innerH, by = padT + innerH - bh, cx = centerOf(i);
+      const labelTransform = manyLabels ? ` transform="rotate(-45 ${cx.toFixed(1)} ${(H - padB + 12).toFixed(1)})"` : '';
+      return `<rect x="${(cx - barW / 2 + 2).toFixed(1)}" y="${by.toFixed(1)}" width="${(barW - 4).toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${opts.color}" fill-opacity=".8"><title>${v}: ${c}</title></rect>` +
+        `<text x="${cx.toFixed(1)}" y="${(by - 5).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text,#1c2420)">${c}</text>` +
+        `<text x="${cx.toFixed(1)}" y="${(H - padB + 12).toFixed(1)}" text-anchor="${manyLabels ? 'end' : 'middle'}" font-size="10" fill="var(--text-secondary,#5c6b63)"${labelTransform}>${v}</text>`;
+    }).join('');
+
+    // متوسط/وسيط قد يقعان بين عمودين — استيفاءٌ خطّيّ بين أقرب قيمتين لوضع
+    // الخط في موضعه الصحيح بصرياً، لا أقرب عمودٍ فقط.
+    const posForValue = val => {
+      if (val <= xs[0]) return centerOf(0);
+      if (val >= xs[n - 1]) return centerOf(n - 1);
+      let i = 0;
+      while (i < n - 1 && xs[i + 1] < val) i++;
+      const lo = xs[i], hi = xs[i + 1] ?? lo;
+      const frac = hi === lo ? 0 : (val - lo) / (hi - lo);
+      return centerOf(i) + frac * (centerOf(Math.min(i + 1, n - 1)) - centerOf(i));
+    };
+
+    const { mean, median } = this.medianMean(values);
+    // لا نصّ على الخط نفسه — يتصادم مع رقم العمود فوقه تماماً حين يقع
+    // المتوسط/الوسيط على عمودٍ عالٍ (القيمتان مكتوبتان أصلاً في شريط
+    // الإحصاءات فوق الرسم). خطٌّ مُنقَّطٌ فقط، وعلامةٌ صغيرة أعلاه للتمييز.
+    const vline = (val, color) => {
+      const vx = posForValue(val);
+      return `<line x1="${vx.toFixed(1)}" y1="${padT}" x2="${vx.toFixed(1)}" y2="${padT + innerH}" stroke="${color}" stroke-width="1.6" stroke-dasharray="4,3"/>` +
+        `<circle cx="${vx.toFixed(1)}" cy="${padT.toFixed(1)}" r="3.5" fill="${color}"/>`;
+    };
+
+    return `<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="min-width:${W}px;max-width:100%" role="img" aria-label="${opts.title}">` +
+      `<line x1="${padL}" y1="${padT + innerH}" x2="${W - padR}" y2="${padT + innerH}" stroke="var(--border,#dfe6e1)"/>` +
+      bars +
+      vline(mean, '#2a5a8c') +
+      vline(median, '#b3433b') +
+      `</svg></div>`;
+  },
+
+  /** Two distribution charts under "العدادة": cumulative shifts, holiday shifts. */
+  renderDoctorStatsCharts() {
+    const host = document.getElementById('doctorStatsCharts');
+    if (!host) return;
+    // الملتحقون فقط — ليس "غير المنفكّين" (حالةٌ فارغة تُحسب هناك ضمن
+    // الملتحقين افتراضياً لأسبابٍ تاريخية؛ هنا نريد الملتحقين فعلاً حصراً).
+    const active = (this.doctorStats || []).filter(r => AUH.status.isJoined(r.status));
+    if (!active.length) { host.innerHTML = ''; return; }
+
+    const totals = active.map(r => r.total);
+    const holidays = active.map(r => r.holiday);
+    const mmTotal = this.medianMean(totals);
+    const mmHoliday = this.medianMean(holidays);
+
+    host.innerHTML = `<div class="dsc-chart-grid">` +
+      `<div class="dsc-chart-card"><h3>توزيع المناوبات التراكمية</h3>` +
+      `<div class="dsc-chart-stats"><span>المتوسط الحسابي: <b>${this.formatNumDisplay(Math.round(mmTotal.mean * 10) / 10)}</b></span><span>الوسيط: <b>${this.formatNumDisplay(mmTotal.median)}</b></span></div>` +
+      this.histogramSvg(totals, { color: '#1f6b4a', title: 'توزيع المناوبات التراكمية' }) + `</div>` +
+      `<div class="dsc-chart-card"><h3>توزيع مناوبات العطل</h3>` +
+      `<div class="dsc-chart-stats"><span>المتوسط الحسابي: <b>${this.formatNumDisplay(Math.round(mmHoliday.mean * 10) / 10)}</b></span><span>الوسيط: <b>${this.formatNumDisplay(mmHoliday.median)}</b></span></div>` +
+      this.histogramSvg(holidays, { color: '#8a6a1f', title: 'توزيع مناوبات العطل' }) + `</div>` +
+      `</div>`;
   }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

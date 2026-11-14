@@ -16,7 +16,10 @@
     return {
       name: resident ? resident.name : row.name,
       abbr: resident ? resident.abbr || resident.name : row.abbr || row.name,
-      isHoliday: !!row.isHoliday
+      isHoliday: !!row.isHoliday,
+      date: row.date || '',
+      realCategory: row.realCategory || '',
+      notes: row.notes || ''
     };
   }
 

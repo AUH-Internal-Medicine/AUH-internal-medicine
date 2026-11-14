@@ -200,6 +200,23 @@
     this.captureElement(el, `مناوبات_${document.getElementById('oncallDatePicker').value || this.today}.png`, bg, btn);
   },
 
+  downloadShiftGroupImage(triggerBtn = null) {
+    if (!this.shiftGroupQuery) { showToast('اختر فرزاً أوّلاً.'); return; }
+    const el = document.getElementById('shiftGroupFinderWrap');
+    const search = el && el.querySelector('.shift-group-search');
+    const head = el && el.querySelector('.oncall-raw-modal-head');
+    if (!el) return;
+    // الصورة للنتيجة فقط — لا صندوق البحث ولا زرّي الحفظ/الإغلاق.
+    if (search) search.style.display = 'none';
+    if (head) head.style.display = 'none';
+    const bg = document.body.classList.contains('dark-mode') ? '#1e293b' : '#ffffff';
+    this.captureElement(el, `فرز_${(this.shiftGroupQuery || '').trim()}_${this.selectedOncallDate || this.today}.png`, bg, triggerBtn)
+      .finally(() => {
+        if (search) search.style.display = '';
+        if (head) head.style.display = '';
+      });
+  },
+
   /** The data the "معلوماتي" exports need, stashed by showMe(). */
   _myInfoExportData() {
     const data = this._myInfoExport;

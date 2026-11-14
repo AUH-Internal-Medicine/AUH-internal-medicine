@@ -43,6 +43,14 @@ body{margin:0;background:var(--paper);color:var(--ink);
 
 /* ------------------------------------------------------------------ layout */
 .wrap{max-width:940px;margin:0 auto;padding:22px 16px 70px}
+.main-row{display:grid;grid-template-columns:1fr;gap:20px}
+.main-col{min-width:0}
+.side-col{min-width:0;order:-1}
+@media(min-width:980px){
+  .wrap{max-width:1180px}
+  .main-row{grid-template-columns:2fr 1fr;align-items:start}
+  .side-col{position:sticky;top:20px;order:0}
+}
 .card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-md);padding:20px 20px 22px;margin-bottom:16px}
 .card.step{position:relative}
@@ -55,9 +63,20 @@ body{margin:0;background:var(--paper);color:var(--ink);
 .card.done .step-n{background:var(--primary-strong)}
 .card.done .step-n::before{content:'\f00c';font-family:'Font Awesome 6 Free';font-weight:900;font-size:12px}
 .card.done .step-n span{display:none}
+.card.current .step-n{animation:step-pulse 1.8s ease-in-out infinite}
+.card.current{border-color:var(--primary)}
+@keyframes step-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(31,107,74,.45)}
+  50%{box-shadow:0 0 0 7px rgba(31,107,74,0)}
+}
+body.dark-mode .card.current .step-n,:root[data-theme="dark"] .card.current .step-n{animation-name:step-pulse-dark}
+@keyframes step-pulse-dark{
+  0%,100%{box-shadow:0 0 0 0 rgba(106,159,216,.5)}
+  50%{box-shadow:0 0 0 7px rgba(106,159,216,0)}
+}
 
 label.fl{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:6px}
-input[type=text],input[type=tel],select,textarea{width:100%;height:44px;padding:0 13px;border:1px solid var(--rule);
+input[type=text],input[type=tel],input[type=password],select,textarea{width:100%;height:44px;padding:0 13px;border:1px solid var(--rule);
   border-radius:var(--radius);background:var(--paper);color:var(--ink);font-family:inherit;font-size:14.5px;
   font-weight:600;transition:border-color .18s,box-shadow .18s}
 textarea{height:auto;padding:11px 13px;font-weight:500;min-height:76px;resize:vertical}
@@ -177,18 +196,20 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .cand .cm{font-size:11.3px;color:var(--ink-2)}
 .cand .cm-alt{font-size:11.3px;color:var(--primary);font-weight:600}
 .cand .cm-alt i{font-size:9.5px}
-.cand-phone{display:flex;align-items:center;gap:7px;margin-top:6px;padding-top:6px;width:100%;
-  border-top:1px dashed var(--rule);font-size:12px;max-height:0;opacity:0;overflow:hidden;
+.cand-phones{display:flex;flex-direction:column;gap:5px;margin-top:6px;padding-top:6px;width:100%;
+  border-top:1px dashed var(--rule);max-height:0;opacity:0;overflow:hidden;
   transition:max-height .18s ease,opacity .18s ease}
-.cand:hover .cand-phone,.cand:focus-within .cand-phone,.cand:focus-visible .cand-phone{max-height:42px;opacity:1}
-.cand-phone a{color:var(--primary-strong);font-weight:700;text-decoration:none;letter-spacing:.3px}
-.cand-phone a:hover{text-decoration:underline}
-.cand-phone.none{color:var(--ink-2);font-size:11px}
-.cand-phone .copy{margin-inline-start:auto;border:1px solid var(--rule);background:var(--surface);
-  color:var(--ink-2);border-radius:7px;width:26px;height:24px;cursor:pointer;font-size:11px;
-  display:grid;place-items:center}
-.cand-phone .copy:hover{border-color:var(--primary);color:var(--primary)}
-@media(hover:none){.cand-phone{max-height:42px;opacity:1}}
+.cand:hover .cand-phones,.cand:focus-within .cand-phones,.cand:focus-visible .cand-phones{max-height:96px;opacity:1}
+.cand-phones.none{color:var(--ink-2);font-size:11px;flex-direction:row;align-items:center;gap:7px}
+.cand-phone-row{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px}
+.cand-phone-row .num{color:var(--ink);font-weight:700;letter-spacing:.3px;font-variant-numeric:tabular-nums}
+.cand-phone-row .pbtns{display:flex;gap:4px;flex:none}
+.cand-phone-row .pbtn{border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);
+  border-radius:7px;width:26px;height:24px;cursor:pointer;font-size:11px;display:grid;place-items:center;
+  text-decoration:none}
+.cand-phone-row .pbtn:hover{border-color:var(--primary);color:var(--primary)}
+.cand-phone-row .pbtn.wa:hover{border-color:#25D366;color:#25D366}
+@media(hover:none){.cand-phones{max-height:96px;opacity:1}}
 
 /* --------------------------------------------------------- save as image */
 .save-img{display:inline-flex;align-items:center;gap:7px;width:auto!important;height:34px;padding:0 13px;
@@ -231,9 +252,6 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   .cand .cn{font-size:13.2px}
   .cand .cm,.cand .cm-alt{font-size:10.8px}
   .ctag{font-size:9px;padding:1px 6px}
-  .exceptional{padding:11px 12px}
-  .exc-text b{font-size:12.8px}
-  .exc-text span{font-size:11.5px}
 }
 
 /* مناوبة مضت — مسموح اختيارها كطلب متأخر */
@@ -277,13 +295,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   .ba-side:last-child{padding-top:4px}
 }
 
-/* من استُبعدوا بسبب الستريب وحده — يُذكرون بدل أن يختفوا بلا تفسير */
-.elig-strip{margin-top:10px;padding:10px 13px;background:var(--ochre-soft);border:1px solid var(--ochre);
-  border-radius:var(--radius);font-size:12.2px;line-height:1.7;color:#7d5c16}
-.elig-strip i{margin-inline-end:6px;opacity:.75}
-.elig-strip b{font-variant-numeric:tabular-nums}
-
-/* ------------------------------------------------ picker head + ستريب + سبب */
+/* ------------------------------------------------ picker head + سبب */
 .picker-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;
   margin-bottom:11px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
 .pk-who{font-size:13.5px;color:var(--ink-2)}
@@ -295,12 +307,6 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   font-size:12.2px;color:var(--ink-2);line-height:1.65;text-align:center}
 .pk-hint b{color:var(--primary)}
 
-.exceptional{margin-top:13px;padding:12px 14px;border:1px dashed var(--ochre);border-radius:var(--radius);
-  background:var(--ochre-soft)}
-.exc-label{display:flex;align-items:flex-start;gap:11px;cursor:pointer}
-.exc-label input{margin-top:3px;width:17px;height:17px;accent-color:var(--ochre);flex:none;cursor:pointer}
-.exc-text{display:flex;flex-direction:column;gap:3px;font-size:12.3px;line-height:1.65;color:var(--ink-2)}
-.exc-text b{color:#7d5c16;font-size:13.3px}
 .reason-other{margin-top:8px;width:100%}
 
 /* -------------------------------------------------------------- verdict */
@@ -317,6 +323,19 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .summary{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin:4px 0 6px}
 @media(max-width:640px){.summary{grid-template-columns:1fr}}
 .sum-box{background:var(--surface-sunk);border:1px solid var(--rule);border-radius:var(--radius);padding:12px 14px}
+.req-item{border:1px solid var(--rule);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;display:flex;
+  flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.req-item .who{font-weight:700;font-size:13.5px}
+.req-item .what{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.req-badge{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.req-badge.pending{background:#fdf1d6;color:#8a6a1f}
+.req-badge.approved{background:#dcf3e3;color:#1f7a42}
+.req-badge.rejected{background:var(--signal-soft);color:var(--signal)}
+.req-badge.urgent{background:var(--signal-soft);color:var(--signal);margin-inline-end:6px}
+.req-actions{display:flex;gap:8px}
+.req-actions button{height:34px;padding:0 14px;border-radius:999px;border:0;font-size:12.5px;font-weight:700;cursor:pointer}
+.req-actions .accept{background:var(--primary);color:#fff}
+.req-actions .reject{background:var(--signal);color:#fff}
 .sum-box .who{font-weight:700;font-size:14px}
 .sum-box .what{font-size:12.5px;color:var(--ink-2);margin-top:3px}
 .sum-arrow{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--primary);
@@ -329,6 +348,10 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .btn:hover:not(:disabled){background:var(--primary-strong);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
 .btn:disabled{background:#c9ccd0;cursor:not-allowed;box-shadow:none}
 .btn.wide{width:100%}
+.btn .btn-spinner{display:none;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+.btn.is-busy .btn-spinner{display:inline-block}
+.btn.is-busy i:not(.btn-spinner i){display:none}
 .btn-ghost{background:transparent;color:var(--ink-2);border:1px solid var(--rule);box-shadow:none;height:44px;
   font-size:14px;font-weight:600}
 .btn-ghost:hover:not(:disabled){background:var(--surface-sunk);color:var(--ink);transform:none;box-shadow:none}
@@ -337,6 +360,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .seg button{border:0;background:transparent;color:var(--ink-2);font-family:inherit;font-size:13.5px;font-weight:700;
   padding:8px 17px;border-radius:999px;cursor:pointer;transition:all .18s}
 .seg button.on{background:var(--primary);color:#fff}
+.seg button[data-kind="تبديل"].on{background:#2a5a8c}
 
 .loading{display:grid;place-items:center;gap:12px;padding:60px 20px;text-align:center;color:var(--ink-2)}
 .spin{width:38px;height:38px;border:3px solid var(--rule);border-top-color:var(--primary);border-radius:50%;
@@ -348,13 +372,209 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.bad{background:var(--signal)}
 .foot{text-align:center;font-size:12px;color:var(--ink-2);padding:8px 16px 0}
+.resp-note{background:#fdf1d6;border:1px solid #e8d49a;color:#6b5420;border-radius:var(--radius);
+  padding:10px 14px;font-size:12.5px;display:flex;gap:9px;align-items:flex-start;line-height:1.6}
+.resp-note i{margin-top:2px;flex:0 0 auto}
+.agree-check.missing span{color:var(--signal)}
 .sent{text-align:center;padding:34px 20px}
 .sent i{font-size:52px;color:var(--primary)}
 .sent h2{margin:14px 0 6px;font-size:1.3em}
 .sent p{margin:0 auto;max-width:460px;color:var(--ink-2);font-size:14px}
+
+/* ------------------------------------------------------------ بوّابة الدخول */
+.auth-overlay{position:fixed;inset:0;z-index:300;background:linear-gradient(180deg,rgba(10,26,20,.72),rgba(8,22,17,.9));
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:clamp(16px,4vh,48px) 14px}
+/* [hidden] من نفس اختصاصيّة .auth-overlay، فـdisplay:flex أعلاه كان يفوز
+   دائماً حتى مع ضبط JS للخاصّية hidden — البوّابة كانت تبقى ظاهرة للأبد
+   بعد نجاح الدخول/التسجيل. هذه القاعدة الأقوى تحسم الأمر فعلياً. */
+.auth-overlay[hidden]{display:none}
+.auth-card{width:min(520px,100%);background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  padding:22px 22px 26px;margin-top:6px}
+.auth-head{text-align:center;margin-bottom:16px}
+.auth-head i{font-size:30px;color:var(--primary)}
+.auth-head h2{margin:8px 0 2px;font-size:1.2em}
+.auth-head p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.auth-tutorial-toggle{display:block;margin:0 auto 14px;background:var(--primary-soft);color:var(--primary-strong);
+  border:1px solid var(--primary);border-radius:999px;padding:8px 16px;font-family:inherit;font-size:12.5px;
+  font-weight:700;cursor:pointer}
+.auth-tutorial{background:var(--surface-sunk);border:1px solid var(--rule);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.85}
+.auth-tutorial ol{margin:8px 0 0;padding-inline-start:20px}
+.auth-tutorial li{margin:6px 0}
+.auth-tutorial li b{color:var(--primary-strong)}
+.auth-tutorial .soon{display:inline-block;margin-inline-start:4px;font-size:10px;font-weight:700;color:var(--ochre);
+  background:var(--ochre-soft);border:1px solid var(--ochre);border-radius:999px;padding:1px 8px}
+.auth-tutorial .note{margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule);color:var(--ink-2);font-size:12px}
+.guide-overlay{position:fixed;inset:0;z-index:310;background:linear-gradient(180deg,rgba(10,26,20,.72),rgba(8,22,17,.9));
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:clamp(16px,4vh,48px) 14px}
+.guide-overlay[hidden]{display:none}
+.guide-card{width:min(600px,100%);background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  margin-top:6px;overflow:hidden}
+.guide-head{text-align:center;padding:26px 22px 14px}
+.guide-head i{font-size:30px;color:var(--primary)}
+.guide-head h2{margin:8px 0 2px;font-size:1.25em}
+.guide-head p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.guide-body{padding:4px 24px 6px}
+.guide-step{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--rule)}
+.guide-step:first-child{border-top:0}
+.guide-step .step-n{margin-top:2px}
+.guide-step h3{margin:0 0 4px;font-size:14.5px}
+.guide-step p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.75}
+.guide-step p b{color:var(--primary-strong)}
+.guide-body .note{margin:14px 0 20px;background:var(--surface-sunk);border-inline-start:3px solid var(--primary);
+  border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--ink-2);line-height:1.7}
+.guide-foot{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--rule);background:var(--surface-sunk)}
+.guide-foot .btn{flex:1}
+.guide-foot .btn-ghost{flex:0 0 auto}
+.auth-tabs{display:flex;background:var(--surface-sunk);border:1px solid var(--rule);border-radius:999px;padding:4px;
+  gap:4px;margin-bottom:16px}
+.auth-tabs button{flex:1;border:0;background:transparent;color:var(--ink-2);font-family:inherit;font-size:13.5px;
+  font-weight:700;padding:9px 10px;border-radius:999px;cursor:pointer}
+.auth-tabs button.on{background:var(--primary);color:#fff}
+.auth-field{margin-bottom:12px}
+.pw-save-note{margin:6px 2px 0;font-size:11.5px;color:var(--signal);display:flex;gap:6px;align-items:flex-start;line-height:1.5}
+.auth-error{background:var(--signal-soft);border:1px solid #f0cfcb;color:var(--signal);border-radius:var(--radius);
+  padding:9px 12px;font-size:12.5px;margin-bottom:12px}
+.auth-step-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.auth-step-nav button{background:none;border:0;color:var(--ink-2);font-family:inherit;font-size:12.5px;cursor:pointer}
+.auth-otp-email{font-weight:700;color:var(--primary-strong)}
+.auth-checking{text-align:center;padding:30px 10px;color:var(--ink-2)}
+.auth-success{text-align:center;padding:26px 10px}
+.auth-success i{font-size:44px;color:var(--primary)}
+.auth-success h3{margin:12px 0 4px;font-size:1.1em}
+.auth-success p{margin:0;font-size:12.5px;color:var(--ink-2)}
+#authWhoBadge{margin-top:12px;display:inline-flex;align-items:center;gap:9px;padding:7px 14px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);border-radius:999px;font-size:12.5px}
+#authWhoBadge[hidden]{display:none} /* نفس عطل .auth-overlay — معرّف أقوى من [hidden] */
+#authWhoBadge button{border:0;background:rgba(255,255,255,.18);color:#fff;width:24px;height:24px;border-radius:50%;
+  cursor:pointer;font-size:10.5px}
+#authWhoBadge button:hover{background:var(--signal)}
 </style>
 </head>
 <body>
+
+<div class="auth-overlay" id="authGate" hidden>
+  <div class="auth-card">
+    <div class="auth-head">
+      <i class="fas fa-right-left"></i>
+      <h2>نظام تبديل المناوبات</h2>
+      <p>حسابٌ واحد لكل مقيم — سجّل دخولك أو أنشئ حساباً جديداً</p>
+    </div>
+
+    <button type="button" class="auth-tutorial-toggle" id="authTutorialToggle">
+      <i class="fas fa-circle-question"></i> كيف يعمل التبديل الجديد؟
+    </button>
+
+    <div class="auth-tabs">
+      <button type="button" id="authTabLogin" class="on">تسجيل دخول</button>
+      <button type="button" id="authTabRegister">حساب جديد</button>
+    </div>
+
+    <div id="authGateChecking" class="auth-checking" hidden>
+      <div class="spin" style="margin:0 auto 10px"></div>
+      جارٍ التحقّق من جلستك المحفوظة…
+    </div>
+
+    <div id="authGateForms">
+      <!-- تسجيل الدخول -->
+      <div id="loginPane">
+        <div class="auth-error" id="loginError" hidden></div>
+        <div class="auth-field">
+          <label class="fl" for="loginAbbr">الاسم أو الاختصار</label>
+          <input type="text" id="loginAbbr" autocomplete="username" placeholder="مثال: أحمد">
+        </div>
+        <div class="auth-field">
+          <label class="fl" for="loginPassword">كلمة السرّ</label>
+          <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••">
+        </div>
+        <button type="button" class="btn wide" id="loginBtn"><i class="fas fa-right-to-bracket"></i> دخول<span class="btn-spinner"></span></button>
+      </div>
+
+      <!-- حساب جديد -->
+      <div id="registerPane" hidden>
+        <div class="auth-error" id="registerError" hidden></div>
+
+        <div id="registerStep1">
+          <div class="auth-field">
+            <label class="fl" for="regName">اسمك الثلاثي (من اللائحة)</label>
+            <input type="text" id="regName" list="regNameOptions" autocomplete="off" placeholder="اكتب اسمك لتظهر الخيارات">
+            <datalist id="regNameOptions"></datalist>
+          </div>
+          <div class="auth-field">
+            <label class="fl" for="regEmail">بريدك الإلكتروني</label>
+            <input type="text" id="regEmail" autocomplete="email" placeholder="example@email.com">
+          </div>
+          <button type="button" class="btn wide" id="registerOtpBtn"><i class="fas fa-paper-plane"></i> أرسل رمز التحقّق<span class="btn-spinner"></span></button>
+        </div>
+
+        <div id="registerStep2" hidden>
+          <div class="auth-step-nav">
+            <button type="button" id="registerBackBtn"><i class="fas fa-arrow-right"></i> رجوع</button>
+            <span>وصل الرمز إلى <span class="auth-otp-email" id="regOtpEmailLabel"></span></span>
+          </div>
+          <div class="auth-field">
+            <label class="fl" for="regCode">رمز التحقّق</label>
+            <input type="text" id="regCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+          </div>
+          <div class="auth-field">
+            <label class="fl" for="regPassword">اختر كلمة سرّ (٦ أحرف على الأقل)</label>
+            <input type="password" id="regPassword" autocomplete="new-password" placeholder="••••••">
+            <p class="pw-save-note"><i class="fas fa-triangle-exclamation"></i> احفظها في مكانٍ آمن — لا توجد طريقةٌ لاسترجاعها إن نُسيت بعد.</p>
+          </div>
+          <button type="button" class="btn wide" id="registerFinishBtn"><i class="fas fa-user-check"></i> إنشاء الحساب<span class="btn-spinner"></span></button>
+        </div>
+
+        <div id="registerSuccess" class="auth-success" hidden>
+          <i class="fas fa-circle-check"></i>
+          <h3>تم إنشاء حسابك بنجاح!</h3>
+          <p>جارٍ تسجيل دخولك تلقائياً…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="guide-overlay" id="firstGuide" hidden>
+  <div class="guide-card">
+    <div class="guide-head">
+      <i class="fas fa-right-left"></i>
+      <h2>دليل تبديل المناوبات</h2>
+      <p>خمس خطوات، بالترتيب — تحتاجها مرّةً واحدة فقط</p>
+    </div>
+    <div class="guide-body">
+      <div class="guide-step">
+        <div class="step-n"><span>1</span></div>
+        <div><h3>أنشئ حسابك — مرّةً واحدة</h3>
+          <p>اختر اسمك من لائحة المقيمين، اكتب بريدك، يصلك رمزُ تحقّقٍ خلال ثوانٍ، ثم تختار كلمة سرّ (احفظها — لا استرجاع لها بعد).</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="step-n"><span>2</span></div>
+        <div><h3>بعدها، سجّل الدخول فقط</h3>
+          <p>بالاسم أو الاختصار وكلمة السرّ. يبقى حسابك متذكَّراً على جهازك، فلا تُعيده كل مرّة.</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="step-n"><span>3</span></div>
+        <div><h3>اختر مناوبتك، واختر زميلك</h3>
+          <p>«شيل» = يأخذها زميلك دون مقابل. «تبديل» = يأخذ كلٌّ منكما مناوبة الآخر. اتّفق مع زميلك أوّلاً خارج الموقع، ثم اختره بالاسم من القائمة المقترحة.</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="step-n"><span>4</span></div>
+        <div><h3>أقرّ، ثم أرسل</h3>
+          <p>تُقرّ أنك أخذت موافقة زميلك فعلاً — <b>هذا الإقرار يحلّ محلّ أي تأكيدٍ منه على الموقع</b>. الطلب يصل مباشرةً إلى الأدمن للاعتماد.</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="step-n"><span>5</span></div>
+        <div><h3>تابع الحالة من «طلباتي»</h3>
+          <p>بانتظار الأدمن، اعتُمِد، أو رُفض — تظهر بجانب النموذج على الحاسوب، وأوّل الصفحة على الهاتف. بعد الاعتماد يُنفَّذ التبديل تلقائياً على الجدول.</p></div>
+      </div>
+      <div class="note"><i class="fas fa-circle-info"></i> تبقى مسؤولية المناوبة على صاحبها الأصلي حتى الاعتماد والتنفيذ الفعلي — لا قبل ذلك.</div>
+    </div>
+    <div class="guide-foot">
+      <button type="button" class="btn-ghost" id="guideSkip">تخطّي</button>
+      <button type="button" class="btn" id="guideDone"><i class="fas fa-circle-check"></i> فهمت، ابدأ</button>
+    </div>
+  </div>
+</div>
 
 <header class="hero">
   <img class="hero-bg" src="bg.webp" alt="" onerror="this.src='bg.png'">
@@ -362,20 +582,23 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   <div class="sub">السنة الأولى</div>
   <div class="dept">قسم الأمراض الداخلية — مشفى حلب الجامعي</div>
   <div class="pill"><i class="fas fa-circle-info"></i> اختر الاسم، ثم المناوبة من الرزنامة — والنظام يمنع أي تبديل يخالف القواعد</div>
+  <div id="authWhoBadge" hidden></div>
 </header>
 
 <div class="wrap">
   <div id="boot" class="card"><div class="loading"><div class="spin"></div><div>جاري تحميل بيانات المناوبات من الشيت...</div></div></div>
 
+  <div class="main-row">
+  <div class="main-col">
   <div id="form" hidden>
     <!-- 1 ----------------------------------------------------------------->
     <section class="card step" id="s1">
       <div class="step-head"><div class="step-n"><span>1</span></div><h2>نوع الطلب</h2></div>
-      <p class="step-hint">«شيل مناوبة» = طبيب يأخذ مناوبة عن آخر دون مقابل. «تبديل متبادل» = كل منهما يأخذ مناوبة الآخر.</p>
+      <p class="step-hint">ابدأ هنا: «شيل مناوبة» يعني أن زميلك يأخذ مناوبتك كاملةً دون أن تأخذ أنت شيئاً بالمقابل. «تبديل» يعني أن كلّ واحدٍ منكما يأخذ مناوبة الآخر — ستختار مناوبتك أولاً، ثم مناوبته التي تأخذها أنت.</p>
       <div style="padding-inline-start:41px">
         <div class="seg" id="kind">
           <button type="button" data-kind="شيل" class="on"><i class="fas fa-hand-holding-medical"></i> شيل مناوبة</button>
-          <button type="button" data-kind="تبديل"><i class="fas fa-right-left"></i> تبديل متبادل</button>
+          <button type="button" data-kind="تبديل"><i class="fas fa-right-left"></i> تبديل</button>
         </div>
       </div>
     </section>
@@ -383,7 +606,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
     <!-- 2 ----------------------------------------------------------------->
     <section class="card step" id="s2">
       <div class="step-head"><div class="step-n"><span>2</span></div><h2>صاحب المناوبة الأصلي</h2></div>
-      <p class="step-hint">اكتب أول حروف الاسم أو الاختصار — تظهر لك الخيارات، ويُملأ الاختصار تلقائياً.</p>
+      <p class="step-hint">هذا أنت دائماً — مُقفَلٌ على حسابك ولا يمكن تغييره، فلا يمكن لأحدٍ تقديم طلبٍ باسم شخصٍ آخر.</p>
       <div class="grid2">
         <div>
           <label class="fl" for="q1">الاسم الثلاثي</label>
@@ -404,7 +627,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
     <!-- 3 ----------------------------------------------------------------->
     <section class="card step locked" id="s3">
       <div class="step-head"><div class="step-n"><span>3</span></div><h2>اختر المناوبة المطلوب تبديلها</h2></div>
-      <p class="step-hint">هذه مناوباتك كما هي في الجدول الرسمي. اضغط على اليوم الذي تريد تبديله.</p>
+      <p class="step-hint">هذه مناوباتك كما هي في الجدول الرسمي حالياً — لم يتغيّر فيها شيءٌ بعد. اضغط على اليوم الذي تريد التخلّي عنه، ثم انتقل للخطوة التالية.</p>
       <div class="cal-top">
         <div class="cal-title" id="cal1t">—</div>
         <div class="cal-nav"><button type="button" id="p1" title="الشهر السابق"><i class="fas fa-chevron-right"></i></button><button type="button" id="n1" title="الشهر التالي"><i class="fas fa-chevron-left"></i></button></div>
@@ -418,7 +641,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
     <!-- 4 ----------------------------------------------------------------->
     <section class="card step locked" id="s4">
       <div class="step-head"><div class="step-n"><span>4</span></div><h2>الطبيب الذي سيأخذ المناوبة</h2></div>
-      <p class="step-hint">اختر من القائمة المقترحة أدناه — وهم الأطباء الذين لا تتعارض هذه المناوبة مع جدولهم — أو اكتب الاسم مباشرة.</p>
+      <p class="step-hint">هنا تختار الطبيب الذي اتّفقتَ معه مسبقاً. اكتب اسمه — تظهر لك القائمة المقترحة تلقائياً (الذين لا تتعارض هذه المناوبة مع جدولهم). <b>تأكّد أنك تحدّثت معه فعلاً ووافق</b>، فستُقرّ بذلك في آخر خطوة.</p>
       <div class="grid2">
         <div>
           <label class="fl" for="q2">الاسم الثلاثي</label>
@@ -432,14 +655,6 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
           <label class="fl" for="ab2">الاختصار</label>
           <input type="text" id="ab2" readonly placeholder="—" style="background:var(--surface-sunk)">
         </div>
-      </div>
-      <div class="exceptional" id="excBox">
-        <label class="exc-label">
-          <input type="checkbox" id="stripOk">
-          <span class="exc-text"><b>طلب استثنائي</b>
-            <span>القاعدة تمنع أن تقع المناوبة في اليوم السابق أو التالي لمناوبة أخرى (ستريب). فعّل هذا الخيار لعرض الخيارات التي تسبب ستريب — سيُرسل الطلب موسوماً بأنه <b>استثنائي</b> مع ملاحظة صريحة بوجود ستريب. أما مناوبتان في اليوم نفسه فممنوعة دائماً.</span>
-          </span>
-        </label>
       </div>
       <div id="elig"></div>
       <div id="ch2"></div>
@@ -486,49 +701,70 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
       </div>
       <div style="margin-top:12px"><label class="fl" for="notes">ملاحظات (اختياري)</label>
         <textarea id="notes" placeholder="أي تفصيل يساعد على مراجعة الطلب..."></textarea></div>
+      <div class="resp-note">
+        <i class="fas fa-circle-info"></i>
+        تبقى مسؤوليةُ المناوبة على صاحبها الأصلي حتى اعتماد الأدمن وتنفيذ التبديل فعلياً على الموقع — لا قبل ذلك.
+      </div>
       <div style="margin-top:8px;font-size:12.5px;color:var(--ink-2)">
-        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer">
+        <label class="agree-check" style="display:flex;gap:9px;align-items:flex-start;cursor:pointer">
           <input type="checkbox" id="agree" style="width:auto;height:auto;margin-top:5px">
-          <span>أقرّ بأن الطرفين متفقان على هذا التبديل، وأن المسؤولية عن المناوبة تنتقل بعد الموافقة.</span>
+          <span>أقرّ بصحّة البيانات أعلاه، وبأنني <b>تحدّثت فعلاً مع الطبيب الآخر وأخذت موافقته</b> على هذا التبديل قبل الإرسال، وأتحمّل مسؤولية هذا الطلب.</span>
+        </label>
+        <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;margin-top:8px">
+          <input type="checkbox" id="urgent" style="width:auto;height:auto;margin-top:5px">
+          <span><i class="fas fa-triangle-exclamation" style="color:var(--signal)"></i> طلبٌ عاجل (يظهر أولاً عند الأدمن)</span>
         </label>
       </div>
       <div style="margin-top:18px"><button type="button" class="btn wide" id="send" disabled>
-        <i class="fas fa-paper-plane"></i> إرسال الطلب</button></div>
-      <p class="foot">يصل الطلب مباشرة إلى جدول الطلبات، وتتم مراجعته يدوياً قبل اعتماده.</p>
+        <i class="fas fa-paper-plane"></i> إرسال الطلب<span class="btn-spinner"></span></button></div>
+      <p class="foot">يصل الطلب مباشرةً إلى الأدمن للاعتماد — لا تأكيد مطلوبٌ من الطبيب الآخر على الموقع، لأنك أقررت أعلاه بأخذ موافقته.</p>
     </section>
   </div>
 
   <div id="done" hidden class="card sent">
     <i class="fas fa-circle-check"></i>
     <h2>تم إرسال الطلب</h2>
-    <p>سيظهر طلبك في جدول الطلبات ليُراجع. لا يُعتبر التبديل نافذاً قبل اعتماده.</p>
+    <p>وصل طلبُك إلى الأدمن مباشرةً للاعتماد. تبقى مسؤولية المناوبة عليك حتى الاعتماد والتنفيذ الفعلي — تابع الحالة في «طلباتي».</p>
     <div style="margin-top:20px"><button type="button" class="btn btn-ghost" onclick="location.reload()">
       <i class="fas fa-rotate-right"></i> طلب جديد</button></div>
+  </div>
+  </div>
+
+  <!-- طلباتي — بجانب النموذج دائماً، لا في آخر الصفحة ------------------>
+  <aside class="side-col">
+    <section class="card" id="myRequestsCard">
+      <div class="step-head"><div class="step-n"><i class="fas fa-list-check"></i></div><h2>طلباتي</h2></div>
+      <div id="myRequestsList"><p class="step-hint">جارٍ التحميل...</p></div>
+    </section>
+  </aside>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script src="js/core/namespace.js"></script>
-<script src="js/core/storage.js"></script>
-<script src="js/core/config.js"></script>
-<script src="js/core/logger.js"></script>
-<script src="js/core/text.js"></script>
-<script src="js/core/status.js"></script>
-<script src="js/core/dates.js"></script>
-<script src="js/data/schema.js"></script>
-<script src="js/data/header-map.js"></script>
-<script src="js/data/gviz-client.js"></script>
-<script src="js/data/api-client.js"></script>
-<script src="js/data/parsers/residents.js"></script>
-<script src="js/data/parsers/rotations-year2.js"></script>
-<script src="js/data/parsers/oncall.js"></script>
-<script src="js/data/parsers/evaluation.js"></script>
-<script src="js/data/parsers/lectures.js"></script>
-<script src="js/data/parsers/holidays.js"></script>
-<script src="js/data/parsers/content.js"></script>
-<script src="js/data/repository.js"></script>
-<script src="js/domain/oncall-schedule.js"></script>
+<script src="js/core/namespace.js?v=__BUILD_ID__"></script>
+<script src="js/core/storage.js?v=__BUILD_ID__"></script>
+<script src="js/core/config.js?v=__BUILD_ID__"></script>
+<script src="js/core/logger.js?v=__BUILD_ID__"></script>
+<script src="js/core/text.js?v=__BUILD_ID__"></script>
+<script src="js/core/status.js?v=__BUILD_ID__"></script>
+<script src="js/core/dates.js?v=__BUILD_ID__"></script>
+<script src="js/data/schema.js?v=__BUILD_ID__"></script>
+<script src="js/data/header-map.js?v=__BUILD_ID__"></script>
+<script src="js/data/gviz-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/api-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/apps-script-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/accounts-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/swap-requests-client.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/residents.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/rotations-year2.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/oncall.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/evaluation.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/lectures.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/holidays.js?v=__BUILD_ID__"></script>
+<script src="js/data/parsers/content.js?v=__BUILD_ID__"></script>
+<script src="js/data/repository.js?v=__BUILD_ID__"></script>
+<script src="js/domain/oncall-schedule.js?v=__BUILD_ID__"></script>
 <div class="img-modal" id="imgModal" hidden>
   <div class="img-box" role="dialog" aria-modal="true" aria-label="معاينة صورة الجدول">
     <div class="img-head">
@@ -543,6 +779,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   </div>
 </div>
 
-<script src="js/swap.js?v=20"></script>
+<script src="js/views/swap-auth.js?v=__BUILD_ID__"></script>
+<script src="js/swap.js?v=__BUILD_ID__"></script>
 </body>
 </html>

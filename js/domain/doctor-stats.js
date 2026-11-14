@@ -16,7 +16,7 @@
   'use strict';
 
   const AUH = global.AUH;
-  const { splitNames, parseDurationHours, exactNameMatch } = AUH.text;
+  const { splitNames, parseDurationHours, exactNameMatch, normAr } = AUH.text;
   const { extractDate, daysSinceDate } = AUH.dates;
   const { isJoined } = AUH.status;
   const schedule = AUH.domain.oncallSchedule;
@@ -48,6 +48,10 @@
         // Bonus/penalty shift counts — never hours, never dated (see schema.js).
         bonusShiftsCount: 0,
         penaltyShiftsCount: 0,
+        // أسبابُها — نصّ عمود «ملاحظات» في شيت تعديل المناوبات، تظهر بأيقونةٍ
+        // بجانب شارة Bonus/عقوبة في الإحصائيات. فارغة إن لم تُكتب ملاحظة.
+        bonusNotes: [],
+        penaltyNotes: [],
         firstOncall: '',
         lastOncall: '',
         groupDetails: { wards: {}, icu: {}, emergency: {}, misc: {}, other: {} },
@@ -66,7 +70,7 @@
 
   /** Records one on-call assignment on a resident's entry. */
   function addAssignment(entry, assignment) {
-    const { date, category, hours, isHoliday, isNight, group, isCompleted } = assignment;
+    const { date, category, hours, isHoliday, isNight, group, isCompleted, note } = assignment;
 
     entry.total++;
     if (isCompleted) entry.completed++;
@@ -92,7 +96,7 @@
       entry.hoursShiftsCompleted += hours;
     }
 
-    entry.assignments.push({ date, category, group, hours, isHoliday, isNight, isCompleted });
+    entry.assignments.push({ date, category, group, hours, isHoliday, isNight, isCompleted, note: note || '' });
 
     if (!entry.firstOncall || date < entry.firstOncall) entry.firstOncall = date;
     if (!entry.lastOncall || date > entry.lastOncall) entry.lastOncall = date;
@@ -185,9 +189,19 @@
       }
     });
 
-    // 3. Bonus/penalty shifts: ±1 on the cumulative count, and ±1 on the
-    //    holiday count too when the row was flagged as a holiday shift
-    //    (hours === 24 in the sheet). No date, no category, no hours math.
+    // 3. Bonus/penalty shifts.
+    //    A bonus row with BOTH `date` and `realCategory` filled is resolved
+    //    against the resident's actual schedule, built in step 2 above:
+    //      - not found there  → a real volunteer shift. Counted fully (group,
+    //        holiday, night, hours, catDates — everything a real duty gets),
+    //        via the same addAssignment() step 2 uses.
+    //      - found there already → just an hours correction for an existing
+    //        shift. The old flat +1/holiday bump, nothing more.
+    //    A bonus row with no date/category (the traditional kind) always
+    //    gets the flat +1. Penalties are never schedule-matched — always ±1.
+    const hasRealDuty = (entry, date, category) =>
+      entry.assignments.some(a => a.date === date && normAr(a.category) === normAr(category));
+
     (ctx.bonuses || []).forEach(bonus => {
       const key = bonus.abbr || bonus.name;
       let entry = statsMap.get(key);
@@ -195,10 +209,27 @@
         entry = blankEntry({ name: bonus.name, abbr: bonus.abbr || '' });
         statsMap.set(key, entry);
       }
-      entry.bonusShiftsCount++;
-      entry.total++;
-      entry.completed++;
-      if (bonus.isHoliday) entry.holiday++;
+      if (bonus.notes) entry.bonusNotes.push(bonus.notes);
+
+      if (bonus.date && bonus.realCategory && !hasRealDuty(entry, bonus.date, bonus.realCategory)) {
+        // مناوبةٌ تطوعية غير موجودة في جدول الطبيب — تُحتسَب بكامل تفاصيلها.
+        const isHolidayB = schedule.isHolidayDate(bonus.date, holidays);
+        const sched = schedule.getCategorySchedule(bonus.realCategory, bonus.date, holidays);
+        addAssignment(entry, {
+          date: bonus.date, category: bonus.realCategory,
+          hours: parseDurationHours(sched ? sched.duration : ''),
+          isHoliday: isHolidayB, isNight: schedule.isNightCategory(bonus.realCategory),
+          group: schedule.classifyGroup(bonus.realCategory),
+          isCompleted: bonus.date < today, note: bonus.notes
+        });
+        entry.bonusShiftsCount++;
+      } else {
+        // بونص تقليديّ، أو تصحيحُ ساعاتٍ لمناوبةٍ موجودة أصلاً — ⁺١ فقط.
+        entry.bonusShiftsCount++;
+        entry.total++;
+        entry.completed++;
+        if (bonus.isHoliday) entry.holiday++;
+      }
     });
 
     (ctx.penalties || []).forEach(penalty => {
@@ -208,6 +239,7 @@
         entry = blankEntry({ name: penalty.name, abbr: penalty.abbr || '' });
         statsMap.set(key, entry);
       }
+      if (penalty.notes) entry.penaltyNotes.push(penalty.notes);
       entry.penaltyShiftsCount++;
       entry.total--;
       entry.completed--;
