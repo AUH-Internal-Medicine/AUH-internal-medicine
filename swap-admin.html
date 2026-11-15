@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <style>
 :root{--primary:#1f6b4a;--primary-strong:#17543a;--primary-soft:#e5f1ec;--ink:#1c2420;--ink-2:#5c6b63;--surface:#fff;
   --surface-sunk:#f3f6f4;--rule:#dfe6e1;--radius:12px;--signal:#b3433b;--signal-soft:#fbe9e7;--shadow:0 6px 18px rgba(20,40,30,.08)}
@@ -32,10 +32,13 @@ input[type=password],input[type=text]{width:100%;height:46px;border:1px solid va
 .err{color:var(--signal);font-size:12.5px;margin-top:10px;min-height:1em}
 h1{font-size:1.2em;margin:0 0 4px}
 .sub{color:var(--ink-2);font-size:13px;margin-bottom:18px}
-.tabs{display:flex;gap:6px;margin-bottom:16px}
-.tabs button{flex:1;border:1px solid var(--rule);background:var(--surface);padding:9px;border-radius:999px;
-  font-family:inherit;font-weight:700;font-size:12.8px;cursor:pointer}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tabs button{flex:0 1 auto;border:1px solid var(--rule);background:var(--surface);padding:9px 14px;border-radius:999px;
+  font-family:inherit;font-weight:700;font-size:12.8px;cursor:pointer;white-space:nowrap}
 .tabs button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.toolbar button{flex:0 1 auto;border:1px solid var(--rule);background:var(--surface);color:var(--ink);padding:9px 14px;
+  border-radius:999px;font-family:inherit;font-weight:700;font-size:12.8px;cursor:pointer;white-space:nowrap}
 #refreshBtn i{transition:transform .2s}
 #refreshBtn.spin i{animation:refreshSpin .7s linear infinite}
 @keyframes refreshSpin{to{transform:rotate(360deg)}}
@@ -58,6 +61,20 @@ h1{font-size:1.2em;margin:0 0 4px}
 .shift-chip.date{font-variant-numeric:tabular-nums}
 .shift-chip.back{background:#e3edf7;border-color:#c7d9ec;color:#1f466e}
 .shift-chip.back i{color:#2a5a8c}
+
+/* تنبيهٌ بارزٌ حين يفشل تنفيذ التبديل على الجدول — لا يجوز أن يُفوَّت. */
+.sched-alert{display:flex;gap:10px;align-items:flex-start;background:var(--signal-soft);
+  border:2px solid var(--signal);border-radius:var(--radius);padding:11px 13px;margin-top:10px;
+  font-size:12.8px;color:var(--signal)}
+.sched-alert i{font-size:16px;margin-top:1px;flex:none}
+.sched-alert b{display:block;margin-bottom:3px;color:var(--signal)}
+.sched-alert span{color:var(--ink);display:block}
+.retry-btn{margin-top:8px;height:30px;padding:0 14px;border-radius:999px;border:1px solid var(--signal);
+  background:#fff;color:var(--signal);font-weight:700;font-size:12px;cursor:pointer;font-family:inherit}
+.retry-btn:hover{background:var(--signal);color:#fff}
+.retry-btn:disabled{opacity:.6;cursor:not-allowed}
+.notes.sched-ok{display:flex;align-items:center;gap:7px;color:var(--primary-strong)}
+.notes.sched-ok i{color:var(--primary)}
 .req .notes{font-size:12.5px;margin-top:8px;background:var(--surface-sunk);border-radius:8px;padding:8px 10px}
 .stat-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--ink-2)}
 .stat-row b{color:var(--ink);font-variant-numeric:tabular-nums}
@@ -123,6 +140,21 @@ h1{font-size:1.2em;margin:0 0 4px}
 .cal .day.hol .tag{background:var(--signal-soft);color:var(--signal)}
 .empty-cal{grid-column:1/-1;padding:26px 14px;text-align:center;color:var(--ink-2);font-size:13px;
   background:var(--surface-sunk);border-radius:var(--radius)}
+
+@media (max-width: 480px) {
+  /* أزرارٌ بعرضٍ متساوٍ بدل عرضٍ متفاوتٍ يُجبر بعضها على الالتفاف سطرين
+     فيبدو أطول من إخوته بلا سبب. */
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .tabs button{flex:none;width:100%}
+  .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .toolbar button{flex:none;width:100%}
+  .wrap{padding:18px 12px 48px}
+  .req .top{flex-direction:column}
+  .stat-row{gap:10px}
+  .cal .day{min-height:46px;padding:4px 3px}
+  .cal .day .tag{font-size:8px;padding:1px 3px}
+  .modal-box{padding:16px}
+}
 </style>
 </head>
 <body>
@@ -146,8 +178,14 @@ h1{font-size:1.2em;margin:0 0 4px}
   <div class="tabs" id="tabs">
     <button type="button" data-f="pending" class="on">بانتظار القرار</button>
     <button type="button" data-f="all">الكل</button>
-    <button type="button" id="refreshBtn" style="flex:0 0 auto;background:var(--surface);border-color:var(--rule);color:var(--ink)"><i class="fas fa-rotate"></i> تحديث</button>
-    <button type="button" id="exportBtn" style="flex:0 0 auto;background:var(--surface);border-color:var(--rule);color:var(--ink)"><i class="fas fa-file-excel"></i> تحميل السجل Excel</button>
+    <button type="button" data-f="shel">شيل فقط</button>
+    <button type="button" data-f="swap">تبديل فقط</button>
+    <button type="button" data-f="failed">بحاجة لإعادة محاولة</button>
+  </div>
+  <div class="toolbar">
+    <button type="button" id="sortBtn"><i class="fas fa-arrow-down-wide-short"></i> الأحدث أولاً</button>
+    <button type="button" id="refreshBtn"><i class="fas fa-rotate"></i> تحديث</button>
+    <button type="button" id="exportBtn"><i class="fas fa-file-excel"></i> تحميل السجل Excel</button>
   </div>
   <div class="last-refresh" id="lastRefresh"></div>
   <div id="list"><p class="empty">جارٍ التحميل...</p></div>
@@ -171,33 +209,36 @@ h1{font-size:1.2em;margin:0 0 4px}
   </div>
 </div>
 
-<script src="js/core/namespace.js?v=__BUILD_ID__"></script>
-<script src="js/core/storage.js?v=__BUILD_ID__"></script>
-<script src="js/core/config.js?v=__BUILD_ID__"></script>
-<script src="js/core/logger.js?v=__BUILD_ID__"></script>
-<script src="js/core/text.js?v=__BUILD_ID__"></script>
-<script src="js/core/status.js?v=__BUILD_ID__"></script>
-<script src="js/core/dates.js?v=__BUILD_ID__"></script>
-<script src="js/data/schema.js?v=__BUILD_ID__"></script>
-<script src="js/data/header-map.js?v=__BUILD_ID__"></script>
-<script src="js/data/gviz-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/api-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/apps-script-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/swap-requests-client.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/residents.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/rotations-year2.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/oncall.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/evaluation.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/lectures.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/holidays.js?v=__BUILD_ID__"></script>
-<script src="js/data/parsers/content.js?v=__BUILD_ID__"></script>
-<script src="js/data/repository.js?v=__BUILD_ID__"></script>
-<script src="js/domain/oncall-schedule.js?v=__BUILD_ID__"></script>
-<script src="js/domain/oncall-adjustments.js?v=__BUILD_ID__"></script>
-<script src="js/domain/doctor-stats.js?v=__BUILD_ID__"></script>
+<script src="js/core/namespace.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/storage.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/config.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/logger.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/text.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/status.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/dates.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/schema.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/header-map.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/gviz-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/api-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/apps-script-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/swap-requests-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/residents.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/rotations-year2.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/oncall.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/evaluation.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/lectures.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/holidays.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/content.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/repository.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/oncall-schedule.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/oncall-adjustments.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/doctor-stats.js?v=__BUILD_ID__" defer></script>
 <script>
 (function () {
   'use strict';
+  // الانتظار حتى اكتمال التحليل كي تُحمَّل كل سكربتات js/* بـ`defer` (أسرع —
+  // تُجلب بالتوازي بدل تسلسلٍ واحداً تلو الآخر) بثقة أنها نفّذت قبل هذا.
+  document.addEventListener('DOMContentLoaded', function () {
   const AUH = window.AUH;
   const { escapeHtml, normAr, splitNames } = AUH.text;
   const el = id => document.getElementById(id);
@@ -205,6 +246,7 @@ h1{font-size:1.2em;margin:0 0 4px}
   let passcode = null; // في الذاكرة فقط — لا يُحفظ، يُطلب من جديد عند إعادة التحميل
   let requests = [];
   let filter = 'pending';
+  let sortDesc = true; // الأحدث أولاً افتراضياً
 
   /** قواعدُ توازن ذكور وإناث لكل فئة — معاينةٌ فقط، لا تمنع الاعتماد. */
   const BALANCE_RULES = [
@@ -326,11 +368,39 @@ h1{font-size:1.2em;margin:0 0 4px}
     return `<span class="kind-badge ${KIND_CLASS[kind] || ''}">${escapeHtml(kind)}</span>`;
   }
 
+  /**
+   * نتيجة تنفيذ الاعتماد على الجدول الحقيقي — «نظام-التبديل.gs» يتحقّق فعلياً
+   * بعد الكتابة (لا يفترض النجاح لمجرّد عدم رمي استثناء)، فيبدأ بـ«فشل:» حين
+   * لا تُطابق الخليّة المتوقَّع. حين يفشل نعرضه تنبيهاً أحمر بارزاً أعلى
+   * البطاقة مباشرةً — لا سطراً هادئاً بين الملاحظات قد يفوت الأدمن فيظنّ أنّ
+   * المناوبة تبدَّلت فعلاً وهي لم تتبدَّل بعد.
+   */
+  function scheduleResultHtml(r) {
+    if (!r.scheduleResult) return '';
+    if (r.scheduleResult.indexOf('فشل') === 0) {
+      return `<div class="sched-alert"><i class="fas fa-triangle-exclamation"></i>
+        <div><b>تنبيه: هذه المناوبة لم تتبدَّل على الجدول بعد</b><span>${escapeHtml(r.scheduleResult)}</span>
+        <button type="button" class="retry-btn" data-id="${escapeHtml(r.id)}"><i class="fas fa-rotate-right"></i> إعادة المحاولة</button></div>
+      </div>`;
+    }
+    return `<div class="notes sched-ok"><i class="fas fa-circle-check"></i> ${escapeHtml(r.scheduleResult)}</div>`;
+  }
+
+  const FAILED = r => r.scheduleResult && r.scheduleResult.indexOf('فشل') === 0;
+
   function render() {
     const host = el('list');
-    const shown = filter === 'pending'
-      ? requests.filter(r => r.status === 'pending_admin')
-      : requests;
+    let shown = requests.filter(r => {
+      if (filter === 'pending') return r.status === 'pending_admin';
+      if (filter === 'shel') return r.kind === 'شيل';
+      if (filter === 'swap') return r.kind === 'تبديل';
+      if (filter === 'failed') return FAILED(r);
+      return true; // 'all'
+    });
+    shown = shown.slice().sort((a, b) => {
+      const ka = a.createdAt || '', kb = b.createdAt || '';
+      return sortDesc ? kb.localeCompare(ka) : ka.localeCompare(kb);
+    });
     if (!shown.length) { host.innerHTML = '<p class="empty">لا طلبات هنا.</p>'; return; }
 
     host.innerHTML = shown.map(r => {
@@ -347,10 +417,10 @@ h1{font-size:1.2em;margin:0 0 4px}
           </div></div>
           <div>${r.urgent ? '<span class="badge urgent"><i class="fas fa-triangle-exclamation"></i> عاجل</span> ' : ''}<span class="badge ${cls}">${escapeHtml(label)}</span></div>
         </div>
+        ${scheduleResultHtml(r)}
         ${r.reason ? `<div class="notes"><b>السبب:</b> ${escapeHtml(r.reason)}</div>` : ''}
         ${r.notes ? `<div class="notes">${escapeHtml(r.notes)}</div>` : ''}
         ${r.phone ? `<div class="meta" style="margin-top:6px">هاتف مُقدّم الطلب: ${escapeHtml(r.phone)}</div>` : ''}
-        ${r.scheduleResult ? `<div class="notes"><b>تنفيذٌ على الجدول:</b> ${escapeHtml(r.scheduleResult)}</div>` : ''}
         ${canDecide && CTX.ready ? `<div class="stat-row">
             <span>${statsLine(r.fromAbbr, r.fromName)}</span><span>${statsLine(r.toAbbr, r.toName)}</span>
           </div>
@@ -382,6 +452,16 @@ h1{font-size:1.2em;margin:0 0 4px}
 
     host.querySelectorAll('.doc-name-link').forEach(s => {
       s.addEventListener('click', () => openDoctorModal(s.dataset.name, s.dataset.abbr));
+    });
+
+    host.querySelectorAll('.retry-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ إعادة المحاولة...';
+        AUH.data.swapRequests.retryScheduleExecution(passcode, btn.dataset.id)
+          .then(res => { if (!res || res.state !== 'ok') alert((res && res.message) || 'تعذّرت إعادة المحاولة.'); load(); })
+          .catch(err => { alert(err.message || 'تعذّرت إعادة المحاولة.'); load(); });
+      });
     });
   }
 
@@ -506,6 +586,14 @@ h1{font-size:1.2em;margin:0 0 4px}
 
   el('refreshBtn').addEventListener('click', load);
 
+  el('sortBtn').addEventListener('click', () => {
+    sortDesc = !sortDesc;
+    el('sortBtn').innerHTML = sortDesc
+      ? '<i class="fas fa-arrow-down-wide-short"></i> الأحدث أولاً'
+      : '<i class="fas fa-arrow-up-wide-short"></i> الأقدم أولاً';
+    render();
+  });
+
   function exportLogExcel() {
     if (!requests.length) { alert('لا طلبات لتصديرها بعد.'); return; }
     const rows = requests.map(r => ({
@@ -554,6 +642,7 @@ h1{font-size:1.2em;margin:0 0 4px}
       startAutoRefresh();
     }).catch(err => { el('gateBtn').disabled = false; el('gateErr').textContent = err.message || 'تعذّر الدخول.'; });
   });
+  }); // DOMContentLoaded
 })();
 </script>
 </body>

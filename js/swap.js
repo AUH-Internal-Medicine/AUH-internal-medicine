@@ -83,12 +83,35 @@
 
   async function boot() {
     try {
-      // هذه الصفحة تحتاج اللائحة والمناوبات والعطل فقط — لا الـ١١ مصدراً
-      // الأخرى التي يحتاجها index.html، فتحميلها كان ينتظر أبطأ ١٤ طلباً
-      // متوازياً بدل أبطأ ٣ فقط.
-      const fetched = await AUH.data.repository.fetchAll({ only: ['residents', 'oncall', 'holidays'] });
+      // هذه الصفحة تحتاج اللائحة والمناوبات والعطل وتعديلاتها فقط — لا
+      // الـ٩ مصادر الأخرى التي يحتاجها index.html (كالتقييم والمحاضرات)،
+      // فتحميلها كان ينتظر أبطأ ١٤ طلباً متوازياً بدل أبطأ ٥ فقط.
+      // تعديلات المناوبات (Bonus/عقوبة) ضروريةٌ هنا تحديداً: بدونها يعرض عدد
+      // مناوباتٍ أقلّ ممّا يراه بقية الموقع لمن لديه تعديل.
+      const fetched = await AUH.data.repository.fetchAll({
+        only: ['residents', 'oncall', 'holidays', 'oncallAdjustments', 'oncallRules']
+      });
       const ds = AUH.data.repository.parseAll(fetched.tables);
       index(ds);
+
+      // نفس حساب الإحصائيات الذي يستعمله بقية الموقع (لائحة المقيمين،
+      // معلوماتي) — ليعرض هذا الصفحة نفس «العدد التراكمي» بالضبط، لا عدّاً
+      // خاماً من الجدول وحده يتجاهل Bonus/العقوبة فيبدو مخالفاً لما يراه
+      // الطبيب في مكانٍ آخر بالموقع.
+      try {
+        const resolved = AUH.domain.adjustments.resolveAdjustments({
+          residents: ds.residents, bonuses: ds.adjustments.bonuses, penalties: ds.adjustments.penalties
+        });
+        S.doctorStats = AUH.domain.doctorStats.computeDoctorStats({
+          residents: ds.residents, oncall: ds.oncall, evaluation: AUH.parse.emptyEvaluation(),
+          bonuses: resolved.bonuses, penalties: resolved.penalties,
+          annualHolidays: new Set([...(ds.rules.annualHolidays || []), ...ds.holidays.dates]),
+          today: new Date().toISOString().slice(0, 10), currentMonth: new Date().getMonth() + 1
+        });
+      } catch (statsErr) {
+        AUH.log.warn('swap', 'تعذّر حساب الإحصائيات التراكمية — سيُعرض عددٌ خامٌّ من الجدول بدلاً منها.');
+      }
+
       $('boot').hidden = true;
       $('form').hidden = false;
       wire();
@@ -178,6 +201,19 @@
   const keyOf = doc => (doc.abbr || doc.name);
   const dutiesOf = doc => (doc ? (S.duties.get(keyOf(doc)) || []) : []);
 
+  /**
+   * العدد التراكمي المعروض للطبيب — نفسُ رقم بقية الموقع (لائحة المقيمين،
+   * معلوماتي) حين تتوفّر الإحصائيات، لا عدّاً خاماً من أعمدة الجدول وحدها؛
+   * فذاك العدّ الخام يتجاهل تعديلات Bonus/العقوبة فيختلف عن الرقم «الرسمي»
+   * ويبدو كأنه خطأ. يسقط إلى العدّ الخام فقط إن تعذّر حساب الإحصائيات أو لم
+   * يوجد الطبيب فيها (سنوات غير الأولى، مثلاً).
+   */
+  function cumulativeCount(doc) {
+    if (!doc) return 0;
+    const stat = S.doctorStats && AUH.domain.doctorStats.findStatsFor(S.doctorStats, doc.name, doc.abbr);
+    return stat ? stat.total : dutiesOf(doc).length;
+  }
+
   /* --------------------------------------------------------------- combobox */
   function combo(inputId, listId, onPick) {
     const input = $(inputId), list = $(listId);
@@ -193,7 +229,7 @@
         list.innerHTML = '<div class="combo-empty">لا يوجد طبيب بهذا الاسم في اللائحة</div>';
       } else {
         list.innerHTML = items.map((r, i) => {
-          const n = dutiesOf(r).length;
+          const n = cumulativeCount(r);
           return `<div class="combo-opt${i === active ? ' active' : ''}" data-i="${i}">` +
             `<span class="nm">${escapeHtml(r.name)}</span>` +
             `<span class="meta">${escapeHtml(r.abbr)}${n ? ` · ${n} مناوبة` : ''}</span></div>`;
@@ -590,10 +626,10 @@
   /* ----------------------------------------------------------------- render */
   function chosenBox(host, doc, onClear) {
     if (!doc) { host.innerHTML = ''; return; }
-    const n = dutiesOf(doc).length;
+    const n = cumulativeCount(doc);
     host.innerHTML = `<div class="chosen"><i class="fas fa-user-doctor"></i>` +
       `<span><b>${escapeHtml(doc.name)}</b>${doc.spec ? ` — ${escapeHtml(doc.spec)}` : ''} · ` +
-      `<span class="num">${n}</span> مناوبة في الجدول</span>` +
+      `<span class="num">${n}</span> مناوبة تراكمياً</span>` +
       `<button type="button" class="x" title="إلغاء الاختيار"><i class="fas fa-xmark"></i></button></div>`;
     host.querySelector('.x').addEventListener('click', onClear);
   }

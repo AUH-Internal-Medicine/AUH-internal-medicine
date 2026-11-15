@@ -47,5 +47,12 @@
     return client.postAndPoll('adminDecideRequest', { passcode: passcode, id: id, decision: decision, note: note }, HEAVY);
   }
 
-  AUH.data.swapRequests = { submitRequest, myRequests, cancelRequest, adminListRequests, adminDecideRequest };
+  /** @returns {Promise<{state:'ok', scheduleResult}|{state:'error', message}>} */
+  function retryScheduleExecution(passcode, id) {
+    return client.postAndPoll('retryScheduleExecution', { passcode: passcode, id: id }, HEAVY);
+  }
+
+  AUH.data.swapRequests = {
+    submitRequest, myRequests, cancelRequest, adminListRequests, adminDecideRequest, retryScheduleExecution
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
