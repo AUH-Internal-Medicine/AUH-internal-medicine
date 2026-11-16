@@ -12,7 +12,7 @@
   const AUH = global.AUH;
   const { normAr, splitNames, escapeHtml } = AUH.text;
   const { getDayName, nowStamp } = AUH.dates;
-  const { mcn } = AUH.ui;
+  const { mcn, showToast } = AUH.ui;
   const AM = AUH.constants.MONTH_NAMES;
 
   AUH.views.oncall = {
@@ -299,6 +299,7 @@
     const head = '<div class="oncall-raw-modal-head"><h4><i class="fas fa-people-group"></i> مناوبو نفس الفرز</h4>' +
       '<div style="display:flex;gap:8px;align-items:center">' +
       '<button class="shift-group-save-btn" id="shiftGroupSaveBtn" onclick="app.downloadShiftGroupImage(this)" title="حفظ كصورة" aria-label="حفظ كصورة"><i class="fas fa-camera"></i></button>' +
+      '<button class="shift-group-save-btn" onclick="app.showMonthlyShiftReport()" title="تقرير شهري" aria-label="تقرير شهري"><i class="fas fa-file-lines"></i></button>' +
       '<button class="oncall-raw-close-btn" onclick="app.toggleShiftGroupFinder()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>' +
       '</div></div>';
     const dstr = this.selectedOncallDate || this.today;
@@ -342,11 +343,16 @@
       });
     });
 
+    // إسعاف المركز (الفئة المدموجة منذ 2026-10-06) مناوبةٌ واحدة ٢٤ ساعة —
+    // ليست «نهارية» فعلياً رغم عدم احتواء اسمها على «ليلي»، فتُستثنى من
+    // تقسيم الليلي/النهاري وتُحسَب ضمن «بقية المناوبات».
+    const isMergedEmergencyCenter = e => normAr(e.category || '') === normAr('إسعاف مركز');
+
     // الترتيبُ المطلوب: إسعافُ الليل أوّلاً (الأشقّ، يحتاج تنسيقاً)، ثم باقي
     // المناوبات (فرزهم الأصلي غالباً)، ثم إسعافُ النهار أخيراً.
-    const nightEmergency = entries.filter(e => e.group === 'emergency' && e.isNight);
-    const dayEmergency = entries.filter(e => e.group === 'emergency' && !e.isNight);
-    const rest = entries.filter(e => e.group !== 'emergency');
+    const nightEmergency = entries.filter(e => e.group === 'emergency' && e.isNight && !isMergedEmergencyCenter(e));
+    const dayEmergency = entries.filter(e => e.group === 'emergency' && !e.isNight && !isMergedEmergencyCenter(e));
+    const rest = entries.filter(e => e.group !== 'emergency' || isMergedEmergencyCenter(e));
 
     const rowHtml = e => `<div class="shift-group-row${e.isCompleted ? ' is-done' : ''}"><span class="sg-name">${mcn(e.name, e.phone, e.abbr, e.phone2)}</span><span class="sg-cat">${this.escapeHtml(e.category)}</span>${e.isCompleted ? '<i class="fas fa-check sg-done-icon" title="تمّت"></i>' : ''}</div>`;
 
@@ -361,6 +367,84 @@
       section('باقي المناوبات', 'fa-layer-group', rest) +
       section('إسعاف نهاري', 'fa-sun', dayEmergency, 'sg-day') +
       (entries.length ? '' : '<p class="shift-group-empty">لا أحد منهم مناوبٌ في هذا اليوم.</p>');
+  },
+
+  /**
+   * تقريرٌ شهريٌّ كامل لفرزٍ واحد: كلّ أيام الشهر (لا يوم اليوم المختار
+   * فقط)، ولكلٍّ عددُ المناوبين من أبناء هذا الفرز وأسماؤهم وفئاتهم. يُفتح
+   * في نافذةٍ قابلة للطباعة/الحفظ PDF مباشرةً من المتصفح — بلا مكتبة PDF،
+   * فمتصفّح المستخدم نفسه يملك هذه الخاصية أصلاً (حوار الطباعة ← حفظ كـPDF).
+   */
+  showMonthlyShiftReport() {
+    const query = (this.shiftGroupQuery || '').trim();
+    if (!query) { showToast('اختر فرزاً أوّلاً.'); return; }
+
+    const dstr = this.selectedOncallDate || this.today;
+    const [y, m] = dstr.split('-').map(Number);
+    const groups = this.dataset.residents.groupByShift(m);
+    const matchKey = Object.keys(groups).find(k => normAr(k) === normAr(query)) ||
+      Object.keys(groups).find(k => normAr(k).includes(normAr(query)));
+    if (!matchKey) { showToast('لا يوجد فرزٌ بهذا الاسم في شهر هذا اليوم.'); return; }
+
+    const residentsInGroup = groups[matchKey] || [];
+    const monthKey = `${y}-${String(m).padStart(2, '0')}`;
+    const daysInMonth = new Date(y, m, 0).getDate();
+
+    const byDate = {};
+    residentsInGroup.forEach(r => {
+      const stat = AUH.domain.doctorStats.findStatsFor(this.doctorStats, r.name, r.abbr);
+      (stat ? stat.assignments : []).forEach(a => {
+        if (!a.date.startsWith(monthKey)) return;
+        (byDate[a.date] = byDate[a.date] || []).push({ name: r.name, category: a.category });
+      });
+    });
+
+    const rows = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${monthKey}-${String(d).padStart(2, '0')}`;
+      const list = (byDate[iso] || []).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+      rows.push({ date: iso, dayName: getDayName(iso), list });
+    }
+
+    this.renderMonthlyReportModal(matchKey, y, m, rows, residentsInGroup.length);
+  },
+
+  renderMonthlyReportModal(matchKey, y, m, rows, memberCount) {
+    let modal = document.getElementById('monthlyReportModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'monthlyReportModal';
+      modal.className = 'report-modal';
+      modal.hidden = true;
+      modal.innerHTML =
+        '<div class="report-box">' +
+          '<div class="report-head"><h3><i class="fas fa-file-lines"></i> <span id="reportTitle"></span></h3>' +
+            '<div class="report-head-actions">' +
+              '<button type="button" class="report-print-btn" onclick="window.print()"><i class="fas fa-print"></i> طباعة / حفظ PDF</button>' +
+              '<button type="button" class="oncall-raw-close-btn" onclick="document.getElementById(\'monthlyReportModal\').hidden=true" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>' +
+            '</div></div>' +
+          '<div class="report-scroll" id="reportBody"></div>' +
+        '</div>';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) modal.hidden = true; });
+    }
+
+    document.getElementById('reportTitle').textContent = `تقرير فرز «${matchKey}» — ${AM[m - 1]} ${y} (${memberCount} مقيماً)`;
+
+    const rowsHtml = rows.map(r => {
+      const names = r.list.length
+        ? r.list.map(x => `${escapeHtml(x.name)} <span class="report-cat">(${escapeHtml(x.category)})</span>`).join('، ')
+        : '<span class="report-none">—</span>';
+      return `<tr${r.list.length ? '' : ' class="report-row-empty"'}>` +
+        `<td class="report-date">${r.date.slice(8)}/${r.date.slice(5, 7)}</td><td>${escapeHtml(r.dayName)}</td>` +
+        `<td class="report-count">${r.list.length}</td><td>${names}</td></tr>`;
+    }).join('');
+
+    document.getElementById('reportBody').innerHTML =
+      `<table class="report-table"><thead><tr><th>التاريخ</th><th>اليوم</th><th>العدد</th><th>الأسماء</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+
+    modal.hidden = false;
   },
 
   /**

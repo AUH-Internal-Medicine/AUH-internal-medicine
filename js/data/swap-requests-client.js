@@ -52,7 +52,18 @@
     return client.postAndPoll('retryScheduleExecution', { passcode: passcode, id: id }, HEAVY);
   }
 
+  /**
+   * طلبٌ يدويٌّ يقدّمه الأدمن نيابةً عن الطرفين — `swap.html?admin=1`. لا
+   * جلسة مقيمٍ هنا، كلمة سرّ الأدمن بدلاً منها؛ و`data` تحمل `fromAbbr`/
+   * `fromName` أيضاً (الجلسة العادية تستنتجهما من التوكن، وهنا لا توكن).
+   * @returns {Promise<{state:'ok', id}|{state:'error', message}>}
+   */
+  function adminSubmitRequest(passcode, data) {
+    return client.postAndPoll('adminSubmitRequest', Object.assign({ passcode: passcode }, data), QUICK);
+  }
+
   AUH.data.swapRequests = {
-    submitRequest, myRequests, cancelRequest, adminListRequests, adminDecideRequest, retryScheduleExecution
+    submitRequest, myRequests, cancelRequest, adminListRequests, adminDecideRequest,
+    retryScheduleExecution, adminSubmitRequest
   };
 })(typeof window !== 'undefined' ? window : globalThis);

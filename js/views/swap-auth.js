@@ -31,9 +31,13 @@
     const badge = el('authWhoBadge');
     if (badge && identity) {
       badge.hidden = false;
-      badge.innerHTML = `<i class="fas fa-user-check"></i> ${escapeHtml(identity.name)} <button type="button" id="authLogoutBtn" title="تسجيل خروج"><i class="fas fa-right-from-bracket"></i></button>`;
+      badge.innerHTML = `<i class="fas fa-user-check"></i> ${escapeHtml(identity.name)} ` +
+        `<button type="button" id="authChangePassBtn" title="تغيير كلمة السرّ"><i class="fas fa-key"></i></button>` +
+        `<button type="button" id="authLogoutBtn" title="تسجيل خروج"><i class="fas fa-right-from-bracket"></i></button>`;
       const out = el('authLogoutBtn');
       if (out) out.onclick = doLogout;
+      const cp = el('authChangePassBtn');
+      if (cp) cp.onclick = openChangePassword;
     }
     // صاحبُ طلب التبديل = صاحبُ الحساب دائماً — راجع swap.js لِمَ هذا مقفل.
     if (identity && AUH.swap && AUH.swap.setAuthIdentity) AUH.swap.setAuthIdentity(identity);
@@ -116,6 +120,56 @@
     global.location.reload();
   }
 
+  /* ──────────────────────────────── تغيير كلمة السرّ ──────────────────────────────── */
+
+  function setChangePassError(msg) {
+    const box = el('changePassError');
+    if (!box) return;
+    box.textContent = msg || '';
+    box.hidden = !msg;
+  }
+
+  function openChangePassword() {
+    setChangePassError('');
+    el('cpOld').value = '';
+    el('cpNew').value = '';
+    el('cpConfirm').value = '';
+    el('cpSubmitBtn').innerHTML = '<i class="fas fa-check"></i> حفظ<span class="btn-spinner"></span>';
+    el('changePassModal').hidden = false;
+    el('cpOld').focus();
+  }
+
+  function closeChangePassword() {
+    el('changePassModal').hidden = true;
+  }
+
+  function submitChangePassword() {
+    const oldPassword = el('cpOld').value;
+    const newPassword = el('cpNew').value;
+    const confirm = el('cpConfirm').value;
+
+    if (!oldPassword) { setChangePassError('اكتب كلمة السرّ الحالية.'); return; }
+    if (newPassword.length < 6) { setChangePassError('كلمةُ السرّ الجديدة قصيرةٌ جداً — ستّة أحرفٍ على الأقل.'); return; }
+    if (newPassword !== confirm) { setChangePassError('كلمتا السرّ الجديدتان غيرُ متطابقتين.'); return; }
+
+    const token = AUH.storage.get(TOKEN_KEY);
+    if (!token) { setChangePassError('انتهت جلستك — سجّل الدخول من جديد.'); return; }
+
+    const btn = el('cpSubmitBtn');
+    btn.disabled = true; btn.classList.add('is-busy');
+    AUH.data.accounts.changePassword(token, oldPassword, newPassword)
+      .then(res => {
+        btn.disabled = false; btn.classList.remove('is-busy');
+        if (!res || res.state !== 'ok') { setChangePassError((res && res.message) || 'تعذّر تغيير كلمة السرّ.'); return; }
+        btn.innerHTML = '<i class="fas fa-circle-check"></i> تم!';
+        setTimeout(closeChangePassword, 900);
+      })
+      .catch(err => {
+        btn.disabled = false; btn.classList.remove('is-busy');
+        setChangePassError(err.message || 'تعذّر تغيير كلمة السرّ.');
+      });
+  }
+
   /* ──────────────────────────────── إنشاء حساب جديد ──────────────────────────────── */
 
   function registerStep1() {
@@ -191,11 +245,23 @@
     el('registerFinishBtn').onclick = registerStep2;
     el('registerBackBtn').onclick = () => { el('registerStep1').hidden = false; el('registerStep2').hidden = true; };
     el('authTutorialToggle').onclick = () => showGuide();
+
+    el('changePassClose').onclick = closeChangePassword;
+    el('changePassModal').addEventListener('click', e => { if (e.target.id === 'changePassModal') closeChangePassword(); });
+    el('cpSubmitBtn').onclick = submitChangePassword;
+    el('cpConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') submitChangePassword(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !el('changePassModal').hidden) closeChangePassword(); });
   }
+
+  /** وضعُ الأدمن (`swap.html?admin=1`) — راجع التعليق في js/swap.js. لا دخول
+   * ولا دليلَ هنا إطلاقاً: الأدمن مصادَقٌ عليه بكلمة سرّه هو عند الإرسال. */
+  const ADMIN_MODE = new URLSearchParams(location.search).get('admin') === '1';
 
   function boot() {
     wireEvents();
     loadResidentsForPicker();
+
+    if (ADMIN_MODE) { el('authGate').hidden = true; return; }
 
     const afterGuide = () => {
       const token = AUH.storage.get(TOKEN_KEY);

@@ -23,6 +23,14 @@
   const AUH = global.AUH;
   const { normAr, smartSearch, splitNames, escapeHtml } = AUH.text;
   const { getDayName } = AUH.dates;
+
+  /**
+   * وضعُ الأدمن (`swap.html?admin=1`) — لمن يتعذّر عليه تقديم الطلب بنفسه.
+   * الأدمن يختار الطرفين كليهما (صاحب المناوبة الأصلية ليس مُقفَلاً على
+   * حسابٍ هنا)، ويُرسل بكلمة سرّ الأدمن بدل جلسة مقيم — بقيّة المحرّك
+   * (الرزنامة، فحص الستريب، كل القواعد) كما هي حرفياً، بلا أي تكرارٍ لمنطقها.
+   */
+  const ADMIN_MODE = new URLSearchParams(global.location.search).get('admin') === '1';
   const schedule = AUH.domain.oncallSchedule;
 
   const HARD = ['إسعاف داخلي ليلي', 'إسعاف داخلي نهاري', 'إسعاف باب ليلي', 'إسعاف باب نهاري',
@@ -81,6 +89,28 @@
     if (typeof refresh === 'function') refresh();
   }
 
+  /** راجع تعليق `ADMIN_MODE` أعلى الملفّ — يفتح خطوة ٢ للاختيار بدل قفلها. */
+  function applyAdminMode() {
+    const banner = $('adminModeBanner');
+    if (banner) banner.hidden = false;
+    const pf = $('adminPasscodeField');
+    if (pf) pf.hidden = false;
+
+    const s2 = document.getElementById('s2');
+    if (s2) {
+      const h2 = s2.querySelector('h2');
+      const hint = s2.querySelector('.step-hint');
+      if (h2) h2.textContent = 'صاحب المناوبة الأصلي';
+      if (hint) hint.innerHTML = '<i class="fas fa-user-shield"></i> أنت كالأدمن تختار هنا — اكتب اسمه كما تختار اسم الطرف الآخر في الخطوة ٤.';
+    }
+
+    const agreeLabel = $('agree') && $('agree').closest('.agree-check');
+    if (agreeLabel) {
+      const span = agreeLabel.querySelector('span');
+      if (span) span.innerHTML = 'أؤكّد أنّ الطرفين متّفقان فعلاً على هذا الطلب، وأُدخِله نيابةً عنهما لتعذُّر تقديمه مباشرةً.';
+    }
+  }
+
   async function boot() {
     try {
       // هذه الصفحة تحتاج اللائحة والمناوبات والعطل وتعديلاتها فقط — لا
@@ -117,6 +147,7 @@
       wire();
       applyLink();
       applyAuthIdentity();
+      if (ADMIN_MODE) applyAdminMode();
     } catch (err) {
       $('boot').innerHTML =
         '<div class="verdict no"><h3><i class="fas fa-triangle-exclamation"></i> تعذر تحميل البيانات</h3>' +
@@ -1127,13 +1158,10 @@
 
   /** يرسل عبر حسابات النظام الجديد (نظام-التبديل.gs) — لا نموذج Google بعد الآن. */
   function send() {
-    const token = AUH.storage.get(TOKEN_KEY);
-    if (!token) { toast('سجّل الدخول أولاً.', true); return; }
     const data = payload();
     const btn = $('send');
-    btn.disabled = true; btn.classList.add('is-busy');
 
-    AUH.data.swapRequests.submitRequest(token, {
+    const requestData = {
       kind: data.kind,
       shiftDate: data.shiftDate, shiftType: data.shiftType,
       toAbbr: data.toAbbr, toName: data.toName,
@@ -1141,13 +1169,29 @@
       reason: data.reason, notes: data.notes, phone: $('phone').value.trim(),
       urgent: $('urgent') && $('urgent').checked,
       agreedResponsibility: $('agree') && $('agree').checked
-    }).then(res => {
+    };
+
+    let submit;
+    if (ADMIN_MODE) {
+      const passcode = $('adminPasscode').value;
+      if (!passcode) { toast('اكتب كلمة سرّ الأدمن.', true); return; }
+      submit = AUH.data.swapRequests.adminSubmitRequest(passcode, Object.assign({
+        fromAbbr: data.fromAbbr, fromName: data.fromName
+      }, requestData));
+    } else {
+      const token = AUH.storage.get(TOKEN_KEY);
+      if (!token) { toast('سجّل الدخول أولاً.', true); return; }
+      submit = AUH.data.swapRequests.submitRequest(token, requestData);
+    }
+
+    btn.disabled = true; btn.classList.add('is-busy');
+    submit.then(res => {
       btn.disabled = false; btn.classList.remove('is-busy');
       if (!res || res.state !== 'ok') { toast((res && res.message) || 'تعذّر إرسال الطلب.', true); return; }
       $('form').hidden = true;
       $('done').hidden = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      loadMyRequests();
+      if (!ADMIN_MODE) loadMyRequests();
     }).catch(err => {
       btn.disabled = false; btn.classList.remove('is-busy');
       toast(err.message || 'تعذّر إرسال الطلب.', true);

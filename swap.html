@@ -472,7 +472,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   <div class="auth-card">
     <div class="auth-head">
       <i class="fas fa-right-left"></i>
-      <h2>نظام تبديل المناوبات</h2>
+      <h2>تبديل</h2>
       <p>حسابٌ واحد لكل مقيم — سجّل دخولك أو أنشئ حساباً جديداً</p>
     </div>
 
@@ -600,12 +600,41 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   <div id="authWhoBadge" hidden></div>
 </header>
 
+<div class="img-modal" id="changePassModal" hidden>
+  <div class="img-box" role="dialog" aria-modal="true" aria-label="تغيير كلمة السرّ" style="width:min(380px,100%)">
+    <div class="img-head">
+      <h3><i class="fas fa-key"></i> تغيير كلمة السرّ</h3>
+      <button type="button" class="img-x" id="changePassClose" title="إغلاق"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="img-scroll" style="background:var(--surface)">
+      <div class="auth-error" id="changePassError" hidden></div>
+      <div class="auth-field">
+        <label class="fl" for="cpOld">كلمة السرّ الحالية</label>
+        <input type="password" id="cpOld" autocomplete="current-password" placeholder="••••••">
+      </div>
+      <div class="auth-field">
+        <label class="fl" for="cpNew">كلمة السرّ الجديدة (٦ أحرف على الأقل)</label>
+        <input type="password" id="cpNew" autocomplete="new-password" placeholder="••••••">
+      </div>
+      <div class="auth-field">
+        <label class="fl" for="cpConfirm">تأكيد كلمة السرّ الجديدة</label>
+        <input type="password" id="cpConfirm" autocomplete="new-password" placeholder="••••••">
+      </div>
+      <button type="button" class="btn wide" id="cpSubmitBtn"><i class="fas fa-check"></i> حفظ<span class="btn-spinner"></span></button>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
   <div id="boot" class="card"><div class="loading"><div class="spin"></div><div>جاري تحميل بيانات المناوبات من الشيت...</div></div></div>
 
   <div class="main-row">
   <div class="main-col">
   <div id="form" hidden>
+    <div class="resp-note" id="adminModeBanner" hidden style="background:#e3edf7;border-color:#c7d9ec;color:#1f466e">
+      <i class="fas fa-user-shield"></i>
+      <span>وضعُ الأدمن — أنت تُقدِّم هذا الطلب نيابةً عن أحد الطرفين (أو كليهما) لتعذُّر تقديمه بنفسه. اختر صاحب المناوبة الأصلية من الخطوة ٢ كما تختار الطرف الآخر من الخطوة ٤ تماماً، وسيُسجَّل الطلب <b>«يدويّ من الأدمن»</b>.</span>
+    </div>
     <!-- 1 ----------------------------------------------------------------->
     <section class="card step" id="s1">
       <div class="step-head"><div class="step-n"><span>1</span></div><h2>نوع الطلب</h2></div>
@@ -732,6 +761,10 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
           <input type="checkbox" id="urgent" style="width:auto;height:auto;margin-top:5px">
           <span><i class="fas fa-triangle-exclamation" style="color:var(--signal)"></i> طلبٌ عاجل (يظهر أولاً عند الأدمن)</span>
         </label>
+      </div>
+      <div id="adminPasscodeField" hidden style="margin-top:12px">
+        <label class="fl" for="adminPasscode">كلمة سرّ الأدمن (لتأكيد الإرسال اليدويّ)</label>
+        <input type="password" id="adminPasscode" autocomplete="off" placeholder="••••••">
       </div>
       <div style="margin-top:18px"><button type="button" class="btn wide" id="send" disabled>
         <i class="fas fa-paper-plane"></i> إرسال الطلب<span class="btn-spinner"></span></button></div>

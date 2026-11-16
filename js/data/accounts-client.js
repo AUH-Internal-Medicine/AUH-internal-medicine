@@ -67,5 +67,22 @@
     return client.postAndPoll('adminListAccounts', { passcode: passcode }, QUICK);
   }
 
-  AUH.data.accounts = { configured, endpoint, startRegister, completeRegister, login, validateSession, logout, adminListAccounts };
+  /** @returns {Promise<{state:'ok'}|{state:'error', message}>} */
+  function changePassword(token, oldPassword, newPassword) {
+    return client.postAndPoll('changePassword', { token: token, oldPassword: oldPassword, newPassword: newPassword }, QUICK);
+  }
+
+  /**
+   * تسجيلٌ يدويٌّ من الأدمن — لا جلسةَ للمقيم من هذا الإجراء، فقط إنشاء
+   * الحساب؛ يسجّل المقيم دخوله بكلمة السرّ التي أعطاه إياها الأدمن.
+   * @returns {Promise<{state:'ok', name, abbr}|{state:'error', message}>}
+   */
+  function adminCreateAccount(passcode, abbr, password, email) {
+    return client.postAndPoll('adminCreateAccount', { passcode: passcode, abbr: abbr, password: password, email: email || '' }, QUICK);
+  }
+
+  AUH.data.accounts = {
+    configured, endpoint, startRegister, completeRegister, login, validateSession, logout,
+    changePassword, adminListAccounts, adminCreateAccount
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
