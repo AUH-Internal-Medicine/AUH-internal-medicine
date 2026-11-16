@@ -98,27 +98,46 @@
    * ones the resident is actually on call for (those pay holiday hours).
    */
   /**
-   * مناوبات Bonus/عقوبة — shift-count adjustments from "تعديل المناوبات"،
-   * غير مؤرَّخة وبلا ساعات: مجرد عدّاد يُضاف أو يُحذف من التراكمي.
+   * مناوبات (+/−) — shift-count adjustments from "تعديل المناوبات". لكل
+   * ملاحظةٍ مكتوبةٍ في عمود «ملاحظات» بالشيت سطرٌ خاصّ بها هنا؛ وإن كانت
+   * مناوبةً تطوعية حقيقية (عمودا الفئة والتاريخ مملوءان) يظهر اسمها وتاريخها
+   * معها أيضاً — غير ذلك فهي مجرّد عدّادٍ يُضاف أو يُحذف من التراكمي بلا
+   * تاريخ. راجع `hasRealDuty`/Case A-B في `js/domain/doctor-stats.js`.
    */
   renderMyInfoBonus(doctorStats) {
     const bonus = doctorStats?.bonusShiftsCount || 0;
     const penalty = doctorStats?.penaltyShiftsCount || 0;
     if (!bonus && !penalty) return '';
 
+    // ملاحظات البونص المؤرَّخة (مناوبة تطوعية حقيقية) تأتي من assignments
+    // لأنها وحدها تحمل التاريخ والفئة معاً؛ وأي ملاحظةٍ أخرى في bonusNotes
+    // لم تُستهلَك هناك فهي بونص بلا تاريخ (تصحيح عددٍ تقليدي).
+    const datedBonusNotes = (doctorStats?.assignments || []).filter(a => a.note);
+    const coveredNotes = new Set(datedBonusNotes.map(a => a.note));
+    const plainBonusNotes = (doctorStats?.bonusNotes || []).filter(n => !coveredNotes.has(n));
+    const penaltyNotes = doctorStats?.penaltyNotes || [];
+
+    const noteLine = (text, extra) => `<div class="bonus-note-line"><i class="fas fa-note-sticky"></i> ${escapeHtml(text)}${extra ? ` <span class="bonus-note-extra">(${escapeHtml(extra)})</span>` : ''}</div>`;
+
+    const bonusNoteLines = [
+      ...datedBonusNotes.map(a => noteLine(a.note, `${a.category} — ${formatDisplayDate(a.date)}`)),
+      ...plainBonusNotes.map(n => noteLine(n))
+    ].join('');
+    const penaltyNoteLines = penaltyNotes.map(n => noteLine(n)).join('');
+
     const bonusRow = bonus
-      ? `<div class="bonus-row bonus-row-positive"><span class="bonus-month"><i class="fas fa-gift"></i> مناوبات Bonus</span><span class="bonus-hours">+${this.formatNumDisplay(bonus)}</span></div>`
+      ? `<div class="bonus-row bonus-row-positive"><span class="bonus-month"><i class="fas fa-gift"></i> مناوبات</span><span class="bonus-hours">+${this.formatNumDisplay(bonus)}</span></div>${bonusNoteLines}`
       : '';
     const penaltyRow = penalty
-      ? `<div class="bonus-row bonus-row-negative"><span class="bonus-month"><i class="fas fa-triangle-exclamation"></i> مناوبات عقوبة</span><span class="bonus-hours">−${this.formatNumDisplay(penalty)}</span></div>`
+      ? `<div class="bonus-row bonus-row-negative"><span class="bonus-month"><i class="fas fa-triangle-exclamation"></i> مناوبات عقوبة</span><span class="bonus-hours">−${this.formatNumDisplay(penalty)}</span></div>${penaltyNoteLines}`
       : '';
 
     return (
       `<div class="collapsible-section bonus-section"><button class="collapsible-btn open" onclick="toggleCollapsible(this)">` +
-        `<span><i class="fas fa-gift"></i> مناوبات Bonus/عقوبة</span><i class="fas fa-chevron-down"></i></button>` +
+        `<span><i class="fas fa-gift"></i> مناوبات (+/−)</span><i class="fas fa-chevron-down"></i></button>` +
         `<div class="collapsible-content show">` +
           `<div class="bonus-list">${bonusRow}${penaltyRow}</div>` +
-          `<div class="holiday-note"><i class="fas fa-circle-info"></i> مضافة/محذوفة من عدد مناوباتك التراكمي مباشرةً، بلا تاريخ ولا ساعات.</div>` +
+          `<div class="holiday-note"><i class="fas fa-circle-info"></i> الزيادة (+) تُضاف إلى عدد مناوباتك التراكمي، والعقوبة (−) تُحذف منه.</div>` +
         `</div></div>`
     );
   },
@@ -370,7 +389,7 @@
     const doneTotal = doctorStats?.completed ?? allOncalls.filter(o => o.date < this.today).length;
     const remainingCount = doctorStats?.remaining ?? 0;
 
-    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub"><i class="fas fa-umbrella-beach"></i> منها عطل: ${this.formatNumDisplay(holidayCount)}</div>${bonusCount ? `<div class="cum-bonus"><i class="fas fa-gift"></i> +${this.formatNumDisplay(bonusCount)} بونص</div>` : ''}${penaltyCount ? `<div class="cum-penalty"><i class="fas fa-triangle-exclamation"></i> −${this.formatNumDisplay(penaltyCount)} عقوبة</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">متبقية: ${this.formatNumDisplay(remainingCount)}</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
+    let h = `<div id="myInfoContent" style="padding:8px;"><div class="myinfo-profile-head"><div class="myinfo-heading-row"><h3><i class="fas fa-user"></i> ${r.name}</h3><span class="myinfo-heading-abbr">(${this.escapeHtml(r.abbr || '-')})</span><span class="myinfo-heading-seq">#${this.escapeHtml(String(r.seq || '-'))}</span></div></div><div class="myinfo-top-stats myinfo-top-stats-3"><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(cumTotal)}</div><div class="cum-lbl">المناوبات التراكمية</div><div class="cum-sub"><i class="fas fa-umbrella-beach"></i> منها عطل: ${this.formatNumDisplay(holidayCount)}</div>${bonusCount ? `<div class="cum-bonus"><i class="fas fa-gift"></i> +${this.formatNumDisplay(bonusCount)}</div>` : ''}${penaltyCount ? `<div class="cum-penalty"><i class="fas fa-triangle-exclamation"></i> −${this.formatNumDisplay(penaltyCount)} عقوبة</div>` : ''}</div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${this.formatNumDisplay(doneTotal)}</div><div class="cum-lbl">المناوبات التي تمّت</div><div class="cum-sub">متبقية: ${this.formatNumDisplay(remainingCount)}</div></div><div class="cumulative-box myinfo-static-stat" style="margin:0;"><div class="cum-num">${joinDays ?? 0}</div><div class="cum-lbl">عدد الأيام منذ الالتحاق</div></div></div><div class="myinfo-breakdown-box"><h4><i class="fas fa-list"></i> توزيع المناوبات التراكمية</h4>${cumDetails.length ? `<div class="myinfo-breakdown-grid">${cumDetails.map(([k, v], idx) => {
       const dates = (catDates[k] || []).slice().sort();
       const detId = `miCatDates-${miUid}-${idx}`;
       return `<button type="button" class="myinfo-breakdown-item" onclick="toggleCollapsible(this)"><span>${this.escapeHtml(k)}</span><strong>${v}</strong></button><div class="collapsible-content myinfo-breakdown-detail" id="${detId}">${dates.length ? dates.map(d => `<span class="dsc-detail-chip">${d}</span>`).join('') : '<span class="dsc-detail-empty">لا توجد تواريخ</span>'}</div>`;

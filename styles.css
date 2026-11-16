@@ -116,6 +116,9 @@ body.dark-mode .header-bg-photo{opacity:0.78;filter:saturate(1.02) contrast(1.06
 .bonus-row-positive .bonus-hours{color:var(--primary);background:var(--primary-soft)}
 .bonus-row-negative{border-inline-start:4px solid var(--signal)}
 .bonus-row-negative .bonus-hours{color:var(--signal);background:var(--signal-soft)}
+.bonus-note-line{display:flex;align-items:flex-start;gap:7px;padding:6px 13px 0;font-size:.82em;color:var(--text-secondary);line-height:1.5}
+.bonus-note-line i{margin-top:2px;flex:none;color:var(--text-secondary)}
+.bonus-note-extra{color:var(--text);font-weight:600}
 
 /* official holidays (from the العطل الرسمية sheet) */
 .calendar-day.official-holiday{background:linear-gradient(150deg,rgba(192,57,43,.14),rgba(217,140,61,.16));border:2px solid rgba(192,57,43,.55);position:relative}

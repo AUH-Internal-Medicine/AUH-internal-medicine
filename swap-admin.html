@@ -36,6 +36,10 @@ h1{font-size:1.2em;margin:0 0 4px}
 .tabs button{flex:0 1 auto;border:1px solid var(--rule);background:var(--surface);padding:9px 14px;border-radius:999px;
   font-family:inherit;font-weight:700;font-size:12.8px;cursor:pointer;white-space:nowrap}
 .tabs button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+  padding:0 5px;border-radius:999px;background:var(--surface-sunk);color:var(--ink);font-size:10.5px;
+  font-variant-numeric:tabular-nums;margin-inline-start:2px}
+.tabs button.on .tab-count{background:rgba(255,255,255,.28);color:#fff}
 .toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
 .toolbar button{flex:0 1 auto;border:1px solid var(--rule);background:var(--surface);color:var(--ink);padding:9px 14px;
   border-radius:999px;font-family:inherit;font-weight:700;font-size:12.8px;cursor:pointer;white-space:nowrap}
@@ -176,11 +180,11 @@ h1{font-size:1.2em;margin:0 0 4px}
   <h1>لوحة طلبات التبديل</h1>
   <div class="sub">موافقة/رفض — الاعتماد ينفّذ التبديل تلقائياً على الجدول.</div>
   <div class="tabs" id="tabs">
-    <button type="button" data-f="pending" class="on">بانتظار القرار</button>
-    <button type="button" data-f="all">الكل</button>
-    <button type="button" data-f="shel">شيل فقط</button>
-    <button type="button" data-f="swap">تبديل فقط</button>
-    <button type="button" data-f="failed">بحاجة لإعادة محاولة</button>
+    <button type="button" data-f="pending" class="on">بانتظار القرار <span class="tab-count" id="cnt-pending"></span></button>
+    <button type="button" data-f="all">الكل <span class="tab-count" id="cnt-all"></span></button>
+    <button type="button" data-f="shel">شيل فقط <span class="tab-count" id="cnt-shel"></span></button>
+    <button type="button" data-f="swap">تبديل فقط <span class="tab-count" id="cnt-swap"></span></button>
+    <button type="button" data-f="failed">بحاجة لإعادة محاولة <span class="tab-count" id="cnt-failed"></span></button>
   </div>
   <div class="toolbar">
     <button type="button" id="sortBtn"><i class="fas fa-arrow-down-wide-short"></i> الأحدث أولاً</button>
@@ -388,7 +392,18 @@ h1{font-size:1.2em;margin:0 0 4px}
 
   const FAILED = r => r.scheduleResult && r.scheduleResult.indexOf('فشل') === 0;
 
+  /** عدّادٌ على كل تبويب — يعكس إجمالي الطلبات دائماً، لا الطلبات المعروضة حالياً. */
+  function updateTabCounts() {
+    const set = (id, n) => { const el2 = el(id); if (el2) el2.textContent = n; };
+    set('cnt-pending', requests.filter(r => r.status === 'pending_admin').length);
+    set('cnt-all', requests.length);
+    set('cnt-shel', requests.filter(r => r.kind === 'شيل').length);
+    set('cnt-swap', requests.filter(r => r.kind === 'تبديل').length);
+    set('cnt-failed', requests.filter(FAILED).length);
+  }
+
   function render() {
+    updateTabCounts();
     const host = el('list');
     let shown = requests.filter(r => {
       if (filter === 'pending') return r.status === 'pending_admin';
