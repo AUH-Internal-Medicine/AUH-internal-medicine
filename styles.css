@@ -522,24 +522,35 @@ tbody tr:nth-child(even){background:rgba(27,58,92,0.02)}
   font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-family:inherit}
 .report-print-btn:hover{background:#5a3496}
 .report-scroll{overflow:auto;padding:16px 18px}
-.report-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.report-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 .report-table th{position:sticky;top:0;background:var(--primary);color:#fff;padding:8px 10px;font-weight:700;
-  text-align:start;white-space:nowrap}
-.report-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+  text-align:start}
+.report-table th:nth-child(1){width:13%}
+.report-table th:nth-child(2){width:14%}
+.report-table th:nth-child(3){width:9%}
+.report-table th:nth-child(4){width:64%}
+.report-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;
+  overflow-wrap:anywhere}
 .report-table .report-date{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
 .report-table .report-count{text-align:center;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums}
-.report-table .report-cat{color:var(--text-secondary);font-size:11px}
-.report-table .report-none{color:var(--text-secondary)}
+.report-names{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.report-names li{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.report-person{font-weight:700;color:var(--text)}
+.report-cat{color:var(--text-secondary);font-size:11px;white-space:nowrap}
+.report-none{color:var(--text-secondary)}
 .report-table tr.report-row-empty td{color:var(--text-secondary)}
 @media print {
+  @page { size: landscape; margin: 10mm; }
   body > :not(#monthlyReportModal){display:none!important}
   #monthlyReportModal{position:static!important;background:none!important;padding:0!important;
     backdrop-filter:none!important;display:block!important}
   #monthlyReportModal .report-box{max-height:none!important;box-shadow:none!important;border-radius:0!important;
-    width:100%!important}
-  #monthlyReportModal .report-scroll{overflow:visible!important}
+    width:100%!important;max-width:none!important}
+  #monthlyReportModal .report-scroll{overflow:visible!important;padding:0!important}
   #monthlyReportModal .report-print-btn,#monthlyReportModal .oncall-raw-close-btn{display:none!important}
+  #monthlyReportModal .report-table{font-size:11px}
   #monthlyReportModal .report-table th{position:static!important}
+  #monthlyReportModal .report-table,#monthlyReportModal .report-table tr{page-break-inside:avoid}
 }
 .oncall-raw-table thead th{position:sticky;top:0;z-index:11;background:var(--primary)}
 .oncall-raw-table th.oncall-raw-sticky-col-1,.oncall-raw-table td.oncall-raw-sticky-col-1{position:sticky;right:0;z-index:10;background:var(--card-bg);box-shadow:-1px 0 0 var(--border)}

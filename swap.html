@@ -447,6 +447,13 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   font-weight:700;padding:9px 10px;border-radius:999px;cursor:pointer}
 .auth-tabs button.on{background:var(--primary);color:#fff}
 .auth-field{margin-bottom:12px}
+.auth-help-note{background:var(--surface-sunk);border:1px solid var(--rule);color:var(--ink-2);border-radius:var(--radius);
+  padding:9px 12px;font-size:11.8px;line-height:1.7;margin-bottom:14px}
+.auth-help-note i.fa-circle-info{color:var(--primary);margin-inline-end:3px}
+.auth-help-note a{color:var(--primary);font-weight:700;text-decoration:none;white-space:nowrap}
+.auth-help-note a:hover{text-decoration:underline}
+.auth-help-note a .fa-whatsapp{color:#25D366}
+.auth-help-note a .fa-telegram{color:#229ED9}
 .pw-save-note{margin:6px 2px 0;font-size:11.5px;color:var(--signal);display:flex;gap:6px;align-items:flex-start;line-height:1.5}
 .auth-error{background:var(--signal-soft);border:1px solid #f0cfcb;color:var(--signal);border-radius:var(--radius);
   padding:9px 12px;font-size:12.5px;margin-bottom:12px}
@@ -485,6 +492,15 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
       <button type="button" id="authTabRegister">حساب جديد</button>
     </div>
 
+    <div class="auth-help-note">
+      <i class="fas fa-circle-info"></i>
+      إذا كان هناك مشاكل بإنشاء الحساب أو تسجيل الدخول، يرجى التواصل على
+      <a href="https://wa.me/963983893299" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> واتساب</a>
+      أو
+      <a href="https://t.me/ALI15cha" target="_blank" rel="noopener"><i class="fab fa-telegram"></i> تلغرام</a>
+      لإنشاء الحساب بشكل يدويّ.
+    </div>
+
     <div id="authGateChecking" class="auth-checking" hidden>
       <div class="spin" style="margin:0 auto 10px"></div>
       جارٍ التحقّق من جلستك المحفوظة…
@@ -496,7 +512,8 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
         <div class="auth-error" id="loginError" hidden></div>
         <div class="auth-field">
           <label class="fl" for="loginAbbr">الاسم أو الاختصار</label>
-          <input type="text" id="loginAbbr" autocomplete="username" placeholder="مثال: أحمد">
+          <input type="text" id="loginAbbr" list="loginNameOptions" autocomplete="username" placeholder="اكتب اسمك أو اختصارك لتظهر الخيارات">
+          <datalist id="loginNameOptions"></datalist>
         </div>
         <div class="auth-field">
           <label class="fl" for="loginPassword">كلمة السرّ</label>

@@ -1471,8 +1471,16 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // كل سكربتات swap.html صارت `defer` (تحميلٌ متوازٍ أسرع) — وهذا يضمن أن
+  // هذا السطر نفسه لا يُنفَّذ إلا بعد انتهاء التحليل، أي أن `readyState`
+  // يكون بالفعل "interactive" لا "loading" عندما يصل التنفيذ إلى هنا. كان
+  // هذا الملفّ يحتوي أيضاً فحصاً احتياطياً `if (document.readyState !== 'loading')
+  // boot();` من أيام التحميل غير المؤجَّل — فصار ذلك الفحص يُنفِّذ boot() فوراً
+  // هنا، ثم يُنفِّذها مرّةً ثانية `DOMContentLoaded` بعد لحظات، فيُضاعَف كل
+  // شيءٍ في S.duties (كل مناوبةٍ تُحسَب مرّتين بالضبط — هذا سبب الأعداد
+  // الخاطئة التي ضاعفت كل رقمٍ في الصفحة). السطر الاحتياطي حذفٌ لا نقل، فلا
+  // داعي له إطلاقاً مع `defer` — المستمع وحده يكفي ويضمن تنفيذاً واحداً فقط.
   document.addEventListener('DOMContentLoaded', boot);
-  if (document.readyState !== 'loading') boot();
 
   AUH.swap = {
     setAuthIdentity(identity) {

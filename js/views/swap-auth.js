@@ -72,11 +72,19 @@
   }
 
   function syncNameDatalist() {
-    const list = el('regNameOptions');
-    if (!list) return;
-    list.innerHTML = residentsList
-      .map(r => `<option value="${escapeHtml(r.name)}">${escapeHtml(r.abbr)}</option>`)
-      .join('');
+    const regList = el('regNameOptions');
+    if (regList) {
+      regList.innerHTML = residentsList
+        .map(r => `<option value="${escapeHtml(r.name)}">${escapeHtml(r.abbr)}</option>`)
+        .join('');
+    }
+    // تسجيل الدخول يقبل الاسم الكامل أو الاختصار كليهما — فكلاهما خيارٌ هنا.
+    const loginList = el('loginNameOptions');
+    if (loginList) {
+      loginList.innerHTML = residentsList
+        .map(r => `<option value="${escapeHtml(r.name)}">${escapeHtml(r.abbr)}</option><option value="${escapeHtml(r.abbr)}">${escapeHtml(r.name)}</option>`)
+        .join('');
+    }
   }
 
   function pickResidentByName(typed) {

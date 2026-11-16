@@ -434,7 +434,9 @@
 
     const rowsHtml = rows.map(r => {
       const names = r.list.length
-        ? r.list.map(x => `${escapeHtml(x.name)} <span class="report-cat">(${escapeHtml(x.category)})</span>`).join('، ')
+        ? `<ul class="report-names">${r.list.map(x =>
+            `<li><span class="report-person">${escapeHtml(x.name)}</span><span class="report-cat">${escapeHtml(x.category)}</span></li>`
+          ).join('')}</ul>`
         : '<span class="report-none">—</span>';
       return `<tr${r.list.length ? '' : ' class="report-row-empty"'}>` +
         `<td class="report-date">${r.date.slice(8)}/${r.date.slice(5, 7)}</td><td>${escapeHtml(r.dayName)}</td>` +
