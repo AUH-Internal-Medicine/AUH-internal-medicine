@@ -257,9 +257,13 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .find-card .fc-offer{border-top:1px dashed var(--rule);margin-top:10px;padding-top:4px}
 .find-card .fc-offer-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--surface-sunk)}
 .find-card .fc-offer-row:first-child{border-top:0}
-.find-card .fc-offer-row button{margin-inline-start:auto;height:30px;padding:0 12px;border-radius:999px;border:0;
+.find-card .fc-offer-actions{display:flex;gap:6px;margin-inline-start:auto}
+.find-card .fc-offer-row button{height:30px;padding:0 12px;border-radius:999px;border:0;
   background:var(--primary);color:#fff;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
 .find-card .fc-offer-row button.armed{background:var(--signal)}
+.find-card .fc-offer-row button.ghost-mini{background:var(--surface);color:var(--ink-2);border:1px solid var(--rule)}
+.find-card .fc-offer-row button.ghost-mini:hover{border-color:var(--primary);color:var(--primary)}
+#refreshBtn.spinning i{animation:sp 1s linear infinite}
 .elig-more-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:4px;
   padding:10px;border:1px dashed var(--rule);border-radius:var(--radius);background:var(--primary-soft);
   color:var(--primary-strong);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
@@ -448,11 +452,16 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
   <div id="boot" class="card"><div class="loading"><div class="spin"></div><div>جاري تحميل بيانات المناوبات من الشيت...</div></div></div>
 
   <div id="app" hidden>
-    <div class="sf-tabs" id="sfTabs">
-      <button type="button" data-tab="browse" class="on"><i class="fas fa-magnifying-glass"></i> يمكنني تلبيتها <span class="cnt" id="cnt-browse">0</span></button>
-      <button type="button" data-tab="submit"><i class="fas fa-plus"></i> إعلانٌ جديد</button>
-      <button type="button" data-tab="mine"><i class="fas fa-list-check"></i> إعلاناتي <span class="cnt" id="cnt-mine">0</span></button>
-      <button type="button" data-tab="offers"><i class="fas fa-paper-plane"></i> عروضي <span class="cnt" id="cnt-offers">0</span></button>
+    <div style="display:flex;gap:8px;align-items:stretch;margin-bottom:18px">
+      <div class="sf-tabs" id="sfTabs" style="margin-bottom:0;flex:1">
+        <button type="button" data-tab="browse" class="on"><i class="fas fa-magnifying-glass"></i> يمكنني تلبيتها <span class="cnt" id="cnt-browse">0</span></button>
+        <button type="button" data-tab="submit"><i class="fas fa-plus"></i> إعلانٌ جديد</button>
+        <button type="button" data-tab="mine"><i class="fas fa-list-check"></i> إعلاناتي <span class="cnt" id="cnt-mine">0</span></button>
+        <button type="button" data-tab="offers"><i class="fas fa-paper-plane"></i> عروضي <span class="cnt" id="cnt-offers">0</span></button>
+      </div>
+      <button type="button" class="btn-ghost" id="refreshBtn" title="تحديث البيانات الآن" style="flex:0 0 auto;border-radius:999px;width:44px;padding:0;justify-content:center">
+        <i class="fas fa-rotate"></i>
+      </button>
     </div>
 
     <!-- تصفّح -->

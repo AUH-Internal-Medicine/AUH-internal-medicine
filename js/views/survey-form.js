@@ -71,20 +71,6 @@
     };
   }
 
-  /**
-   * كلُّ أنواع المناوبات **الحاليّة** (بعد كلِّ دمج) — لقسم «تقييم كلِّ
-   * الفروز». تُقرأ من `AUH.domain.oncallSchedule` نفسِه لا تُكرَّر هنا؛
-   * فإن أُضيف دمجٌ جديد في `MERGE_RULES` سقط طرفاه من هذه القائمة تلقائياً.
-   */
-  function allCategories() {
-    const dom = AUH.domain && AUH.domain.oncallSchedule;
-    if (!dom) return [];
-    const drop = {};
-    (dom.MERGE_RULES || []).forEach(r => (r.parts || []).forEach(p => { drop[p] = true; }));
-    drop['تاني'] = true; // أُعيدت تسميتُها «تاني رجال» + «تاني نساء» (2026-10)
-    return Object.keys(dom.ONCALL_SCHEDULE_NEW || {}).filter(c => !drop[c]);
-  }
-
   /** القيمُ المقبولةُ لتقييم فرزٍ واحد. */
   const CAT_DIFFICULTY_VALUES = ['صعب', 'متوسط', 'سهل', 'لم أُفرَز بعد'];
 
@@ -92,9 +78,26 @@
     return (AUH.config && AUH.config.surveyForm) || {};
   }
 
-  /** أُغلق بابُ التقديم والتعديل؟ */
+  /** موعدُ الإغلاق التلقائي (كائنُ `Date`)، أو `null` إن لم يُضبط. */
+  function closeAtDate() {
+    const raw = cfg().closeAt;
+    if (!raw) return null;
+    const t = Date.parse(raw);
+    return isNaN(t) ? null : new Date(t);
+  }
+
+  /**
+   * أُغلق بابُ التقديم والتعديل؟
+   *
+   * بابان للإغلاق: `closed: true` اليدويّ، أو **موعدٌ تلقائيٌّ** تجاوزه
+   * الوقتُ الحاليّ (`closeAt`). كلاهما يُنتج نفسَ الحالة المغلقة في كل
+   * مكانٍ يَستعمل هذه الدالّة — فلا يحتاج زرُّ التعديل ولا الإرسالُ فحصاً
+   * ثانياً منفصلاً للموعد.
+   */
   function isClosed() {
-    return !!cfg().closed;
+    if (cfg().closed) return true;
+    const d = closeAtDate();
+    return !!(d && Date.now() >= d.getTime());
   }
 
   function monthInfo() {
@@ -182,7 +185,7 @@
     const maxDay = monthInfo().days;
     const a = blankAnswers();
     const validCats = {};
-    allCategories().forEach(c => { validCats[c] = true; });
+    knownRotations().forEach(c => { validCats[c] = true; });
 
     Object.keys(a).forEach(k => {
       if (k === 'days') {
@@ -601,11 +604,10 @@
     }
     if (!a.scheduleRating) e.scheduleRating = 'اختر درجةً من 1 إلى 10.';
 
-    if (a.days.length && !a.reason.trim()) {
-      e.reason = 'ذكرُ السبب إلزاميٌّ عند اختيار أيام — لن يُقبل الطلبُ دونه.';
+    if (a.days.length) {
+      if (!a.reason.trim()) e.reason = 'ذكرُ السبب إلزاميٌّ عند اختيار أيام — لن يُقبل الطلبُ دونه.';
+      if (a.leave !== 'نعم' && a.leave !== 'لا') e.leave = 'أجِب بنعم أو لا.';
     }
-    // إلزاميٌّ دائماً، بصرف النظر عن اختيار أيّ يوم — بخلاف السبب أعلاه.
-    if (a.leave !== 'نعم' && a.leave !== 'لا') e.leave = 'أجِب بنعم أو لا.';
 
     state.fieldErrors = e;
     return Object.keys(e).length === 0;
@@ -668,7 +670,7 @@
       categoryDifficulty: a.categoryDifficulty,
       days: a.days.slice().sort((x, y) => x - y),
       reason: a.days.length ? a.reason.trim() : '',
-      leave: a.leave,
+      leave: a.days.length ? a.leave : '',
       notes: a.notes.trim(),
       scheduleRating: Number(a.scheduleRating),
       scheduleProblems: a.scheduleProblems.trim()
@@ -749,7 +751,10 @@
       [state.answers.abbr, state.answers.phone, state.answers.rotation].map(v => v ? '1' : '0').join(''),
       state.saved ? 'saved' : '-',
       state.viewingSaved ? 'view' : '-',
-      isClosed() ? 'closed' : 'open'
+      isClosed() ? 'closed' : 'open',
+      // سلّةُ ٥ دقائق: تُعيد رسمَ إشعار العدّ التنازلي دوريّاً بلا إعادةِ بناءٍ
+      // على كلِّ تغييرٍ تافه. التحديثُ الدوريُّ للموقع (كلَّ ٣ دقائق) كافٍ.
+      Math.floor(Date.now() / 300000)
     ].join('¦');
 
     if (!(opts && opts.rebuild) && sig === state.signature && host.childElementCount) return;
@@ -818,6 +823,44 @@
 </div>`;
   }
 
+  /** نصٌّ تقريبيٌّ للوقت المتبقّي — دقّةُ دقيقةٍ تكفي لإشعارٍ يُعاد رسمُه كلّ بضع دقائق. */
+  function remainingLabel(d) {
+    const totalMin = Math.max(0, Math.ceil((d.getTime() - Date.now()) / 60000));
+    const days = Math.floor(totalMin / 1440);
+    const hours = Math.floor((totalMin % 1440) / 60);
+    const mins = totalMin % 60;
+    if (days > 0) {
+      const dLabel = days === 1 ? 'يوم' : days === 2 ? 'يومان' : days <= 10 ? 'أيام' : 'يوماً';
+      return days + ' ' + dLabel + (hours ? ' و' + hours + ' ساعة' : '');
+    }
+    if (hours > 0) {
+      const hLabel = hours === 1 ? 'ساعة' : hours === 2 ? 'ساعتان' : hours <= 10 ? 'ساعات' : 'ساعة';
+      return hours + ' ' + hLabel + (mins ? ' و' + mins + ' دقيقة' : '');
+    }
+    return mins + ' دقيقة';
+  }
+
+  function formatClock(d) {
+    let h = d.getHours();
+    const ampm = h >= 12 ? 'م' : 'ص';
+    h = h % 12; if (h === 0) h = 12;
+    return h + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + ampm;
+  }
+
+  /** إشعارُ الموعد النهائي — يظهر وحده ما دام الاستبيانُ مفتوحاً وله موعدُ إغلاقٍ مضبوط. */
+  function deadlineBanner() {
+    const d = closeAtDate();
+    if (!d || isClosed()) return '';
+    const when = DAY_NAMES[d.getDay()] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] +
+      ' ' + d.getFullYear() + ' الساعة ' + formatClock(d);
+    return `
+<div class="sf-deadline">
+  <i class="fas fa-hourglass-half"></i>
+  <span>الوقتُ المتبقّي لتقديم الاستبيان أو تعديله: <strong>${esc(remainingLabel(d))}</strong> —
+  يُغلق البابُ تلقائياً ${esc(when)}، ولا تُقبل بعدها إجاباتٌ جديدة ولا تعديل.</span>
+</div>`;
+  }
+
   function headCard() {
     const m = monthInfo();
     return `
@@ -828,7 +871,7 @@ ${isClosed() ? `
 <div class="sf-closed">
   <i class="fas fa-lock"></i>
   <span>انتهت مدّة التقديم والتعديل على الاستبيان.</span>
-</div>` : ''}`;
+</div>` : deadlineBanner()}`;
   }
 
   /* ──────────────────────────── بوّابةُ الهويّة ──────────────────────────── */
@@ -1017,7 +1060,7 @@ ${compact ? '' : answered}`;
         <datalist id="sfRotationList">
           ${rotations.map(v => `<option value="${esc(v)}"></option>`).join('')}
         </datalist>
-        <div class="sf-hint">مُعبَّأٌ من شيت القسم — صحّحه إن كان خطأً. والقائمة فيها ${rotations.length} فرزاً.</div>
+        <div class="sf-hint">مُعبَّأٌ من Google Sheet القسم — صحّحه إن كان خطأً. والقائمة فيها ${rotations.length} فرزاً.</div>
         ${errOf('rotation')}
       </div>
       <div class="sf-field" data-field="reliefCount">
@@ -1054,12 +1097,12 @@ ${compact ? '' : answered}`;
         <div class="sf-hint">ذكرُ السبب إلزاميٌّ — لن يُقبل الطلبُ دونه.</div>
         ${errOf('reason')}
       </div>
-    </div>
 
-    <div class="sf-field" data-field="leave">
-      <label>هل ستأخذ إجازةً خلال ${esc(m.label)}؟ <span class="sf-req">*</span></label>
-      ${yesNo('leave', a.leave)}
-      ${errOf('leave')}
+      <div class="sf-field" data-field="leave">
+        <label>هل ستأخذ إجازةً في الأيام التي لن تُناوب فيها؟ <span class="sf-req">*</span></label>
+        ${yesNo('leave', a.leave)}
+        ${errOf('leave')}
+      </div>
     </div>
   </section>
 
@@ -1112,14 +1155,19 @@ ${compact ? '' : answered}`;
   }
 
   /**
-   * قسمٌ مطويٌّ اختياريٌّ: تقييمُ صعوبةِ **كلِّ** أنواع المناوبات، لا فرزِ
-   * المقيمِ الحالي وحدَه — فالمالكُ طلب رأيَه في الفروز كلِّها، ومن لم
-   * يُناوب فرزاً بعد يُترك له خيارٌ صريحٌ لذلك بدل أن يُترك الحقلُ فارغاً
-   * بلا تفسير.
+   * قسمٌ مطويٌّ اختياريٌّ: تقييمُ صعوبةِ **كلِّ** الفروز (الخدمات السريرية:
+   * صدرية، هضمية، كلية، استشارات قلبية، اسعاف داخلي…) لا فرزِ المقيمِ
+   * الحالي وحدَه — فالمالكُ طلب رأيَه في الفروز كلِّها، ومن لم يُفرَز في
+   * فرزٍ بعد يُترك له خيارٌ صريحٌ لذلك بدل أن يُترك الحقلُ فارغاً بلا تفسير.
+   *
+   * والقائمةُ **ليست** أنواعَ المناوبة (سابع، رابع، عناية قلبية…) — تلك
+   * فئاتُ الرزنامةِ اليوميّة من `oncall-schedule.js`، شيءٌ آخر تماماً.
+   * المصدرُ هنا `knownRotations()` نفسُها المستعملةُ أصلاً لحقل «الفرز» في
+   * القسم ٢ أعلاه — فلا يُكرَّر استخراجُ القائمة بمنطقٍ مختلف.
    */
   function categoryDifficultyBlock() {
     const a = state.answers;
-    const cats = allCategories();
+    const cats = knownRotations();
     const open = !!state.catOpen;
     const count = Object.keys(a.categoryDifficulty || {}).length;
 
@@ -1289,7 +1337,7 @@ ${compact ? '' : answered}`;
       row('الأيام التي لا تستطيع المناوبة فيها',
           `<div class="sf-sum-days">${dayChips}</div>`, 'key'),
       a.days.length ? row('السبب', esc(a.reason)) : '',
-      row('إجازة خلال ' + m.label, esc(a.leave)),
+      a.days.length ? row('إجازة في تلك الأيام', esc(a.leave)) : '',
       row('تقييم رزنامة شهر ' + p.month,
           `<b>${esc(a.scheduleRating)}</b> <span class="sf-sum-of">/ 10</span>`),
       a.scheduleProblems ? row('مشاكل الرزنامة', esc(a.scheduleProblems)) : '',
@@ -1562,6 +1610,7 @@ ${compact ? '' : answered}`;
 
     if (!state.answers.days.length) {
       delete state.fieldErrors.reason;
+      delete state.fieldErrors.leave;
     }
   }
 

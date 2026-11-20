@@ -124,7 +124,7 @@ body.dark-mode .header-bg-photo{opacity:0.78;filter:saturate(1.02) contrast(1.06
 .calendar-day.official-holiday{background:linear-gradient(150deg,rgba(192,57,43,.14),rgba(217,140,61,.16));border:2px solid rgba(192,57,43,.55);position:relative}
 .calendar-day.official-holiday.has-oncall{background:linear-gradient(150deg,rgba(47,125,92,.18),rgba(217,140,61,.2));border-color:rgba(47,125,92,.6);box-shadow:inset 0 0 0 2px rgba(192,57,43,.35)}
 .calendar-holiday-star{position:absolute;top:3px;inset-inline-start:4px;font-size:.55em;color:var(--signal);line-height:1;pointer-events:none}
-.calendar-holiday-name{display:block;font-size:.5em;font-weight:800;color:var(--signal);line-height:1.2;margin-top:2px;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.calendar-holiday-name{display:block;font-size:.8em;font-weight:800;color:var(--signal);line-height:1.2;margin-top:2px;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .day-badge.weekend.official{background:linear-gradient(135deg,var(--signal),var(--ochre));color:#fff;border:none}
 
 .holidays-section .collapsible-btn{border-inline-start:5px solid var(--signal)}

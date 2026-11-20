@@ -74,8 +74,9 @@
     const doc = S.roster.find(r => normAr(r.abbr) === normAr(authIdentity.abbr));
     if (!doc) return;
     S.me = doc;
-    if ($('app')) { $('app').hidden = false; }
-    loadAll();
+    // #app لا يُكشَف هنا — يبقى #boot ظاهراً حتى يصل أوّل جوابٍ فعليّ من
+    // loadAll(true)، فلا يرى أحدٌ "0" لحظةَ عابرة قبل وصول البيانات الحقيقية.
+    loadAll(true);
   }
 
   async function boot() {
@@ -97,9 +98,14 @@
       defaultSubMonthIdx = upcoming < 0 ? Math.max(0, S.months.length - 1) : upcoming;
       S.sub.m = defaultSubMonthIdx;
 
-      $('boot').hidden = true;
       wire();
       applyAuthIdentity();
+      // تحديثٌ دوريٌّ تلقائي — كل ٦٠ ثانية، ويتوقّف إن كان التبويب غير
+      // ظاهر (الموقع الرئيسي يفعل الشيء نفسه كل ٣ دقائق؛ هنا أقصر لأن
+      // التنسيق بين مقيمَين مباشرٌ وأكثر حسّاسيةً للوقت).
+      setInterval(() => {
+        if (!document.hidden && S.me) loadAll();
+      }, 60000);
     } catch (err) {
       $('boot').innerHTML =
         '<div class="verdict no"><h3><i class="fas fa-triangle-exclamation"></i> تعذر تحميل البيانات</h3>' +
@@ -116,10 +122,20 @@
     toast._h = setTimeout(() => { t.className = 'toast'; }, 2600);
   }
 
-  /* ============================================================ تحميل الإعلانات */
-  function loadAll() {
+  function setRefreshBusy(busy) {
+    const b = $('refreshBtn');
+    if (b) { b.classList.toggle('spinning', busy); b.disabled = busy; }
+  }
+
+  /**
+   * تحميل الإعلانات — أوّل مرّة (`isFirst`) تُبقي #boot ظاهراً حتى يصل
+   * الجواب (فلا يُرى "0" قبل اكتمال التحميل الحقيقي)، وبعدها دوريّاً أو
+   * بزرّ «تحديث» يدويّ (`setRefreshBusy` فقط، بلا لمسِ #boot/#app).
+   */
+  function loadAll(isFirst) {
     const token = AUH.storage.get('auh_swap_session');
     if (!token) return;
+    if (!isFirst) setRefreshBusy(true);
     Promise.all([
       AUH.data.swapFind.listFindRequests(token),
       AUH.data.swapFind.myFindRequests(token)
@@ -127,7 +143,14 @@
       if (listRes && listRes.state === 'ok') S.open = listRes.requests || [];
       if (mineRes && mineRes.state === 'ok') { S.mine = mineRes.mine || []; S.myOffers = mineRes.myOffers || []; }
       renderAll();
-    }).catch(() => toast('تعذّر تحميل الإعلانات — أعد تحميل الصفحة.', true));
+      if (isFirst) { $('boot').hidden = true; $('app').hidden = false; }
+      else setRefreshBusy(false);
+    }).catch(() => {
+      toast('تعذّر تحميل الإعلانات — أعد تحميل الصفحة.', true);
+      // حتى عند الفشل: لا يبقى المستخدمُ عالقاً أمام شاشة تحميلٍ أبدية.
+      if (isFirst) { $('boot').hidden = true; $('app').hidden = false; }
+      else setRefreshBusy(false);
+    });
   }
 
   function renderAll() {
@@ -150,9 +173,19 @@
     });
   }
 
-  function switchTab(tab) {
+  /**
+   * الانتقالُ إلى «إعلانٌ جديد» عبر **زرّ الشريط نفسِه** يعني دائماً «ابدأ من
+   * جديد» — وإلا بقي `S.sub.editId` من تعديلٍ تُرك بلا حفظٍ عالقاً، فيُرسَل
+   * إعلانٌ تالٍ كـ"تعديل" على طلبٍ قد يكون أُغلق فعلاً (رسالة الخادم حينها
+   * «لا يمكنك تعديل إعلانٍ قد تمّ إقفاله» رغم أن المقصود إعلانٌ جديد كلياً).
+   * `startEdit()` وحدها تمرّ `keepEdit:true` فتُبقي حالة التعديل التي ضبطَتها
+   * للتوّ. إعادة الدخول إلى تبويبٍ هو فيه أصلاً (`was === 'submit'`) لا تُصفِّر
+   * شيئاً، فلا يُفقَد عملٌ جارٍ بنقرةٍ عرَضيّة على التبويب نفسِه.
+   */
+  function switchTab(tab, opts) {
+    const was = S.tab;
     S.tab = tab;
-    if (tab === 'submit' && !S.sub.editId) resetSubWizard();
+    if (tab === 'submit' && was !== 'submit' && !(opts && opts.keepEdit)) resetSubWizard();
     renderTabs();
   }
 
@@ -468,7 +501,7 @@
     $('subPhone').value = r.phone || '';
     $('subUrgent').checked = !!r.urgent;
     $('subSubmitBtn').innerHTML = '<i class="fas fa-check"></i> حفظ التعديل<span class="btn-spinner"></span>';
-    switchTab('submit');
+    switchTab('submit', { keepEdit: true });
     renderSubWizard();
   }
 
@@ -486,7 +519,12 @@
         ${o.shiftDate ? `<span class="num">${escapeHtml(o.shiftType)} — ${fmt(o.shiftDate)}</span>` : ''}
         ${o.phone ? `<span class="num">${escapeHtml(o.phone)}</span>` : ''}
         <span class="req-badge ${escapeHtml(o.status)}">${escapeHtml(OFFER_STATUS_LABEL[o.status] || o.status)}</span>
-        ${(r.status === 'open' && o.status === 'pending') ? `<button type="button" class="accept-offer-btn" data-offer="${escapeHtml(o.id)}" data-req="${escapeHtml(r.id)}"><i class="fas fa-check"></i> قبول</button>` : ''}
+        ${(r.status === 'open' && o.status === 'pending') ? `
+          <div class="fc-offer-actions">
+            <button type="button" class="ghost-mini preview-accept-btn" data-offer="${escapeHtml(o.id)}" data-req="${escapeHtml(r.id)}"><i class="fas fa-eye"></i> رزنامتي</button>
+            <button type="button" class="accept-offer-btn" data-offer="${escapeHtml(o.id)}" data-req="${escapeHtml(r.id)}"><i class="fas fa-check"></i> قبول</button>
+          </div>
+        ` : ''}
       </div>`).join('') || '<div class="fc-offer-row"><span class="step-hint" style="padding:0">لم يصلك عرضٌ بعد.</span></div>';
 
       return `<div class="find-card${r.urgent ? ' urgent' : ''}" data-id="${escapeHtml(r.id)}">
@@ -510,6 +548,11 @@
     }));
     host.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => armDelete(b)));
     host.querySelectorAll('.accept-offer-btn').forEach(b => b.addEventListener('click', () => armAccept(b)));
+    host.querySelectorAll('.preview-accept-btn').forEach(b => b.addEventListener('click', () => {
+      const r = S.mine.find(x => x.id === b.dataset.req);
+      const o = r && (r.offers || []).find(x => x.id === b.dataset.offer);
+      if (r && o) previewMineOffer(r, o);
+    }));
   }
 
   /** نفس نمط «تسليح ثم تأكيد» المستخدَم في «طلباتي» بـ`swap.js` — لا نقرة خاطئة تحذف أو تقبل. */
@@ -528,6 +571,22 @@
     }).catch(err => toast(err.message || 'تعذّر الحذف.', true));
   }
 
+  /** الفعلُ المشترَك بين زرّ «قبول» (بعد تسليحه) وزرّ «قبول هذا العرض الآن» داخل معاينة الرزنامة. */
+  function doAcceptOffer(reqId, offerId, btn) {
+    const token = AUH.storage.get('auh_swap_session');
+    if (btn) btn.disabled = true;
+    AUH.data.swapFind.acceptFindOffer(token, reqId, offerId).then(res => {
+      if (btn) btn.disabled = false;
+      if (!res || res.state !== 'ok') { toast((res && res.message) || 'تعذّر قبول العرض.', true); return; }
+      AUH.storage.set(AUTOFILL_KEY, JSON.stringify({
+        fromAbbr: res.fromAbbr, kind: res.kind, shiftDate: res.shiftDate, shiftType: res.shiftType,
+        toAbbr: res.toAbbr, toName: res.toName, backDate: res.backDate, backType: res.backType, urgent: res.urgent
+      }));
+      toast('تمّ! جارٍ تحويلك لإتمام الطلب الرسمي…');
+      setTimeout(() => { global.location.href = 'swap.html'; }, 900);
+    }).catch(err => { if (btn) btn.disabled = false; toast(err.message || 'تعذّر قبول العرض.', true); });
+  }
+
   function armAccept(btn) {
     if (!btn.classList.contains('armed')) {
       btn.classList.add('armed');
@@ -535,17 +594,35 @@
       setTimeout(() => { btn.classList.remove('armed'); btn.innerHTML = '<i class="fas fa-check"></i> قبول'; }, 4000);
       return;
     }
-    const token = AUH.storage.get('auh_swap_session');
-    btn.disabled = true;
-    AUH.data.swapFind.acceptFindOffer(token, btn.dataset.req, btn.dataset.offer).then(res => {
-      if (!res || res.state !== 'ok') { btn.disabled = false; toast((res && res.message) || 'تعذّر قبول العرض.', true); return; }
-      AUH.storage.set(AUTOFILL_KEY, JSON.stringify({
-        fromAbbr: res.fromAbbr, kind: res.kind, shiftDate: res.shiftDate, shiftType: res.shiftType,
-        toAbbr: res.toAbbr, toName: res.toName, backDate: res.backDate, backType: res.backType, urgent: res.urgent
-      }));
-      toast('تمّ! جارٍ تحويلك لإتمام الطلب الرسمي…');
-      setTimeout(() => { global.location.href = 'swap.html'; }, 900);
-    }).catch(err => { btn.disabled = false; toast(err.message || 'تعذّر قبول العرض.', true); });
+    doAcceptOffer(btn.dataset.req, btn.dataset.offer, btn);
+  }
+
+  /**
+   * «رزنامتي» من جهة صاحب الإعلان: يُعاينُ أثرَ **قبول عرضٍ بعينه** قبل أيّ
+   * التزام — مرآةٌ لِـ`openPreview` (التي تُعاين أثرَ *تقديم* عرضٍ)، لكن هنا
+   * مناوبتي المنشورة هي التي تُحذَف دائماً، وما يُضاف (إن كان تبديلاً) هو
+   * ما عرضه الطرف الآخر تحديداً — لا اختيارَ هنا، العرضُ مُحدَّدٌ سلفاً.
+   */
+  function previewMineOffer(r, o) {
+    const removeDuty = { date: r.shiftDate, cat: r.shiftType };
+    const addDuty = (r.kind === 'تبديل' && o.shiftDate) ? { date: o.shiftDate, cat: o.shiftType } : null;
+    const after = dutiesAfter(dutiesOf(S.me), addDuty, removeDuty);
+    const month = (addDuty || removeDuty).date.slice(0, 7);
+    const mi = S.months.indexOf(month);
+
+    $('previewTitle').textContent = addDuty
+      ? `رزنامتك إن قبلتَ تبديل ${escapeHtml(removeDuty.cat)} بـ ${escapeHtml(addDuty.cat)}`
+      : `رزنامتك إن قبلتَ تسليم ${escapeHtml(removeDuty.cat)}`;
+    renderSingleMonth($('previewCal'), $('previewCalT'), mi >= 0 ? mi : S.months.length - 1, after, {
+      added: addDuty ? addDuty.date : null, removed: removeDuty.date
+    });
+
+    $('previewOfferBtn').innerHTML = '<i class="fas fa-check"></i> قبول هذا العرض الآن';
+    $('previewOfferBtn').onclick = () => {
+      $('previewModal').hidden = true;
+      doAcceptOffer(r.id, o.id, null);
+    };
+    $('previewModal').hidden = false;
   }
 
   /* =============================================================== هـ: عروضي */
@@ -642,6 +719,7 @@
       if (b) switchTab(b.dataset.tab);
     });
     $('showAllBtn').addEventListener('click', () => { S.showAll = !S.showAll; renderBrowse(); });
+    $('refreshBtn').addEventListener('click', () => loadAll());
 
     $('subKind').addEventListener('click', e => {
       const b = e.target.closest('button[data-kind]');

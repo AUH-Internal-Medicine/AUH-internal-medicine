@@ -54,6 +54,9 @@ body{margin:0;background:var(--paper);color:var(--ink);
   font-size:12.5px;font-weight:700;color:var(--primary);text-decoration:none}
 .t-link:hover{text-decoration:underline}
 @media(max-width:480px){.t-link{margin-inline-start:0}}
+.t-contacts{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;margin-inline-start:50px}
+.t-contacts .t-link{margin-top:0;margin-inline-start:0}
+@media(max-width:480px){.t-contacts{margin-inline-start:0}}
 
 .foot-note{text-align:center;font-size:12px;color:var(--ink-2);padding:14px 10px 0}
 
@@ -97,9 +100,22 @@ body{margin:0;background:var(--paper);color:var(--ink);
     <ul class="timeline">
       <li class="t-item latest">
         <div class="t-head">
+          <div class="t-icon"><i class="fas fa-address-book"></i></div>
+          <h2 class="t-title">إمكانية إضافة رقم تواصل ثانٍ</h2>
+          <span class="t-new">جديد</span>
+          <span class="t-date num">2026-11-21</span>
+        </div>
+        <p class="t-desc">بات بإمكان كل مقيمٍ تسجيل رقم تواصلٍ ثانٍ إلى جانب رقمه الأساسي. لإضافته، تواصل عبر واتساب أو تلغرام — نفس الأرقام والروابط الموجودة في واجهة «تبديل المناوبات».</p>
+        <div class="t-contacts">
+          <a class="t-link" href="https://wa.me/963983893299" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> واتساب</a>
+          <a class="t-link" href="https://t.me/ALI15cha" target="_blank" rel="noopener"><i class="fab fa-telegram"></i> تلغرام</a>
+        </div>
+      </li>
+
+      <li class="t-item">
+        <div class="t-head">
           <div class="t-icon"><i class="fas fa-clipboard-question"></i></div>
           <h2 class="t-title">استبيان شهر 12</h2>
-          <span class="t-new">جديد</span>
           <span class="t-date num">2026-11-20</span>
         </div>
         <p class="t-desc">استبيانٌ شهريٌّ جديد داخل الموقع — تحديد الأيام التي لا تستطيع المناوبة فيها خلال الشهر القادم مع ذكر السبب، وهل ستأخذ إجازةً أم لا.</p>
