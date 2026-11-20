@@ -253,12 +253,12 @@
        * اتّسخ التبويب؟» لا ينطبق عليه؛ ولأنه لم يكن في مجموعة الاتّساخ
        * أصلاً كان لا يظهر شيءٌ عند أوّل ضغطة.
        *
-       * «استبيان شهر ١١» — حالتُه في الذاكرة لا في البيانات (بوّابةُ الدخول،
+       * «استبيان شهر ١٢» — حالتُه في الذاكرة لا في البيانات (بوّابةُ الدخول،
        * ثم النموذجُ، ثم التأكيد)، فلا شيءَ يُوسّخه من طبقة البيانات. ودالّةُ
        * رسمِه تَحمي نفسَها ببصمةٍ داخلية فلا تُعيد بناءَ النموذجِ على مَن
        * يكتب فيه.
        */
-      const ALWAYS_FRESH = ['emergencymeds', 'survey11'];
+      const ALWAYS_FRESH = ['emergencymeds', 'survey12'];
       if (!opts.force && ALWAYS_FRESH.indexOf(tabId) < 0 && !this._dirtyTabs.has(tabId)) return;
       this._dirtyTabs.delete(tabId);
 
@@ -293,7 +293,7 @@
         case 'emergencymeds':
           if (AUH.views.emergMeds) AUH.views.emergMeds.render();
           break;
-        case 'survey11':
+        case 'survey12':
           if (AUH.views.surveyForm) AUH.views.surveyForm.render();
           break;
         case 'qa':

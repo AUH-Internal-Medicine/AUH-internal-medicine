@@ -1312,6 +1312,15 @@ body.dark-mode .nav-btn.nav-hot.nav-hot-survey{background:var(--ochre);border-co
 body.dark-mode .nav-btn.nav-hot.nav-hot-swap{background:#6a9fd8;border-color:#6a9fd8;color:#161814}
 body.dark-mode .nav-btn.nav-hot.nav-hot-swap i{color:#161814}
 
+.nav-btn.nav-hot.nav-hot-updates{background:#7c3aed;border-color:#7c3aed;color:#fff;
+  box-shadow:0 2px 10px rgba(124,58,237,.3)}
+.nav-btn.nav-hot.nav-hot-updates:hover{background:#6225c4;border-color:#6225c4}
+.nav-btn.nav-hot.nav-hot-updates.active{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.nav-btn.nav-hot.nav-hot-updates::after{border-color:#7c3aed}
+.nav-btn.nav-hot.nav-hot-updates i{color:#fff}
+body.dark-mode .nav-btn.nav-hot.nav-hot-updates{background:#a78bfa;border-color:#a78bfa;color:#161814}
+body.dark-mode .nav-btn.nav-hot.nav-hot-updates i{color:#161814}
+
 /* `color` صريحٌ على الحاويتَين، لا اتّكالاً على الوراثة من body.
    فـ body في هذا الموقع يُبقي لونَه الفاتحَ في الوضع الليلي (قيمةُ
    `--text` عليه ليليّةٌ، ولون نصِّه لا يتبعها) — ولهذا يُصرّح كلُّ مكوّنٍ
@@ -1450,6 +1459,28 @@ select.sf-input{cursor:pointer}
 .sf-chip:hover{border-color:var(--primary);background:var(--primary-soft)}
 .sf-chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
 
+/* ── تقييمُ صعوبة كلِّ الفروز (اختياري، مطويٌّ بزرٍّ) ── */
+.sf-collapse-toggle{display:flex;align-items:center;gap:9px;width:100%;
+  padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--card-bg);color:var(--text);font:700 13px/1.5 var(--display-font);
+  cursor:pointer;min-height:44px;transition:var(--transition-fast)}
+.sf-collapse-toggle:hover{border-color:var(--primary);background:var(--primary-soft)}
+.sf-collapse-toggle i.fa-chevron-down{transition:transform .15s ease;color:var(--text-secondary)}
+.sf-collapse-toggle i.sf-rot{transform:rotate(180deg)}
+.sf-opt{color:var(--text-secondary);font-weight:500;font-size:11.5px}
+.sf-badge-count{margin-inline-start:auto;background:var(--primary);color:#fff;
+  border-radius:var(--radius-full);min-width:20px;height:20px;padding:0 6px;
+  display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+.sf-cat-list{margin-top:11px;display:flex;flex-direction:column;gap:9px}
+/* نفسُ سبب `.sf-cond[hidden]` أعلاه: display على هذا الصنف يُبطل hidden
+   الأصليّة بصمتٍ إن لم يُصرَّح هنا — فيَظهر القسمُ «المطويُّ» مفتوحاً دائماً. */
+.sf-cat-list[hidden]{display:none}
+.sf-cat-row{display:flex;align-items:center;justify-content:space-between;gap:11px;
+  flex-wrap:wrap;padding:9px 11px;background:var(--surface-sunk);border-radius:var(--radius-sm)}
+.sf-cat-name{font-size:12.5px;font-weight:700;color:var(--text);flex:1 1 140px;min-width:0}
+.sf-cat-choices{display:flex;gap:6px;flex-wrap:wrap}
+.sf-chip-sm{padding:6px 12px;min-height:34px;font-size:12px}
+
 /* ── الرزنامة ── */
 .sf-cal{border:1px solid var(--border);border-radius:var(--radius);
   background:var(--surface-sunk);padding:11px;margin-bottom:12px}
@@ -1548,6 +1579,8 @@ select.sf-input{cursor:pointer}
   .sf-sum-row dt{flex:0 0 100%;max-width:100%;font-size:11.5px}
   .sf-sum-row dd{font-size:13.5px}
   .sf-chip{flex:1;justify-content:center}
+  .sf-cat-row{flex-direction:column;align-items:flex-start}
+  .sf-cat-choices .sf-chip{flex:1 1 70px}
 }
 @media(max-width:380px){
   .sf-cal-d,.sf-cal-pad{min-height:42px}

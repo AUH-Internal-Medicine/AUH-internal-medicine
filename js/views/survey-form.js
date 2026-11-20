@@ -1,5 +1,5 @@
 /**
- * «استبيان شهر ١١» — الاستبيانُ الشهريُّ داخلَ الموقع لا في استمارةِ Google.
+ * «استبيان شهر ١٢» — الاستبيانُ الشهريُّ داخلَ الموقع لا في استمارةِ Google.
  *
  * ولماذا نُقل من الاستمارة أصلاً؟ سؤالٌ واحدٌ هو السبب: «الأيامُ التي لا
  * تستطيع المناوبةَ فيها». كان نصّاً حرّاً، فجاء في شيتِ الشهر الماضي **٨٩
@@ -33,11 +33,16 @@
 
   /* ═══════════════════════════ الحالة ═══════════════════════════ */
 
-  /** مسوّدةُ ما يُكتب الآن (قبل الدخول وبعده)، لمقيمٍ واحدٍ على هذا المتصفّح. */
-  const DRAFT_KEY = 'survey_form_draft_v1';
+  /**
+   * مسوّدةُ ما يُكتب الآن (قبل الدخول وبعده)، لمقيمٍ واحدٍ على هذا المتصفّح.
+   * نسخةُ `v2`: شهرُ ١٢ غيّر شكلَ الجوابِ (`categoryDifficulty` بدل
+   * `difficulty` الرقميّة، و`leave` صار إلزاميّاً دائماً) — فمسوّدةُ شهرٍ
+   * سابقٍ بشكلها القديم تُهمَل بدل أن تُقرأ مشوَّهة.
+   */
+  const DRAFT_KEY = 'survey_form_draft_v2';
 
   /** آخرُ جوابٍ **أُرسل فعلاً**، مفهرَساً بالبريد. يَبقى بعد الإرسال لا يُمحى. */
-  const LAST_KEY = 'survey_form_last_v1';
+  const LAST_KEY = 'survey_form_last_v2';
 
   const state = {
     step: 'gate',        // gate · form · sent
@@ -53,17 +58,35 @@
     serverAnswer: null,  // نسخةُ الخادم كما وصلت، ليُستعاد إليها بزرّ
     toppedUpFor: '',     // لمن أُكملت الحقولُ من اللائحة — فلا تُكرَّر عليه
     viewingSaved: false, // بطاقةُ الملخّص تَعرض جواباً مسجَّلاً لا إرسالاً جديداً
+    catOpen: false,      // قسمُ «تقييم كلِّ الفروز» مطويٌّ افتراضاً
     signature: ''        // بصمةُ ما بُني، لمنعِ إعادةِ بناءٍ تَمسح ما كُتب
   };
 
   function blankAnswers() {
     return {
       name: '', abbr: '', phone: '', rotation: '',
-      reliefCount: '', difficulty: '',
+      reliefCount: '', categoryDifficulty: {},
       days: [], reason: '', leave: '',
       notes: '', scheduleRating: '', scheduleProblems: ''
     };
   }
+
+  /**
+   * كلُّ أنواع المناوبات **الحاليّة** (بعد كلِّ دمج) — لقسم «تقييم كلِّ
+   * الفروز». تُقرأ من `AUH.domain.oncallSchedule` نفسِه لا تُكرَّر هنا؛
+   * فإن أُضيف دمجٌ جديد في `MERGE_RULES` سقط طرفاه من هذه القائمة تلقائياً.
+   */
+  function allCategories() {
+    const dom = AUH.domain && AUH.domain.oncallSchedule;
+    if (!dom) return [];
+    const drop = {};
+    (dom.MERGE_RULES || []).forEach(r => (r.parts || []).forEach(p => { drop[p] = true; }));
+    drop['تاني'] = true; // أُعيدت تسميتُها «تاني رجال» + «تاني نساء» (2026-10)
+    return Object.keys(dom.ONCALL_SCHEDULE_NEW || {}).filter(c => !drop[c]);
+  }
+
+  /** القيمُ المقبولةُ لتقييم فرزٍ واحد. */
+  const CAT_DIFFICULTY_VALUES = ['صعب', 'متوسط', 'سهل', 'لم أُفرَز بعد'];
 
   function cfg() {
     return (AUH.config && AUH.config.surveyForm) || {};
@@ -76,7 +99,7 @@
 
   function monthInfo() {
     const c = cfg();
-    const month = Number(c.month) || 11;
+    const month = Number(c.month) || 12;
     const year = Number(c.year) || new Date().getFullYear();
     const days = new Date(year, month, 0).getDate();
     return { month, year, days, label: MONTH_NAMES[month - 1] + ' ' + year };
@@ -84,7 +107,7 @@
 
   function prevMonthInfo() {
     const c = cfg();
-    const month = Number(c.ratedMonth) || 10;
+    const month = Number(c.ratedMonth) || 11;
     return { month, label: MONTH_NAMES[month - 1] };
   }
 
@@ -158,11 +181,19 @@
     if (!d || typeof d !== 'object') return null;
     const maxDay = monthInfo().days;
     const a = blankAnswers();
+    const validCats = {};
+    allCategories().forEach(c => { validCats[c] = true; });
+
     Object.keys(a).forEach(k => {
       if (k === 'days') {
         a.days = Array.isArray(d.days)
           ? d.days.map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= maxDay)
           : [];
+      } else if (k === 'categoryDifficulty') {
+        const src = (d.categoryDifficulty && typeof d.categoryDifficulty === 'object') ? d.categoryDifficulty : {};
+        Object.keys(src).forEach(cat => {
+          if (validCats[cat] && CAT_DIFFICULTY_VALUES.indexOf(src[cat]) >= 0) a.categoryDifficulty[cat] = src[cat];
+        });
       } else if (typeof d[k] === 'string' || typeof d[k] === 'number') {
         a[k] = String(d[k]);
       }
@@ -173,7 +204,7 @@
   function hasContent(a) {
     if (!a) return false;
     return !!(a.name || a.days.length || a.reason || a.notes || a.scheduleProblems ||
-              a.difficulty || a.scheduleRating || a.rotation);
+              Object.keys(a.categoryDifficulty || {}).length || a.scheduleRating || a.rotation);
   }
 
   /* ═════════════════════════ اللائحة ═════════════════════════ */
@@ -568,19 +599,19 @@
     if (String(a.reliefCount).trim() === '' || !Number.isInteger(relief) || relief < 0 || relief > 31) {
       e.reliefCount = 'اكتب رقماً بين 0 و31.';
     }
-    if (!a.difficulty) e.difficulty = 'اختر درجةً من 1 إلى 10.';
     if (!a.scheduleRating) e.scheduleRating = 'اختر درجةً من 1 إلى 10.';
 
-    if (a.days.length) {
-      if (!a.reason.trim()) e.reason = 'ذكرُ السبب إلزاميٌّ عند اختيار أيام — لن يُقبل الطلبُ دونه.';
-      if (a.leave !== 'نعم' && a.leave !== 'لا') e.leave = 'أجِب بنعم أو لا.';
+    if (a.days.length && !a.reason.trim()) {
+      e.reason = 'ذكرُ السبب إلزاميٌّ عند اختيار أيام — لن يُقبل الطلبُ دونه.';
     }
+    // إلزاميٌّ دائماً، بصرف النظر عن اختيار أيّ يوم — بخلاف السبب أعلاه.
+    if (a.leave !== 'نعم' && a.leave !== 'لا') e.leave = 'أجِب بنعم أو لا.';
 
     state.fieldErrors = e;
     return Object.keys(e).length === 0;
   }
 
-  const FIELD_ORDER = ['name', 'phone', 'rotation', 'reliefCount', 'difficulty', 'reason', 'leave', 'scheduleRating'];
+  const FIELD_ORDER = ['name', 'phone', 'rotation', 'reliefCount', 'reason', 'leave', 'scheduleRating'];
 
   function focusFirstError() {
     const first = FIELD_ORDER.find(k => state.fieldErrors[k]);
@@ -634,10 +665,10 @@
       rotation: a.rotation.trim(),
       phone: digitsOnly(a.phone),
       reliefCount: Number(toAscii(a.reliefCount).replace(/[^\d]/g, '')),
-      difficulty: Number(a.difficulty),
+      categoryDifficulty: a.categoryDifficulty,
       days: a.days.slice().sort((x, y) => x - y),
       reason: a.days.length ? a.reason.trim() : '',
-      leave: a.days.length ? a.leave : '',
+      leave: a.leave,
       notes: a.notes.trim(),
       scheduleRating: Number(a.scheduleRating),
       scheduleProblems: a.scheduleProblems.trim()
@@ -655,7 +686,7 @@
       writeLast(state.session.email, JSON.parse(JSON.stringify(state.answers)));
       clearDraft();
       render({ rebuild: true });
-      const host = global.document.getElementById('survey11Host');
+      const host = global.document.getElementById('survey12Host');
       if (host) host.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, err => {
       state.busy = '';
@@ -696,7 +727,7 @@
   /* ═══════════════════════════ الرسم ═══════════════════════════ */
 
   function render(opts) {
-    const host = global.document.getElementById('survey11Host');
+    const host = global.document.getElementById('survey12Host');
     if (!host) return;
 
     // اللائحةُ قد تكون وصلت الآن: نُكمل ما نَقص قبل أن نُقرّر هل نُعيد البناء.
@@ -999,11 +1030,7 @@ ${compact ? '' : answered}`;
       </div>
     </div>
 
-    <div class="sf-field" data-field="difficulty">
-      <label>صعوبةُ الفرز من 10 <span class="sf-req">*</span></label>
-      ${scale('difficulty', a.difficulty, 'سهلٌ جداً', 'صعبٌ جداً')}
-      ${errOf('difficulty')}
-    </div>
+    ${categoryDifficultyBlock()}
   </section>
 
   <!-- ٣ · الأيام -->
@@ -1027,12 +1054,12 @@ ${compact ? '' : answered}`;
         <div class="sf-hint">ذكرُ السبب إلزاميٌّ — لن يُقبل الطلبُ دونه.</div>
         ${errOf('reason')}
       </div>
+    </div>
 
-      <div class="sf-field" data-field="leave">
-        <label>هل ستأخذ إجازةً في الأيام التي لن تُناوب فيها؟ <span class="sf-req">*</span></label>
-        ${yesNo('leave', a.leave)}
-        ${errOf('leave')}
-      </div>
+    <div class="sf-field" data-field="leave">
+      <label>هل ستأخذ إجازةً خلال ${esc(m.label)}؟ <span class="sf-req">*</span></label>
+      ${yesNo('leave', a.leave)}
+      ${errOf('leave')}
     </div>
   </section>
 
@@ -1081,6 +1108,44 @@ ${compact ? '' : answered}`;
   <span class="sf-scale-end">${esc(lowLabel)}</span>
   <div class="sf-scale-row">${cells.join('')}</div>
   <span class="sf-scale-end">${esc(highLabel)}</span>
+</div>`;
+  }
+
+  /**
+   * قسمٌ مطويٌّ اختياريٌّ: تقييمُ صعوبةِ **كلِّ** أنواع المناوبات، لا فرزِ
+   * المقيمِ الحالي وحدَه — فالمالكُ طلب رأيَه في الفروز كلِّها، ومن لم
+   * يُناوب فرزاً بعد يُترك له خيارٌ صريحٌ لذلك بدل أن يُترك الحقلُ فارغاً
+   * بلا تفسير.
+   */
+  function categoryDifficultyBlock() {
+    const a = state.answers;
+    const cats = allCategories();
+    const open = !!state.catOpen;
+    const count = Object.keys(a.categoryDifficulty || {}).length;
+
+    return `
+<div class="sf-field">
+  <button type="button" class="sf-collapse-toggle" id="sfCatToggle" aria-expanded="${open}">
+    <i class="fas fa-chevron-down${open ? ' sf-rot' : ''}" aria-hidden="true"></i>
+    <span>تقييم صعوبة كلِّ الفروز <span class="sf-opt">(اختياري)</span></span>
+    ${count ? `<span class="sf-badge-count">${count}</span>` : ''}
+  </button>
+  <div class="sf-cat-list" id="sfCatList"${open ? '' : ' hidden'}>
+    <p class="sf-note sf-dim">قيِّم أيَّ فرزٍ تعرفه — ولو لم تُناوبه. اختياريٌّ تماماً، واتركْ ما لا تريد تقييمَه بلا إجابة.</p>
+    ${cats.map(cat => catDifficultyRow(cat, a.categoryDifficulty[cat])).join('')}
+  </div>
+</div>`;
+  }
+
+  function catDifficultyRow(cat, value) {
+    const chips = CAT_DIFFICULTY_VALUES.map(v => `
+      <button type="button" class="sf-chip sf-chip-sm${value === v ? ' on' : ''}"
+              data-cat-choice="${esc(cat)}" data-value="${esc(v)}">${esc(v)}</button>
+    `).join('');
+    return `
+<div class="sf-cat-row" data-cat="${esc(cat)}">
+  <span class="sf-cat-name">${esc(cat)}</span>
+  <div class="sf-cat-choices">${chips}</div>
 </div>`;
   }
 
@@ -1210,16 +1275,21 @@ ${compact ? '' : answered}`;
         <dd>${value}</dd>
       </div>`;
 
+    const catEntries = Object.keys(a.categoryDifficulty || {});
+    const catChips = catEntries.map(cat =>
+      `<span class="sf-day-chip">${esc(cat)}: ${esc(a.categoryDifficulty[cat])}</span>`
+    ).join('');
+
     const rows = [
       row('الاسم', esc(a.name)),
       a.abbr ? row('الاختصار', esc(a.abbr)) : '',
       row('فرز شهر ' + p.month, esc(a.rotation)),
       row('عدد التفريغات', esc(a.reliefCount)),
-      row('صعوبة الفرز', `<b>${esc(a.difficulty)}</b> <span class="sf-sum-of">/ 10</span>`),
+      catEntries.length ? row('تقييم صعوبة الفروز', `<div class="sf-sum-days">${catChips}</div>`) : '',
       row('الأيام التي لا تستطيع المناوبة فيها',
           `<div class="sf-sum-days">${dayChips}</div>`, 'key'),
       a.days.length ? row('السبب', esc(a.reason)) : '',
-      a.days.length ? row('إجازة في تلك الأيام', esc(a.leave)) : '',
+      row('إجازة خلال ' + m.label, esc(a.leave)),
       row('تقييم رزنامة شهر ' + p.month,
           `<b>${esc(a.scheduleRating)}</b> <span class="sf-sum-of">/ 10</span>`),
       a.scheduleProblems ? row('مشاكل الرزنامة', esc(a.scheduleProblems)) : '',
@@ -1365,6 +1435,42 @@ ${compact ? '' : answered}`;
       });
     });
 
+    /* تقييمُ كلِّ الفروز — قسمٌ مطويٌّ اختياري */
+    const catToggle = host.querySelector('#sfCatToggle');
+    if (catToggle) {
+      catToggle.addEventListener('click', () => {
+        state.catOpen = !state.catOpen;
+        render({ rebuild: true });
+      });
+    }
+
+    host.querySelectorAll('[data-cat-choice]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = btn.getAttribute('data-cat-choice');
+        const val = btn.getAttribute('data-value');
+        const cur = state.answers.categoryDifficulty[cat];
+        if (cur === val) delete state.answers.categoryDifficulty[cat];
+        else state.answers.categoryDifficulty[cat] = val;
+        saveDraft();
+        const row = btn.closest('.sf-cat-row');
+        if (row) {
+          row.querySelectorAll('.sf-chip').forEach(b => b.classList.remove('on'));
+          if (cur !== val) btn.classList.add('on');
+        }
+        const toggle = host.querySelector('#sfCatToggle');
+        if (toggle) {
+          const n = Object.keys(state.answers.categoryDifficulty).length;
+          let badge = toggle.querySelector('.sf-badge-count');
+          if (n && !badge) {
+            badge = global.document.createElement('span');
+            badge.className = 'sf-badge-count';
+            toggle.appendChild(badge);
+          }
+          if (badge) { if (n) badge.textContent = String(n); else badge.remove(); }
+        }
+      });
+    });
+
     /* الرزنامة */
     const cal = host.querySelector('#sfCal');
     if (cal) {
@@ -1456,7 +1562,6 @@ ${compact ? '' : answered}`;
 
     if (!state.answers.days.length) {
       delete state.fieldErrors.reason;
-      delete state.fieldErrors.leave;
     }
   }
 

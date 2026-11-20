@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>آخر التحديثات — قسم الأمراض الداخلية</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔔</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f7f5f0; --surface:#fff; --surface-sunk:#f1efe9; --ink:#15181b; --ink-2:#5d6670;
+  --rule:#e2ded4; --primary:#1f6b4f; --primary-strong:#17553e; --primary-soft:#e8f1ec;
+  --radius:12px; --radius-lg:18px;
+  --shadow-md:0 6px 20px rgba(20,24,28,.08); --shadow-lg:0 18px 44px rgba(20,24,28,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:15px;line-height:1.75;
+  -webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
+
+.hero{position:relative;overflow:hidden;color:#fff;padding:48px 20px 56px;text-align:center;
+  background:linear-gradient(165deg,var(--primary-strong),#0e3b2a)}
+.hero h1{margin:0;font-size:clamp(1.6em,4.6vw,2.2em);font-weight:700}
+.hero p{margin:12px auto 0;max-width:520px;font-size:1.02em;color:#d9ebe1}
+.hero .back{position:absolute;top:16px;inset-inline-start:16px;display:inline-flex;align-items:center;gap:7px;
+  color:#fff;text-decoration:none;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:7px 14px}
+.hero .back:hover{background:rgba(255,255,255,.24)}
+
+.wrap{max-width:760px;margin:0 auto;padding:0 18px 70px}
+.section{margin-top:-26px;position:relative;z-index:2}
+
+.timeline{list-style:none;margin:0;padding:0}
+.t-item{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);padding:22px 24px;margin-bottom:18px;position:relative;
+  border-inline-start:5px solid var(--rule)}
+.t-item.latest{border-inline-start-color:var(--primary)}
+.t-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.t-icon{flex:0 0 auto;width:38px;height:38px;border-radius:50%;background:var(--primary-soft);
+  color:var(--primary-strong);display:grid;place-items:center;font-size:15px}
+.t-item.latest .t-icon{background:var(--primary);color:#fff}
+.t-title{font-size:16px;font-weight:700;margin:0}
+.t-date{margin-inline-start:auto;font-size:11.5px;color:var(--ink-2);background:var(--surface-sunk);
+  border-radius:999px;padding:4px 11px;white-space:nowrap}
+.t-new{font-size:10px;font-weight:700;color:#fff;background:var(--primary);border-radius:999px;
+  padding:2px 9px;letter-spacing:.3px}
+.t-desc{margin:0 0 0 50px;font-size:13.5px;color:var(--ink-2);line-height:1.8}
+@media(max-width:480px){.t-desc{margin-inline-start:0}}
+.t-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;margin-inline-start:50px;
+  font-size:12.5px;font-weight:700;color:var(--primary);text-decoration:none}
+.t-link:hover{text-decoration:underline}
+@media(max-width:480px){.t-link{margin-inline-start:0}}
+
+.foot-note{text-align:center;font-size:12px;color:var(--ink-2);padding:14px 10px 0}
+
+/* لقطةٌ حقيقية من واجهة «مناوبو نفس الفرز» — نفس ألوان/مكوّنات الموقع
+   الفعلية (oncall-raw-modal-head / shift-group-save-btn في styles.css)،
+   لا تصويرٌ تقريبيّ. */
+.mock-frame{border:1px solid var(--rule);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-md);
+  background:#fff;margin:14px 0 6px}
+.mock-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#ece9e2;border-bottom:1px solid var(--rule)}
+.mock-bar .dot{width:9px;height:9px;border-radius:50%;background:#d7d2c6}
+.mock-bar .dot:first-child{background:#e2938c}
+.mock-bar .dot:nth-child(2){background:#e3c988}
+.mock-bar .dot:nth-child(3){background:#9bc99f}
+.mock-bar .url{margin-inline-start:10px;font-size:11px;color:var(--ink-2);background:#fff;border:1px solid var(--rule);
+  border-radius:999px;padding:3px 12px;font-family:monospace;direction:ltr}
+.sg-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 15px;
+  background:linear-gradient(135deg,#6a3fb0,#8a5fd1)}
+.sg-head h4{margin:0;font-size:14px;display:flex;align-items:center;gap:7px;color:#fff;font-weight:700}
+.sg-btns{display:flex;gap:8px;align-items:center}
+.sg-btn{width:34px;height:34px;border-radius:8px;background:#f3f6f4;color:#5c6b63;display:grid;place-items:center;
+  font-size:13px;border:1px solid rgba(0,0,0,.05)}
+.sg-btn-x{background:rgba(255,255,255,.2);color:#fff;border-radius:50%}
+.sg-callout-row{display:flex;gap:8px;align-items:flex-start;justify-content:flex-end;padding:8px 15px 14px;
+  background:var(--surface-sunk)}
+.sg-callout-slot{flex:0 0 34px;display:flex;justify-content:center}
+.sg-callout{position:relative;white-space:nowrap;background:var(--primary);color:#fff;font-size:11px;font-weight:700;
+  padding:6px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;margin-inline-start:-110px}
+.sg-callout i{font-size:11px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <a class="back" href="index.html"><i class="fas fa-arrow-right"></i> الموقع الرئيسي</a>
+  <h1><i class="fas fa-bell"></i> آخر التحديثات</h1>
+  <p>كل ما استُحدث بالموقع مؤخراً، بترتيب الأحدث أولاً.</p>
+</header>
+
+<div class="wrap">
+  <div class="section">
+    <ul class="timeline">
+      <li class="t-item latest">
+        <div class="t-head">
+          <div class="t-icon"><i class="fas fa-clipboard-question"></i></div>
+          <h2 class="t-title">استبيان شهر 12</h2>
+          <span class="t-new">جديد</span>
+          <span class="t-date num">2026-11-20</span>
+        </div>
+        <p class="t-desc">استبيانٌ شهريٌّ جديد داخل الموقع — تحديد الأيام التي لا تستطيع المناوبة فيها خلال الشهر القادم مع ذكر السبب، وهل ستأخذ إجازةً أم لا.</p>
+        <a class="t-link" href="index.html#survey12"><i class="fas fa-arrow-left"></i> افتح الاستبيان</a>
+      </li>
+
+      <li class="t-item">
+        <div class="t-head">
+          <div class="t-icon"><i class="fas fa-magnifying-glass"></i></div>
+          <h2 class="t-title">البحث عن بديل</h2>
+          <span class="t-date num">2026-11-17</span>
+        </div>
+        <p class="t-desc">واجهةٌ جديدة تساعدك على العثور على بديلٍ لمناوبتك — تنشر إعلاناً بمناوبتك أو تتصفّح من يحتاج مساعدة، وعند الاتفاق تُنقَل تلقائياً لتأكيد الطلب الرسمي.</p>
+        <a class="t-link" href="swap-find-guide.html"><i class="fas fa-arrow-left"></i> اعرف كيف تعمل</a>
+      </li>
+
+      <li class="t-item">
+        <div class="t-head">
+          <div class="t-icon"><i class="fas fa-right-left"></i></div>
+          <h2 class="t-title">تبديل المناوبات على الموقع</h2>
+          <span class="t-date num">2026-11-07</span>
+        </div>
+        <p class="t-desc">حسابٌ خاصٌّ لكل مقيم، وتقديم طلبات تبديل أو شيل مناوبة مباشرةً من الموقع — تصل الطلبات إلى الأدمن للاعتماد فوراً.</p>
+        <a class="t-link" href="swap.html"><i class="fas fa-arrow-left"></i> افتح تبديل</a>
+      </li>
+
+      <li class="t-item">
+        <div class="t-head">
+          <div class="t-icon"><i class="fas fa-file-pdf"></i></div>
+          <h2 class="t-title">تقرير شهري لمناوبي نفس الفرز</h2>
+          <span class="t-date num">2026-11-16</span>
+        </div>
+        <p class="t-desc">من «مناوبو نفس الفرز»، ملفٌّ واحد قابلٌ للطباعة يُظهر عدد المناوبين واسم كلّ واحدٍ منهم في كل يومٍ من أيام الشهر.</p>
+
+        <div class="mock-frame">
+          <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url">index.html — المناوبات</span></div>
+          <div class="sg-head">
+            <h4><i class="fas fa-people-group"></i> مناوبو نفس الفرز</h4>
+            <div class="sg-btns">
+              <span class="sg-btn"><i class="fas fa-camera"></i></span>
+              <span class="sg-btn sg-btn-target"><i class="fas fa-file-lines"></i></span>
+              <span class="sg-btn sg-btn-x"><i class="fas fa-xmark"></i></span>
+            </div>
+          </div>
+          <div class="sg-callout-row">
+            <span class="sg-callout-slot"></span>
+            <span class="sg-callout-slot"><span class="sg-callout"><i class="fas fa-arrow-up"></i> هذا الزرّ — تقرير شهري PDF</span></span>
+            <span class="sg-callout-slot"></span>
+          </div>
+        </div>
+
+        <a class="t-link" href="index.html#oncall"><i class="fas fa-arrow-left"></i> افتح المناوبات</a>
+      </li>
+
+      <li class="t-item">
+        <div class="t-head">
+          <div class="t-icon"><i class="fas fa-users-rectangle"></i></div>
+          <h2 class="t-title">زرّ «مناوبو نفس الفرز»</h2>
+          <span class="t-date num">2026-11-14</span>
+        </div>
+        <p class="t-desc">يعرض كل من يشاركك فرزك نفسه، ومناوباتهم خلال الشهر — مفيدٌ للتنسيق المباشر معهم.</p>
+        <a class="t-link" href="index.html#oncall"><i class="fas fa-arrow-left"></i> افتح المناوبات</a>
+      </li>
+    </ul>
+    <p class="foot-note">هذه قائمةٌ مختصرة بأبرز التحديثات — لا تفصيلاً كاملاً. لأي استفسار، راجع «روابط هامة» في الصفحة الرئيسية.</p>
+  </div>
+</div>
+
+</body>
+</html>

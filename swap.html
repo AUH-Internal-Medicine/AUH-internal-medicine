@@ -40,6 +40,23 @@ body{margin:0;background:var(--paper);color:var(--ink);
 .hero .pill{margin-top:16px;display:inline-flex;align-items:center;gap:8px;padding:8px 15px;
   background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);border-radius:999px;
   font-size:12.5px;backdrop-filter:blur(6px)}
+.hero .back-main{position:absolute;top:16px;inset-inline-start:16px;z-index:2;display:inline-flex;
+  align-items:center;gap:7px;color:#fff;text-decoration:none;font-size:12.5px;font-weight:600;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:999px;
+  padding:7px 14px;backdrop-filter:blur(6px)}
+.hero .back-main:hover{background:rgba(255,255,255,.26)}
+/* زرّ «البحث عن بديل» — لونٌ مغايرٌ تماماً لأخضر الهوية البصرية عمداً، ونبضةٌ لطيفة تلفت الانتباه بعد تسجيل الدخول. */
+.hero-find-cta{margin-top:16px;display:inline-flex;align-items:center;gap:10px;padding:11px 22px;
+  border-radius:999px;background:linear-gradient(90deg,#e8a33d,#df5f2c);color:#fff;text-decoration:none;
+  font-size:13.5px;font-weight:700;box-shadow:0 6px 18px rgba(223,95,44,.4);
+  animation:find-cta-pulse 2.4s ease-in-out infinite}
+.hero-find-cta:hover{background:linear-gradient(90deg,#edb157,#e97339);transform:translateY(-1px)}
+.hero-find-cta[hidden]{display:none}
+@keyframes find-cta-pulse{
+  0%,100%{box-shadow:0 6px 18px rgba(223,95,44,.4)}
+  50%{box-shadow:0 8px 28px rgba(223,95,44,.68)}
+}
+@media(max-width:560px){.hero .back-main{position:static;display:inline-flex;margin-bottom:14px}}
 
 /* ------------------------------------------------------------------ layout */
 .wrap{max-width:940px;margin:0 auto;padding:22px 16px 70px}
@@ -389,7 +406,22 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .foot{text-align:center;font-size:12px;color:var(--ink-2);padding:8px 16px 0}
 .resp-note{background:#fdf1d6;border:1px solid #e8d49a;color:#6b5420;border-radius:var(--radius);
   padding:10px 14px;font-size:12.5px;display:flex;gap:9px;align-items:flex-start;line-height:1.6}
+.resp-note[hidden]{display:none}
 .resp-note i{margin-top:2px;flex:0 0 auto}
+
+/* إشعار إطلاق «البحث عن بديل» — فوق كل شيء، حتى بوّابة الدخول، ليراه الجميع */
+.feature-banner{position:fixed;top:0;inset-inline:0;z-index:320;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(90deg,var(--primary-strong),#2a5a8c);color:#fff;padding:10px 16px;
+  font-size:12.8px;box-shadow:var(--shadow-lg)}
+.feature-banner[hidden]{display:none}
+.fb-link{flex:1;display:flex;align-items:center;gap:9px;color:#fff;text-decoration:none;min-width:0}
+.fb-link b{font-weight:800;background:rgba(255,255,255,.22);padding:2px 9px;border-radius:999px;font-size:11px;flex:none}
+.fb-link .fb-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fb-link .fb-arrow{margin-inline-start:auto;flex:none;font-size:11px}
+.fb-close{flex:none;background:rgba(255,255,255,.18);border:0;color:#fff;width:25px;height:25px;border-radius:50%;
+  cursor:pointer;font-size:10.5px}
+.fb-close:hover{background:rgba(255,255,255,.32)}
+@media(max-width:560px){.fb-link .fb-txt{white-space:normal}}
 .agree-check.missing span{color:var(--signal)}
 .sent{text-align:center;padding:34px 20px}
 .sent i{font-size:52px;color:var(--primary)}
@@ -454,6 +486,10 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 .auth-help-note a:hover{text-decoration:underline}
 .auth-help-note a .fa-whatsapp{color:#25D366}
 .auth-help-note a .fa-telegram{color:#229ED9}
+.auth-feature-note{background:#fdf1e2;border-color:#f0cfa0;color:#7a4e14}
+.auth-feature-note i.fa-magnifying-glass{color:#df5f2c}
+.auth-feature-note b{color:#b84a1e}
+.auth-feature-note a{color:#b84a1e}
 .pw-save-note{margin:6px 2px 0;font-size:11.5px;color:var(--signal);display:flex;gap:6px;align-items:flex-start;line-height:1.5}
 .auth-error{background:var(--signal-soft);border:1px solid #f0cfcb;color:var(--signal);border-radius:var(--radius);
   padding:9px 12px;font-size:12.5px;margin-bottom:12px}
@@ -475,6 +511,15 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 </head>
 <body>
 
+<div class="feature-banner" id="featureBanner" hidden>
+  <a class="fb-link" href="swap-find-guide.html">
+    <b>جديد</b>
+    <span class="fb-txt"><i class="fas fa-magnifying-glass"></i> واجهةٌ جديدة تساعدك على العثور على بديلٍ لمناوبتك — «البحث عن بديل». اعرف كيف تعمل</span>
+    <i class="fas fa-arrow-left fb-arrow"></i>
+  </a>
+  <button type="button" class="fb-close" id="featureBannerClose" title="إغلاق"><i class="fas fa-xmark"></i></button>
+</div>
+
 <div class="auth-overlay" id="authGate" hidden>
   <div class="auth-card">
     <div class="auth-head">
@@ -490,6 +535,13 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
     <div class="auth-tabs">
       <button type="button" id="authTabLogin" class="on">تسجيل دخول</button>
       <button type="button" id="authTabRegister">حساب جديد</button>
+    </div>
+
+    <div class="auth-help-note auth-feature-note">
+      <i class="fas fa-magnifying-glass"></i>
+      <b>جديد:</b> بعد تسجيل الدخول، تستطيع استخدام «البحث عن بديل» — تساعدك على العثور على
+      من يأخذ مناوبتك أو يبدّلها معك، دون أن تعرف الطرف الآخر مسبقاً. نفس حسابك هنا بالضبط.
+      <a href="swap-find-guide.html">اعرف كيف تعمل <i class="fas fa-arrow-left"></i></a>
     </div>
 
     <div class="auth-help-note">
@@ -610,11 +662,17 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 
 <header class="hero">
   <img class="hero-bg" src="bg.webp" alt="" onerror="this.src='bg.png'">
+  <a class="back-main" href="index.html"><i class="fas fa-arrow-right"></i> الموقع الرئيسي</a>
   <h1>طلب تبديل أو شيل مناوبة</h1>
   <div class="sub">السنة الأولى</div>
   <div class="dept">قسم الأمراض الداخلية — مشفى حلب الجامعي</div>
   <div class="pill"><i class="fas fa-circle-info"></i> اختر الاسم، ثم المناوبة من الرزنامة — والنظام يمنع أي تبديل يخالف القواعد</div>
   <div id="authWhoBadge" hidden></div>
+  <a class="hero-find-cta" id="heroFindCta" href="swap-find-guide.html" hidden>
+    <i class="fas fa-magnifying-glass"></i>
+    <span>جديد — ابحث عن بديلٍ لمناوبتك</span>
+    <i class="fas fa-arrow-left"></i>
+  </a>
 </header>
 
 <div class="img-modal" id="changePassModal" hidden>
@@ -651,6 +709,10 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
     <div class="resp-note" id="adminModeBanner" hidden style="background:#e3edf7;border-color:#c7d9ec;color:#1f466e">
       <i class="fas fa-user-shield"></i>
       <span>وضعُ الأدمن — أنت تُقدِّم هذا الطلب نيابةً عن أحد الطرفين (أو كليهما) لتعذُّر تقديمه بنفسه. اختر صاحب المناوبة الأصلية من الخطوة ٢ كما تختار الطرف الآخر من الخطوة ٤ تماماً، وسيُسجَّل الطلب <b>«يدويّ من الأدمن»</b>.</span>
+    </div>
+    <div class="resp-note" style="background:var(--ochre-soft);border-color:#efdfba;color:#6b4f13">
+      <i class="fas fa-clock"></i>
+      <span><b>قدِّم الطلب قبل المناوبة بوقتٍ كافٍ</b> — يحتاج الأدمن وقتاً لمراجعته واعتماده قبل حدوث المناوبة. لا يجوز تقديم الطلب قبل ساعاتٍ فقط من موعدها.</span>
     </div>
     <!-- 1 ----------------------------------------------------------------->
     <section class="card step" id="s1">
@@ -835,6 +897,7 @@ input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
 <script src="js/domain/oncall-schedule.js?v=__BUILD_ID__" defer></script>
 <script src="js/domain/oncall-adjustments.js?v=__BUILD_ID__" defer></script>
 <script src="js/domain/doctor-stats.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/swap-rules.js?v=__BUILD_ID__" defer></script>
 <div class="img-modal" id="imgModal" hidden>
   <div class="img-box" role="dialog" aria-modal="true" aria-label="معاينة صورة الجدول">
     <div class="img-head">

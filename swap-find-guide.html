@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>دليل البحث عن بديل — قسم الأمراض الداخلية</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f7f5f0; --surface:#fff; --surface-sunk:#f1efe9; --ink:#15181b; --ink-2:#5d6670;
+  --rule:#e2ded4; --primary:#1f6b4f; --primary-strong:#17553e; --primary-soft:#e8f1ec;
+  --signal:#c0392b; --signal-soft:#fbeceb; --blue:#2a5a8c; --blue-soft:#e3edf7;
+  --radius:12px; --radius-lg:18px;
+  --shadow-md:0 6px 20px rgba(20,24,28,.08); --shadow-lg:0 18px 44px rgba(20,24,28,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:15px;line-height:1.75;
+  -webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
+
+.hero{position:relative;overflow:hidden;color:#fff;padding:50px 20px 60px;text-align:center;
+  background:linear-gradient(165deg,var(--primary-strong),#0e3b2a)}
+.hero h1{margin:0;font-size:clamp(1.6em,4.6vw,2.2em);font-weight:700}
+.hero p{margin:12px auto 0;max-width:560px;font-size:1.02em;color:#d9ebe1}
+.hero .back{display:inline-flex;align-items:center;gap:7px;margin-top:22px;color:#fff;text-decoration:none;
+  font-size:13px;font-weight:600;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);
+  border-radius:999px;padding:8px 16px}
+.hero .back:hover{background:rgba(255,255,255,.22)}
+
+.wrap{max-width:900px;margin:0 auto;padding:0 18px 70px}
+.section{margin-top:-28px;position:relative;z-index:2}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);padding:26px 26px 28px;margin-bottom:22px}
+h2.sec-title{margin:0 0 6px;font-size:1.3em;display:flex;align-items:center;gap:10px}
+h2.sec-title i{color:var(--primary)}
+.sec-sub{margin:0 0 20px;color:var(--ink-2);font-size:13.5px}
+
+/* مقارنة الواجهتين */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:680px){.compare{grid-template-columns:1fr}}
+.compare .col{border:1px solid var(--rule);border-radius:var(--radius);padding:18px;background:var(--surface-sunk)}
+.compare .col.highlight{border-color:var(--primary);background:var(--primary-soft)}
+.compare .col h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+.compare .col h3 i{font-size:13px}
+.compare .col.highlight h3{color:var(--primary-strong)}
+.compare .col p{margin:8px 0 0;font-size:13px;color:var(--ink-2)}
+.compare .col ul{margin:10px 0 0;padding-inline-start:18px;font-size:12.8px;color:var(--ink-2)}
+.compare .col li{margin:4px 0}
+.compare .go{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;font-weight:700;
+  padding:8px 14px;border-radius:999px;text-decoration:none}
+.compare .col:not(.highlight) .go{background:var(--surface);border:1px solid var(--rule);color:var(--ink)}
+.compare .col.highlight .go{background:var(--primary);color:#fff}
+
+/* خطوات مرقّمة */
+.steps{counter-reset:step}
+.step{display:grid;grid-template-columns:40px 1fr;gap:16px;padding:20px 0;border-top:1px solid var(--rule)}
+.step:first-child{border-top:0;padding-top:4px}
+.step .num-badge{width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:14px}
+.step h3{margin:0 0 6px;font-size:15px}
+.step p{margin:0 0 12px;font-size:13.3px;color:var(--ink-2)}
+
+/* إطارٌ يشبه نافذة متصفّح — لعرض «لقطات» الواجهة الحقيقية بأمانةٍ بصريّة */
+.mock-frame{border:1px solid var(--rule);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-md);background:#fff}
+.mock-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#ece9e2;border-bottom:1px solid var(--rule)}
+.mock-bar .dot{width:9px;height:9px;border-radius:50%;background:#d7d2c6}
+.mock-bar .dot:first-child{background:#e2938c}
+.mock-bar .dot:nth-child(2){background:#e3c988}
+.mock-bar .dot:nth-child(3){background:#9bc99f}
+.mock-bar .url{margin-inline-start:10px;font-size:11px;color:var(--ink-2);background:#fff;border:1px solid var(--rule);
+  border-radius:999px;padding:3px 12px;font-family:monospace;direction:ltr}
+.mock-body{padding:16px;background:var(--paper)}
+.mock-label{position:absolute;top:10px;inset-inline-end:10px;background:var(--ochre,#b8862b);color:#fff;font-size:10px;
+  font-weight:700;padding:2px 9px;border-radius:999px}
+
+/* إعادة استخدام نفس مكوّنات swap-find.html حرفياً داخل الإطار */
+.m-tabs{display:flex;gap:5px;background:var(--surface-sunk);border:1px solid var(--rule);border-radius:999px;
+  padding:4px;margin-bottom:12px;font-size:10.5px}
+.m-tabs span{flex:1;text-align:center;padding:6px 4px;border-radius:999px;font-weight:700;color:var(--ink-2)}
+.m-tabs span.on{background:var(--primary);color:#fff}
+.m-card{border:1px solid var(--rule);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;font-size:11.5px}
+.m-card.urgent{border-inline-start:3px solid var(--signal)}
+.m-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;display:inline-block}
+.m-badge.shel{background:var(--primary-soft);color:var(--primary-strong)}
+.m-badge.swap{background:var(--blue-soft);color:var(--blue)}
+.m-badge.urgent{background:var(--signal-soft);color:var(--signal)}
+.m-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.m-who{font-weight:700;margin-inline-start:auto;font-size:11px}
+.m-what{color:var(--ink-2);font-size:11px}
+.m-btns{display:flex;gap:6px;margin-top:8px}
+.m-btn{font-size:10px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--rule);background:#fff}
+.m-btn.primary{background:var(--primary);color:#fff;border:0}
+.m-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.m-day{height:30px;border:1px solid var(--rule);border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:var(--ink-2);background:#fff}
+.m-day.blocked{background:#fdf2f1;border-color:#f0c9c4;color:var(--signal)}
+.m-day.pick{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-strong);font-weight:700}
+.m-day.added{background:var(--primary);color:#fff;font-weight:700}
+.m-day.removed{background:var(--signal-soft);border-color:var(--signal);color:var(--signal);font-weight:700}
+.mock-caption{font-size:11.5px;color:var(--ink-2);text-align:center;margin-top:9px}
+
+.note{margin:0;background:#fdf1d6;border:1px solid #e8d49a;color:#6b5420;border-radius:var(--radius);
+  padding:12px 15px;font-size:13px;display:flex;gap:10px;align-items:flex-start;line-height:1.7}
+.note i{margin-top:2px}
+.note.ok{background:var(--primary-soft);border-color:#cfe3d8;color:#1d5c41}
+
+.cta{text-align:center;padding:10px 10px 4px}
+.cta .btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 30px;border:0;border-radius:999px;
+  background:var(--primary);color:#fff;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;
+  text-decoration:none;box-shadow:var(--shadow-md);transition:all .15s}
+.cta .btn:hover{background:var(--primary-strong);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.cta p{margin:14px 0 0;font-size:12px;color:var(--ink-2)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1><i class="fas fa-magnifying-glass"></i> دليل البحث عن بديل</h1>
+  <p>واجهةٌ جديدة تساعدك على العثور على بديلٍ لمناوبتك — تسبق الطلب الرسمي ولا تُلغيه، ولا تغيّر شيئاً فيما تعرفه أصلاً عن «تبديل».</p>
+  <a class="back" href="swap.html"><i class="fas fa-arrow-left"></i> رجوعٌ إلى تبديل</a>
+</header>
+
+<div class="wrap">
+  <div class="section">
+    <div class="card">
+      <h2 class="sec-title"><i class="fas fa-code-compare"></i> ما الفرق بين الواجهتين؟</h2>
+      <p class="sec-sub">لم تتغيّر واجهة «تبديل» الحالية بأي شيء — هذه إضافةٌ جديدة تماماً تعمل بجانبها، لمن لا يعرف بعدُ مع من سيُبدِّل.</p>
+
+      <div class="compare">
+        <div class="col">
+          <h3><i class="fas fa-right-left"></i> تبديل (الحالية)</h3>
+          <p>تعرف الطرف الآخر مسبقاً، واتّفقتما خارج الموقع.</p>
+          <ul>
+            <li>تختار اسمه مباشرةً من اللائحة</li>
+            <li>تُقرّ أنك أخذت موافقته فعلاً</li>
+            <li>يصل الطلب للأدمن للاعتماد فوراً</li>
+          </ul>
+          <a class="go" href="swap.html"><i class="fas fa-arrow-left"></i> افتح تبديل</a>
+        </div>
+        <div class="col highlight">
+          <h3><i class="fas fa-magnifying-glass"></i> البحث عن بديل (جديدة)</h3>
+          <p>لا تعرف بعدُ من سيوافق — تريد نشر ما لديك أو تصفّح من يحتاج مساعدة.</p>
+          <ul>
+            <li>تنشر إعلاناً، أو تتصفّح إعلانات الآخرين</li>
+            <li>تجمع عروضاً وتختار الأنسب</li>
+            <li>عند القبول، تُنقَل تلقائياً إلى «تبديل» لإتمام الطلب</li>
+          </ul>
+          <a class="go" href="swap-find.html"><i class="fas fa-arrow-left"></i> افتح البحث عن بديل</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="sec-title"><i class="fas fa-list-ol"></i> كيف يعمل، خطوةً بخطوة</h2>
+      <p class="sec-sub">أربع لقطاتٍ من الواجهة الحقيقية نفسها، بترتيب الاستخدام.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="num-badge">1</div>
+          <div>
+            <h3>انشر ما لديك، أو تصفّح ما يناسبك</h3>
+            <p>تظهر أولاً الإعلانات التي <b>تستطيع أنت تلبيتها فعلياً</b> حسب جدولك الحقيقي — والعاجلة منها أولاً. زرٌّ واحد يكشف البقية.</p>
+            <div class="mock-frame">
+              <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="url">swap-find.html</span></div>
+              <div class="mock-body">
+                <div class="m-tabs"><span class="on">يمكنني تلبيتها (٢)</span><span>إعلانٌ جديد</span><span>إعلاناتي</span><span>عروضي</span></div>
+                <div class="m-card urgent">
+                  <div class="m-row"><span class="m-badge shel">شيل</span><span class="m-badge urgent">عاجل</span><span class="m-who">د. سامر خ.</span></div>
+                  <div class="m-what">يعرض: رابع — الأربعاء <span class="num">23/11</span> — السبب: سفر</div>
+                  <div class="m-btns"><span class="m-btn"><i class="fas fa-eye"></i> رزنامتي في حال الشيل</span><span class="m-btn primary"><i class="fas fa-handshake"></i> أعرض المساعدة</span></div>
+                </div>
+                <div class="m-card">
+                  <div class="m-row"><span class="m-badge swap">تبديل</span><span class="m-who">د. لينا ع.</span></div>
+                  <div class="m-what">يعرض: سابع — الأحد <span class="num">08/11</span> — يقبل: أيّ يومٍ وأيّ نوع</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="num-badge">2</div>
+          <div>
+            <h3>عند نشر إعلان «تبديل»، يمنعك النظام من ستريبٍ قبل أن يحدث</h3>
+            <p>تختار مناوبتك، ثم الأيام التي تقبل التبديل إليها — وأيُّ يومٍ يسبّب تعارضاً مع جدولك الحقيقي <b>يظهر معطَّلاً من الأساس</b>، لا بعد تقديم الطلب.</p>
+            <div class="mock-frame">
+              <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="url">swap-find.html</span></div>
+              <div class="mock-body">
+                <div class="m-what" style="margin-bottom:6px">الأيام التي تقبل التبديل إليها — تشرين الثاني 2026</div>
+                <div class="m-cal">
+                  <div class="m-day">15</div><div class="m-day pick">16</div><div class="m-day blocked" title="مناوبة في اليوم التالي">17</div>
+                  <div class="m-day blocked" title="مناوبة في نفس اليوم">18</div><div class="m-day blocked" title="مناوبة في اليوم السابق">19</div>
+                  <div class="m-day pick">20</div><div class="m-day pick">23</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="num-badge">3</div>
+          <div>
+            <h3>قبل أن تعرض المساعدة — عاين النتيجة</h3>
+            <p>«رزنامتي في حال التبديل/الشيل» تُريك جدولك الشخصي <b>بعد</b> التنفيذ فعلياً: المناوبة المضافة بالأخضر، والمُسلَّمة بالأحمر — قبل أي التزام.</p>
+            <div class="mock-frame">
+              <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="url">swap-find.html</span></div>
+              <div class="mock-body">
+                <div class="m-what" style="margin-bottom:6px">رزنامتك إن بدّلت ديال بـ سابع — تشرين الثاني 2026</div>
+                <div class="m-cal">
+                  <div class="m-day">6</div><div class="m-day">7</div><div class="m-day removed">9</div><div class="m-day added">8</div>
+                  <div class="m-day">12</div><div class="m-day">15</div><div class="m-day">21</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="num-badge">4</div>
+          <div>
+            <h3>قبولُك لعرضٍ على إعلانك — ينقلك أنت تلقائياً للتأكيد النهائي</h3>
+            <p>قد يصلك أكثر من عرض على إعلانك — راجعها في «إعلاناتي». بمجرّد أن <b>تقبل أنت</b> عرضاً واحداً، تُقفَل البقية تلقائياً، وتُنقَل أنت فوراً إلى <b>نموذج تبديل</b> نفسه مُعبَّأً بالكامل — لا يبقى عليك إلا الإقرار والإرسال.
+              إن كان العرضُ المقبول عرضاً <b>أنت قدّمتَه</b> على إعلان شخصٍ آخر، فصاحب الإعلان هو من يُنقَل حينها، لا أنت — تتابع أنت النتيجة من «عروضي».</p>
+            <div class="mock-frame">
+              <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="url">swap.html</span></div>
+              <div class="mock-body">
+                <div class="note ok" style="margin-bottom:10px;font-size:11.5px;padding:9px 12px">
+                  <i class="fas fa-handshake"></i> عُبِّئ هذا الطلب تلقائياً من عرضٍ قبلتَه في واجهة البحث عن بديل — راجع التفاصيل أدناه ثم أكمل الإقرار والإرسال.
+                </div>
+                <div class="m-row"><span class="m-badge shel">تأكيد الطلب</span></div>
+                <div class="m-what">تُعطي: رابع — الاثنين <span class="num">23/11</span> ← يأخذها: د. سامر خ.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="sec-title"><i class="fas fa-shield-halved"></i> ما الذي لم يتغيّر</h2>
+      <div style="display:grid;gap:10px">
+        <div class="note"><i class="fas fa-circle-info"></i>
+          <span>هذه الواجهة تنظيميةٌ فقط — المراجعة النهائية من الأدمن، والتنفيذ الفعلي على جدول المناوبات، لم يتغيّرا بشيء. القبول هنا وحده لا يُنفِّذ شيئاً على الجدول.</span>
+        </div>
+        <div class="note"><i class="fas fa-pen"></i>
+          <span>يمكنك تعديل إعلانك أو حذفه طالما لم يُقبَل عليه عرضٌ بعد — من تبويب «إعلاناتي».</span>
+        </div>
+        <div class="note"><i class="fas fa-user-lock"></i>
+          <span>نفس حسابك وكلمة سرّك في «تبديل» — لا تسجيل جديد.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <a class="btn" href="swap-find.html"><i class="fas fa-arrow-left"></i> متابعة إلى البحث عن بديل</a>
+      <p>أو عُد إلى <a href="swap.html" style="color:var(--primary);font-weight:700">تبديل</a> إن كنت تعرف الطرف الآخر مسبقاً.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>البحث عن بديل — قسم الأمراض الداخلية</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="bg.webp" fetchpriority="high">
+<style>
+:root{
+  --paper:#f7f5f0; --surface:#fff; --surface-sunk:#f1efe9; --ink:#15181b; --ink-2:#5d6670;
+  --rule:#e2ded4; --primary:#1f6b4f; --primary-strong:#17553e; --primary-soft:#e8f1ec;
+  --signal:#c0392b; --signal-soft:#fbeceb; --ochre:#b8862b; --ochre-soft:#fbf3e2;
+  --radius:12px; --radius-lg:18px;
+  --shadow:0 1px 2px rgba(20,24,28,.05); --shadow-md:0 6px 20px rgba(20,24,28,.08);
+  --shadow-lg:0 18px 44px rgba(20,24,28,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:15px;line-height:1.7;
+  -webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
+
+/* ---------------------------------------------------------------- masthead */
+.hero{position:relative;isolation:isolate;overflow:hidden;color:#fff;
+  padding:clamp(30px,6vh,54px) 20px clamp(26px,5vh,42px);text-align:center;min-height:clamp(210px,26vh,290px);
+  display:flex;flex-direction:column;justify-content:center;align-items:center}
+.hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 48%;z-index:-2}
+.hero::before{content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(10,26,20,.62) 0%,rgba(8,22,17,.86) 100%)}
+.hero h1{margin:0;font-size:clamp(1.5em,4.6vw,2.15em);font-weight:700;letter-spacing:-.4px;
+  text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.hero .sub{margin-top:10px;font-size:clamp(.9em,2.3vw,1.02em);color:#e9d9ad;font-weight:600;letter-spacing:2px}
+.hero .dept{margin-top:12px;font-size:.9em;opacity:.9}
+.hero .pill{margin-top:16px;display:inline-flex;align-items:center;gap:8px;padding:8px 15px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);border-radius:999px;
+  font-size:12.5px;backdrop-filter:blur(6px)}
+.hero .back-main{position:absolute;top:16px;inset-inline-start:16px;z-index:2;display:inline-flex;
+  align-items:center;gap:7px;color:#fff;text-decoration:none;font-size:12.5px;font-weight:600;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:999px;
+  padding:7px 14px;backdrop-filter:blur(6px)}
+.hero .back-main:hover{background:rgba(255,255,255,.26)}
+@media(max-width:560px){.hero .back-main{position:static;display:inline-flex;margin-bottom:14px}}
+
+/* ------------------------------------------------------------------ layout */
+.wrap{max-width:860px;margin:0 auto;padding:22px 16px 70px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);padding:20px 20px 22px;margin-bottom:16px}
+.step-head{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.step-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.step-head h2{margin:0;font-size:1.03em;font-weight:700}
+.step-hint{margin:2px 0 15px 0;padding-inline-start:41px;font-size:12.7px;color:var(--ink-2)}
+
+label.fl{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:6px}
+input[type=text],input[type=tel],input[type=password],select,textarea{width:100%;height:44px;padding:0 13px;border:1px solid var(--rule);
+  border-radius:var(--radius);background:var(--paper);color:var(--ink);font-family:inherit;font-size:14.5px;
+  font-weight:600;transition:border-color .18s,box-shadow .18s}
+textarea{height:auto;padding:11px 13px;font-weight:500;min-height:76px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+input::placeholder,textarea::placeholder{color:#a8afb6;font-weight:500}
+
+/* -------------------------------------------------------------- calendars */
+.cal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;flex-wrap:wrap}
+.cal-title{font-weight:700;font-size:14px}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:34px;height:34px;border-radius:9px;border:1px solid var(--rule);background:var(--paper);
+  color:var(--ink);cursor:pointer;font-size:12px}
+.cal-nav button:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .dow{text-align:center;font-size:10.5px;font-weight:700;color:var(--ink-2);padding-bottom:3px}
+.day{position:relative;min-height:62px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);
+  padding:5px 5px 4px;display:flex;flex-direction:column;gap:3px;transition:all .15s;overflow:hidden}
+.day.pad{border:0;background:transparent;min-height:0}
+.day .dn{font-size:11.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.day .tag{font-size:9.5px;line-height:1.3;font-weight:700;padding:2px 4px;border-radius:5px;
+  background:var(--primary-soft);color:var(--primary-strong);text-align:center;word-break:break-word}
+.day .why{margin-top:auto;font-size:8.6px;font-weight:700;text-align:center;line-height:1.25;
+  padding:2px 3px;border-radius:4px}
+.day.pick{cursor:pointer}
+.day.pick:hover{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);transform:translateY(-1px)}
+.day.sel{border-color:var(--primary);background:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.day.sel .dn{color:#fff}
+.day.sel .tag{color:#fff;background:rgba(255,255,255,.2)}
+.day.blocked{background:#fdf2f1;border-color:#f0c9c4}
+.day.blocked .dn{color:var(--signal)}
+.day.blocked .why{background:var(--signal);color:#fff}
+.day.added{border-color:var(--primary);background:var(--primary-soft);box-shadow:inset 0 0 0 1px var(--primary)}
+.day.added .dn{color:var(--primary-strong)}
+.day.removed{border-color:var(--signal);background:var(--signal-soft)}
+.day.removed .dn{color:var(--signal)}
+.day.past:not(.blocked):not(.added):not(.removed){background:var(--surface-sunk);border-color:var(--rule)}
+.day.past:not(.blocked):not(.added):not(.removed) .dn{color:#9aa0a6}
+.day.past:not(.blocked):not(.added):not(.removed) .tag{background:#e6e3da;color:#80868c}
+.empty-cal{padding:26px 14px;text-align:center;color:var(--ink-2);font-size:13.5px;background:var(--surface-sunk);
+  border-radius:var(--radius)}
+@media(max-width:680px){
+  .cal{gap:4px}
+  .day{min-height:56px;height:auto;padding:4px 3px 3px;border-radius:8px;gap:2px;overflow:visible}
+  .day .tag{font-size:8.5px;padding:2px 2px;border-radius:4px;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
+}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;padding:0 26px;border:0;
+  border-radius:999px;background:var(--primary);color:#fff;font-family:inherit;font-size:15.5px;font-weight:700;
+  cursor:pointer;transition:background .18s,transform .12s,box-shadow .18s;box-shadow:var(--shadow-md)}
+.btn:hover:not(:disabled){background:var(--primary-strong);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.btn:disabled{background:#c9ccd0;cursor:not-allowed;box-shadow:none}
+.btn.wide{width:100%}
+.btn .btn-spinner{display:none;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+.btn.is-busy .btn-spinner{display:inline-block}
+.btn.is-busy i:not(.btn-spinner i){display:none}
+.btn-ghost{background:transparent;color:var(--ink-2);border:1px solid var(--rule);box-shadow:none;height:44px;
+  font-size:14px;font-weight:600}
+.btn-ghost:hover:not(:disabled){background:var(--surface-sunk);color:var(--ink);transform:none;box-shadow:none}
+
+.seg{display:inline-flex;background:var(--surface-sunk);border:1px solid var(--rule);border-radius:999px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;color:var(--ink-2);font-family:inherit;font-size:13.5px;font-weight:700;
+  padding:8px 17px;border-radius:999px;cursor:pointer;transition:all .18s}
+.seg button.on{background:var(--primary);color:#fff}
+.seg button[data-kind="تبديل"].on{background:#2a5a8c}
+
+.loading{display:grid;place-items:center;gap:12px;padding:60px 20px;text-align:center;color:var(--ink-2)}
+.spin{width:38px;height:38px;border:3px solid var(--rule);border-top-color:var(--primary);border-radius:50%;
+  animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;inset-inline:0;bottom:22px;margin:auto;width:max-content;max-width:92vw;z-index:99;
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;box-shadow:var(--shadow-lg);
+  opacity:0;transform:translateY(12px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.bad{background:var(--signal)}
+.resp-note{background:#fdf1d6;border:1px solid #e8d49a;color:#6b5420;border-radius:var(--radius);
+  padding:10px 14px;font-size:12.5px;display:flex;gap:9px;align-items:flex-start;line-height:1.6}
+.resp-note[hidden]{display:none}
+.resp-note i{margin-top:2px;flex:0 0 auto}
+
+.req-badge{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.req-badge.kind-shel{background:var(--primary-soft);color:var(--primary-strong)}
+.req-badge.kind-swap{background:#e3edf7;color:#2a5a8c}
+.req-badge.urgent{background:var(--signal-soft);color:var(--signal)}
+.req-badge.open{background:#e3edf7;color:#2a5a8c}
+.req-badge.matched,.req-badge.accepted{background:#dcf3e3;color:#1f7a42}
+.req-badge.withdrawn{background:var(--surface-sunk);color:var(--ink-2)}
+.req-badge.auto_rejected,.req-badge.rejected{background:var(--signal-soft);color:var(--signal)}
+.req-badge.pending{background:#fdf1d6;color:#8a6a1f}
+
+/* ------------------------------------------------------------ بوّابة الدخول */
+.auth-overlay{position:fixed;inset:0;z-index:300;background:linear-gradient(180deg,rgba(10,26,20,.72),rgba(8,22,17,.9));
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:clamp(16px,4vh,48px) 14px}
+.auth-overlay[hidden]{display:none}
+.auth-card{width:min(520px,100%);background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  padding:22px 22px 26px;margin-top:6px}
+.auth-head{text-align:center;margin-bottom:16px}
+.auth-head i{font-size:30px;color:var(--primary)}
+.auth-head h2{margin:8px 0 2px;font-size:1.2em}
+.auth-head p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.auth-tutorial-toggle{display:block;margin:0 auto 14px;background:var(--primary-soft);color:var(--primary-strong);
+  border:1px solid var(--primary);border-radius:999px;padding:8px 16px;font-family:inherit;font-size:12.5px;
+  font-weight:700;cursor:pointer}
+.guide-overlay{position:fixed;inset:0;z-index:310;background:linear-gradient(180deg,rgba(10,26,20,.72),rgba(8,22,17,.9));
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:clamp(16px,4vh,48px) 14px}
+.guide-overlay[hidden]{display:none}
+.guide-card{width:min(600px,100%);background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  margin-top:6px;overflow:hidden}
+.guide-head{text-align:center;padding:26px 22px 14px}
+.guide-head i{font-size:30px;color:var(--primary)}
+.guide-head h2{margin:8px 0 2px;font-size:1.25em}
+.guide-head p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.guide-body{padding:4px 24px 6px}
+.guide-step{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--rule)}
+.guide-step:first-child{border-top:0}
+.guide-step .step-n{margin-top:2px}
+.guide-step h3{margin:0 0 4px;font-size:14.5px}
+.guide-step p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.75}
+.guide-step p b{color:var(--primary-strong)}
+.guide-body .note{margin:14px 0 20px;background:var(--surface-sunk);border-inline-start:3px solid var(--primary);
+  border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--ink-2);line-height:1.7}
+.guide-foot{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--rule);background:var(--surface-sunk)}
+.guide-foot .btn{flex:1}
+.guide-foot .btn-ghost{flex:0 0 auto}
+.auth-tabs{display:flex;background:var(--surface-sunk);border:1px solid var(--rule);border-radius:999px;padding:4px;
+  gap:4px;margin-bottom:16px}
+.auth-tabs button{flex:1;border:0;background:transparent;color:var(--ink-2);font-family:inherit;font-size:13.5px;
+  font-weight:700;padding:9px 10px;border-radius:999px;cursor:pointer}
+.auth-tabs button.on{background:var(--primary);color:#fff}
+.auth-field{margin-bottom:12px}
+.auth-help-note{background:var(--surface-sunk);border:1px solid var(--rule);color:var(--ink-2);border-radius:var(--radius);
+  padding:9px 12px;font-size:11.8px;line-height:1.7;margin-bottom:14px}
+.auth-help-note i.fa-circle-info{color:var(--primary);margin-inline-end:3px}
+.auth-help-note a{color:var(--primary);font-weight:700;text-decoration:none;white-space:nowrap}
+.auth-help-note a:hover{text-decoration:underline}
+.auth-help-note a .fa-whatsapp{color:#25D366}
+.auth-help-note a .fa-telegram{color:#229ED9}
+.pw-save-note{margin:6px 2px 0;font-size:11.5px;color:var(--signal);display:flex;gap:6px;align-items:flex-start;line-height:1.5}
+.auth-error{background:var(--signal-soft);border:1px solid #f0cfcb;color:var(--signal);border-radius:var(--radius);
+  padding:9px 12px;font-size:12.5px;margin-bottom:12px}
+.auth-step-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.auth-step-nav button{background:none;border:0;color:var(--ink-2);font-family:inherit;font-size:12.5px;cursor:pointer}
+.auth-otp-email{font-weight:700;color:var(--primary-strong)}
+.auth-checking{text-align:center;padding:30px 10px;color:var(--ink-2)}
+.auth-success{text-align:center;padding:26px 10px}
+.auth-success i{font-size:44px;color:var(--primary)}
+.auth-success h3{margin:12px 0 4px;font-size:1.1em}
+.auth-success p{margin:0;font-size:12.5px;color:var(--ink-2)}
+#authWhoBadge{margin-top:12px;display:inline-flex;align-items:center;gap:9px;padding:7px 14px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);border-radius:999px;font-size:12.5px}
+#authWhoBadge[hidden]{display:none}
+#authWhoBadge button{border:0;background:rgba(255,255,255,.18);color:#fff;width:24px;height:24px;border-radius:50%;
+  cursor:pointer;font-size:10.5px}
+#authWhoBadge button:hover{background:var(--signal)}
+
+.img-modal{position:fixed;inset:0;z-index:200;background:rgba(16,26,21,.62);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:18px}
+.img-modal[hidden]{display:none}
+.img-box{width:min(620px,100%);max-height:92vh;display:flex;flex-direction:column;background:var(--paper);
+  border-radius:var(--radius-lg);box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}
+.img-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;
+  border-bottom:1px solid var(--rule)}
+.img-head h3{margin:0;font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.img-head h3 i{color:var(--primary);font-size:13px}
+.img-x{width:32px;height:32px;border-radius:8px;border:1px solid var(--rule);background:var(--surface);
+  color:var(--ink-2);cursor:pointer;font-size:13px}
+.img-x:hover{border-color:var(--signal);color:var(--signal)}
+.img-scroll{overflow:auto;padding:14px;background:var(--surface-sunk);flex:1}
+
+/* ------------------------------------------------------------- هذه الصفحة */
+.sf-tabs{display:flex;flex-wrap:wrap;gap:6px;background:var(--surface-sunk);border:1px solid var(--rule);
+  border-radius:999px;padding:5px;margin-bottom:18px}
+.sf-tabs button{flex:1 1 auto;min-width:130px;border:0;background:transparent;color:var(--ink-2);
+  font-family:inherit;font-size:12.8px;font-weight:700;padding:9px 10px;border-radius:999px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.sf-tabs button.on{background:var(--primary);color:#fff}
+.sf-tabs .cnt{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+  padding:0 5px;border-radius:999px;background:rgba(0,0,0,.12);font-size:10.5px;font-variant-numeric:tabular-nums}
+.sf-tabs button.on .cnt{background:rgba(255,255,255,.25)}
+.sf-panel[hidden]{display:none}
+
+.find-card{border:1px solid var(--rule);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;background:var(--surface)}
+.find-card.urgent{border-inline-start:4px solid var(--signal)}
+.find-card .fc-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+.find-card .fc-who{font-weight:700;font-size:14px;margin-inline-start:auto}
+.find-card .fc-what{font-size:13px;color:var(--ink-2);margin:4px 0}
+.find-card .fc-pref{font-size:12px;color:var(--ink-2);background:var(--surface-sunk);border-radius:var(--radius);padding:8px 10px;margin-top:6px}
+.find-card .fc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.find-card .fc-actions button{height:36px;padding:0 14px;border-radius:999px;font-size:12.5px;font-weight:700;
+  cursor:pointer;border:1px solid var(--rule);background:var(--surface);color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.find-card .fc-actions button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.find-card .fc-actions button.primary:disabled{opacity:.45;cursor:not-allowed}
+.find-card .fc-actions button.ghost:hover{border-color:var(--primary);color:var(--primary)}
+.find-card .fc-actions button.ghost.delete-btn:hover{border-color:var(--signal);color:var(--signal)}
+.find-card .fc-actions button.armed{background:var(--signal);color:#fff;border-color:var(--signal)}
+.find-card .fc-offer{border-top:1px dashed var(--rule);margin-top:10px;padding-top:4px}
+.find-card .fc-offer-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--surface-sunk)}
+.find-card .fc-offer-row:first-child{border-top:0}
+.find-card .fc-offer-row button{margin-inline-start:auto;height:30px;padding:0 12px;border-radius:999px;border:0;
+  background:var(--primary);color:#fff;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.find-card .fc-offer-row button.armed{background:var(--signal)}
+.elig-more-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:4px;
+  padding:10px;border:1px dashed var(--rule);border-radius:var(--radius);background:var(--primary-soft);
+  color:var(--primary-strong);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.elig-more-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:4px}
+.cat-chk{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--rule);border-radius:var(--radius);
+  font-size:12.3px;cursor:pointer;background:var(--surface);user-select:none}
+.cat-chk input{width:auto;height:auto}
+.cat-chk.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary-strong);font-weight:700}
+.sub-toggle{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px;cursor:pointer}
+.sub-toggle input{width:auto;height:auto}
+
+.duty-pick-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;
+  border:1px solid var(--rule);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;font-size:13.5px}
+.duty-pick-item:hover{border-color:var(--primary);background:var(--primary-soft)}
+
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.field-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="auth-overlay" id="authGate" hidden>
+  <div class="auth-card">
+    <div class="auth-head">
+      <i class="fas fa-magnifying-glass"></i>
+      <h2>البحث عن بديل</h2>
+      <p>حسابٌ واحد لكل مقيم — سجّل دخولك أو أنشئ حساباً جديداً</p>
+    </div>
+
+    <button type="button" class="auth-tutorial-toggle" id="authTutorialToggle">
+      <i class="fas fa-circle-question"></i> كيف تعمل هذه الواجهة؟
+    </button>
+
+    <div class="auth-tabs">
+      <button type="button" id="authTabLogin" class="on">تسجيل دخول</button>
+      <button type="button" id="authTabRegister">حساب جديد</button>
+    </div>
+
+    <div class="auth-help-note">
+      <i class="fas fa-circle-info"></i>
+      إذا كان هناك مشاكل بإنشاء الحساب أو تسجيل الدخول، يرجى التواصل على
+      <a href="https://wa.me/963983893299" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> واتساب</a>
+      أو
+      <a href="https://t.me/ALI15cha" target="_blank" rel="noopener"><i class="fab fa-telegram"></i> تلغرام</a>
+      لإنشاء الحساب بشكل يدويّ.
+    </div>
+
+    <div id="authGateChecking" class="auth-checking" hidden>
+      <div class="spin" style="margin:0 auto 10px"></div>
+      جارٍ التحقّق من جلستك المحفوظة…
+    </div>
+
+    <div id="authGateForms">
+      <div id="loginPane">
+        <div class="auth-error" id="loginError" hidden></div>
+        <div class="auth-field">
+          <label class="fl" for="loginAbbr">الاسم أو الاختصار</label>
+          <input type="text" id="loginAbbr" list="loginNameOptions" autocomplete="username" placeholder="اكتب اسمك أو اختصارك لتظهر الخيارات">
+          <datalist id="loginNameOptions"></datalist>
+        </div>
+        <div class="auth-field">
+          <label class="fl" for="loginPassword">كلمة السرّ</label>
+          <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••">
+        </div>
+        <button type="button" class="btn wide" id="loginBtn"><i class="fas fa-right-to-bracket"></i> دخول<span class="btn-spinner"></span></button>
+      </div>
+
+      <div id="registerPane" hidden>
+        <div class="auth-error" id="registerError" hidden></div>
+
+        <div id="registerStep1">
+          <div class="auth-field">
+            <label class="fl" for="regName">اسمك الثلاثي (من اللائحة)</label>
+            <input type="text" id="regName" list="regNameOptions" autocomplete="off" placeholder="اكتب اسمك لتظهر الخيارات">
+            <datalist id="regNameOptions"></datalist>
+          </div>
+          <div class="auth-field">
+            <label class="fl" for="regEmail">بريدك الإلكتروني</label>
+            <input type="text" id="regEmail" autocomplete="email" placeholder="example@email.com">
+          </div>
+          <button type="button" class="btn wide" id="registerOtpBtn"><i class="fas fa-paper-plane"></i> أرسل رمز التحقّق<span class="btn-spinner"></span></button>
+        </div>
+
+        <div id="registerStep2" hidden>
+          <div class="auth-step-nav">
+            <button type="button" id="registerBackBtn"><i class="fas fa-arrow-right"></i> رجوع</button>
+            <span>وصل الرمز إلى <span class="auth-otp-email" id="regOtpEmailLabel"></span></span>
+          </div>
+          <div class="auth-field">
+            <label class="fl" for="regCode">رمز التحقّق</label>
+            <input type="text" id="regCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+          </div>
+          <div class="auth-field">
+            <label class="fl" for="regPassword">اختر كلمة سرّ (٦ أحرف على الأقل)</label>
+            <input type="password" id="regPassword" autocomplete="new-password" placeholder="••••••">
+            <p class="pw-save-note"><i class="fas fa-triangle-exclamation"></i> احفظها في مكانٍ آمن — لا توجد طريقةٌ لاسترجاعها إن نُسيت بعد.</p>
+          </div>
+          <button type="button" class="btn wide" id="registerFinishBtn"><i class="fas fa-user-check"></i> إنشاء الحساب<span class="btn-spinner"></span></button>
+        </div>
+
+        <div id="registerSuccess" class="auth-success" hidden>
+          <i class="fas fa-circle-check"></i>
+          <h3>تم إنشاء حسابك بنجاح!</h3>
+          <p>جارٍ تسجيل دخولك تلقائياً…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="guide-overlay" id="firstGuide" hidden>
+  <div class="guide-card">
+    <div class="guide-head">
+      <i class="fas fa-magnifying-glass"></i>
+      <h2>دليل البحث عن بديل</h2>
+      <p>واجهةٌ تساعدك على العثور على بديلٍ لمناوبتك، قبل طلب التبديل/الشيل الرسمي — لا تُلغيه</p>
+    </div>
+    <div class="guide-body">
+      <div class="guide-step">
+        <div class="step-n"><span>1</span></div>
+        <div><h3>لا تعرف بعدُ مع من ستُبدِّل؟</h3>
+          <p>انشر إعلاناً بمناوبتك: «شيل» (يأخذها زميلٌ دون مقابل) أو «تبديل» (تحدّد الأيام والأنواع التي تقبلها بالمقابل).</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="step-n"><span>2</span></div>
+        <div><h3>تصفّح إعلانات الآخرين</h3>
+          <p>تظهر أولاً الإعلانات التي <b>تستطيع أنت تلبيتها فعلياً</b> حسب جدولك — والعاجلة أولاً. اضغط «رزنامتي» لمعاينة النتيجة قبل أي التزام.</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="step-n"><span>3</span></div>
+        <div><h3>اعرض المساعدة، أو انتظر عروضاً على إعلانك</h3>
+          <p>قد يصلك أكثر من عرضٍ واحد على إعلانك — راجعها في «إعلاناتي». أمّا العروض التي أرسلتَها أنت على إعلانات الآخرين فتابع حالتها من «عروضي».</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="step-n"><span>4</span></div>
+        <div><h3>قبولُك لعرضٍ — ينقلك أنت تلقائياً للتأكيد النهائي</h3>
+          <p>عندما <b>تقبل أنت</b> عرضاً وصلك على إعلانك، تُقفَل بقية العروض تلقائياً، وتُنقَل أنت فوراً إلى <b>نموذج الطلب الرسمي</b> مُعبَّأً بالكامل — لا يبقى عليك إلا التأكيد الأخير. (إن قُبِل عرضٌ قدّمتَه أنت على إعلان شخصٍ آخر، فصاحب الإعلان هو من يُنقَل، لا أنت — تتابع أنت النتيجة من «عروضي».)</p></div>
+      </div>
+      <div class="note"><i class="fas fa-circle-info"></i> هذه الواجهة تنظيميةٌ فقط — المراجعة النهائية من الأدمن والتنفيذ الفعلي على الجدول لم يتغيّرا بشيء.</div>
+    </div>
+    <div class="guide-foot">
+      <button type="button" class="btn-ghost" id="guideSkip">تخطّي</button>
+      <button type="button" class="btn" id="guideDone"><i class="fas fa-circle-check"></i> فهمت، ابدأ</button>
+    </div>
+  </div>
+</div>
+
+<header class="hero">
+  <img class="hero-bg" src="bg.webp" alt="" onerror="this.src='bg.png'">
+  <a class="back-main" href="index.html"><i class="fas fa-arrow-right"></i> الموقع الرئيسي</a>
+  <h1>البحث عن بديل</h1>
+  <div class="sub">السنة الأولى</div>
+  <div class="dept">قسم الأمراض الداخلية — مشفى حلب الجامعي</div>
+  <div class="pill"><i class="fas fa-circle-info"></i> انشر مناوبتك، أو تصفّح من يحتاج مساعدة — قبل أي طلبٍ رسمي</div>
+  <div id="authWhoBadge" hidden></div>
+</header>
+
+<div class="img-modal" id="changePassModal" hidden>
+  <div class="img-box" role="dialog" aria-modal="true" aria-label="تغيير كلمة السرّ" style="width:min(380px,100%)">
+    <div class="img-head">
+      <h3><i class="fas fa-key"></i> تغيير كلمة السرّ</h3>
+      <button type="button" class="img-x" id="changePassClose" title="إغلاق"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="img-scroll" style="background:var(--surface)">
+      <div class="auth-error" id="changePassError" hidden></div>
+      <div class="auth-field">
+        <label class="fl" for="cpOld">كلمة السرّ الحالية</label>
+        <input type="password" id="cpOld" autocomplete="current-password" placeholder="••••••">
+      </div>
+      <div class="auth-field">
+        <label class="fl" for="cpNew">كلمة السرّ الجديدة (٦ أحرف على الأقل)</label>
+        <input type="password" id="cpNew" autocomplete="new-password" placeholder="••••••">
+      </div>
+      <div class="auth-field">
+        <label class="fl" for="cpConfirm">تأكيد كلمة السرّ الجديدة</label>
+        <input type="password" id="cpConfirm" autocomplete="new-password" placeholder="••••••">
+      </div>
+      <button type="button" class="btn wide" id="cpSubmitBtn"><i class="fas fa-check"></i> حفظ<span class="btn-spinner"></span></button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="boot" class="card"><div class="loading"><div class="spin"></div><div>جاري تحميل بيانات المناوبات من الشيت...</div></div></div>
+
+  <div id="app" hidden>
+    <div class="sf-tabs" id="sfTabs">
+      <button type="button" data-tab="browse" class="on"><i class="fas fa-magnifying-glass"></i> يمكنني تلبيتها <span class="cnt" id="cnt-browse">0</span></button>
+      <button type="button" data-tab="submit"><i class="fas fa-plus"></i> إعلانٌ جديد</button>
+      <button type="button" data-tab="mine"><i class="fas fa-list-check"></i> إعلاناتي <span class="cnt" id="cnt-mine">0</span></button>
+      <button type="button" data-tab="offers"><i class="fas fa-paper-plane"></i> عروضي <span class="cnt" id="cnt-offers">0</span></button>
+    </div>
+
+    <!-- تصفّح -->
+    <section class="card sf-panel" id="panelBrowse">
+      <div class="step-head"><div class="step-n"><i class="fas fa-magnifying-glass"></i></div><h2>إعلاناتٌ يمكنك تلبيتها</h2></div>
+      <p class="step-hint">مرتّبةٌ بالعاجل أولاً ثم الأحدث.</p>
+      <div id="browseList"></div>
+      <button type="button" class="elig-more-btn" id="showAllBtn"><i class="fas fa-layer-group"></i> عرض كل الإعلانات</button>
+    </section>
+
+    <!-- تقديم إعلان -->
+    <section class="card sf-panel" id="panelSubmit" hidden>
+      <div class="step-head"><div class="step-n"><i class="fas fa-plus"></i></div><h2>إعلانٌ جديد</h2></div>
+      <p class="step-hint">لا تعرف بعدُ من سيأخذ مناوبتك؟ انشرها هنا وانتظر عروضاً، أو تصفّح طلبات الآخرين من التبويب الآخر.</p>
+
+      <div style="padding-inline-start:41px;margin-bottom:16px">
+        <div class="seg" id="subKind">
+          <button type="button" data-kind="شيل" class="on"><i class="fas fa-hand-holding-medical"></i> شيل مناوبة</button>
+          <button type="button" data-kind="تبديل"><i class="fas fa-right-left"></i> تبديل</button>
+        </div>
+      </div>
+
+      <label class="fl">مناوبتك</label>
+      <div class="cal-top">
+        <div class="cal-title" id="subCalT">—</div>
+        <div class="cal-nav"><button type="button" id="p1sub" title="الشهر السابق"><i class="fas fa-chevron-right"></i></button><button type="button" id="n1sub" title="الشهر التالي"><i class="fas fa-chevron-left"></i></button></div>
+      </div>
+      <div id="subCal"></div>
+
+      <div id="subPrefSection" hidden style="margin-top:18px">
+        <label class="fl">الأيام التي تقبل التبديل إليها</label>
+        <label class="sub-toggle"><input type="checkbox" id="subAllDays" checked> أيُّ يومٍ لا يسبّب تعارضاً مع جدولي</label>
+        <div id="subDaysGrid"></div>
+
+        <label class="fl" style="margin-top:16px">أنواع المناوبات التي تقبلها بالمقابل</label>
+        <label class="sub-toggle"><input type="checkbox" id="subAllCats" checked> كل الأنواع</label>
+        <div class="cat-grid" id="subCatsGrid"></div>
+      </div>
+
+      <div class="field-row" style="margin-top:18px">
+        <div><label class="fl" for="subPhone">رقم هاتفك (اختياري)</label>
+          <input type="tel" id="subPhone" placeholder="09xxxxxxxx" inputmode="tel"></div>
+        <div><label class="fl" for="subReason">السبب (اختياري)</label>
+          <input type="text" id="subReason" placeholder="مثال: ظرف عائلي"></div>
+      </div>
+      <div style="margin-top:12px"><label class="fl" for="subNotes">ملاحظات (اختياري)</label>
+        <textarea id="subNotes" placeholder="أي تفصيل يساعد من يرى إعلانك..."></textarea></div>
+      <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;margin-top:12px;font-size:13px">
+        <input type="checkbox" id="subUrgent" style="width:auto;height:auto;margin-top:3px">
+        <span><i class="fas fa-triangle-exclamation" style="color:var(--signal)"></i> إعلانٌ عاجل (يظهر أولاً للجميع)</span>
+      </label>
+
+      <div style="margin-top:18px;display:flex;gap:10px">
+        <button type="button" class="btn wide" id="subSubmitBtn" disabled><i class="fas fa-paper-plane"></i> نشر الإعلان<span class="btn-spinner"></span></button>
+        <button type="button" class="btn-ghost" id="subCancelEditBtn"><i class="fas fa-xmark"></i> إلغاء</button>
+      </div>
+    </section>
+
+    <!-- إعلاناتي -->
+    <section class="card sf-panel" id="panelMine" hidden>
+      <div class="step-head"><div class="step-n"><i class="fas fa-list-check"></i></div><h2>إعلاناتي</h2></div>
+      <p class="step-hint">الإعلانات التي نشرتَها، مع كل عرضٍ وصلك وحالته.</p>
+      <div id="mineList"></div>
+    </section>
+
+    <!-- عروضي -->
+    <section class="card sf-panel" id="panelOffers" hidden>
+      <div class="step-head"><div class="step-n"><i class="fas fa-paper-plane"></i></div><h2>عروضي</h2></div>
+      <p class="step-hint">العروض التي أرسلتَها على إعلانات الآخرين، وهل قَبِل أصحابها أم لا.</p>
+      <div id="offersList"></div>
+    </section>
+  </div>
+</div>
+
+<!-- اختيار المناوبة التي أعرضها بالمقابل (تبديل فقط) -->
+<div class="img-modal" id="pickModal" hidden>
+  <div class="img-box" role="dialog" aria-modal="true" style="width:min(460px,100%)">
+    <div class="img-head">
+      <h3 id="pickModalTitle"><i class="fas fa-calendar-check"></i> اختر مناوبتك</h3>
+      <button type="button" class="img-x" id="pickModalClose" title="إغلاق"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="img-scroll"><div id="pickList"></div></div>
+  </div>
+</div>
+
+<!-- معاينة: رزنامتي في حال التبديل/الشيل -->
+<div class="img-modal" id="previewModal" hidden>
+  <div class="img-box" role="dialog" aria-modal="true" style="width:min(520px,100%)">
+    <div class="img-head">
+      <h3 id="previewTitle"><i class="fas fa-eye"></i> المعاينة</h3>
+      <button type="button" class="img-x" id="previewClose" title="إغلاق"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="img-scroll">
+      <div class="cal-top">
+        <div class="cal-title" id="previewCalT">—</div>
+      </div>
+      <div id="previewCal"></div>
+      <div class="legend" style="display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:13px;font-size:11.5px;color:var(--ink-2)">
+        <span><i style="display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-inline-end:5px;background:var(--primary-soft);border:1px solid var(--primary)"></i>مضافة</span>
+        <span><i style="display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-inline-end:5px;background:var(--signal-soft);border:1px solid var(--signal)"></i>مُسلَّمة</span>
+      </div>
+      <button type="button" class="btn wide" id="previewOfferBtn" style="margin-top:16px"><i class="fas fa-handshake"></i> أعرض هذه المساعدة الآن</button>
+    </div>
+  </div>
+</div>
+
+<!-- تأكيدٌ أخير قبل إرسال عرضٍ -->
+<div class="img-modal" id="offerConfirmModal" hidden>
+  <div class="img-box" role="dialog" aria-modal="true" style="width:min(460px,100%)">
+    <div class="img-head">
+      <h3><i class="fas fa-handshake"></i> تأكيد العرض</h3>
+      <button type="button" class="img-x" id="offerConfirmClose" title="إغلاق"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="img-scroll" style="background:var(--surface)">
+      <div id="offerConfirmBody" style="margin-bottom:12px"></div>
+      <div class="auth-field">
+        <label class="fl" for="offerPhone">رقم هاتفك (اختياري)</label>
+        <input type="tel" id="offerPhone" placeholder="09xxxxxxxx" inputmode="tel">
+      </div>
+      <div class="auth-field">
+        <label class="fl" for="offerNote">ملاحظة (اختياري)</label>
+        <textarea id="offerNote" placeholder="أي تفصيلٍ تريد إخبار صاحب الإعلان به..."></textarea>
+      </div>
+      <button type="button" class="btn wide" id="offerConfirmBtn"><i class="fas fa-paper-plane"></i> إرسال العرض<span class="btn-spinner"></span></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/core/namespace.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/storage.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/config.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/logger.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/text.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/status.js?v=__BUILD_ID__" defer></script>
+<script src="js/core/dates.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/schema.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/header-map.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/gviz-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/api-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/apps-script-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/accounts-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/swap-find-client.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/residents.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/rotations-year2.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/oncall.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/evaluation.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/lectures.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/holidays.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/parsers/content.js?v=__BUILD_ID__" defer></script>
+<script src="js/data/repository.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/oncall-schedule.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/oncall-adjustments.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/doctor-stats.js?v=__BUILD_ID__" defer></script>
+<script src="js/domain/swap-rules.js?v=__BUILD_ID__" defer></script>
+
+<script src="js/views/swap-auth.js?v=__BUILD_ID__" defer></script>
+<script src="js/swap-find.js?v=__BUILD_ID__" defer></script>
+</body>
+</html>

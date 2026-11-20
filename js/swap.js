@@ -32,16 +32,19 @@
    */
   const ADMIN_MODE = new URLSearchParams(global.location.search).get('admin') === '1';
   const schedule = AUH.domain.oncallSchedule;
-
-  const HARD = ['إسعاف داخلي ليلي', 'إسعاف داخلي نهاري', 'إسعاف باب ليلي', 'إسعاف باب نهاري',
-    'اسعاف بارد ليلي', 'اسعاف بارد صباحي'].map(normAr);
+  // محرّك فحص الستريب/التعارضات مُستخلَصٌ هنا من `js/domain/swap-rules.js` —
+  // يُعاد استخدامه حرفياً في واجهة «البحث عن بديل» (`swap-find.js`) بلا أي
+  // تكرارٍ لمنطقه. الأغلفة أدناه (`evaluate`/`coverFeasible`/`swapFeasible`/
+  // `feasibleSwaps`/`dutiesAfter`) تحافظ على التوقيعات القديمة تماماً —
+  // إعادة تموضعٍ لا إعادة كتابةٍ لأي سلوك.
+  const swapRules = AUH.domain.swapRules;
+  const { sameDuty, afterExchange, dutyGroup, isDoorDuty, isMale, genderBlocked } = swapRules;
 
   const $ = id => document.getElementById(id);
   const AR_MONTHS = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب',
     'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
   const DOW = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
-  const dayNum = iso => Math.round(new Date(iso + 'T00:00:00Z') / 86400000);
   const isoOf = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   const fmt = iso => `${iso.slice(8)}/${iso.slice(5, 7)}`;
   const today = new Date().toISOString().slice(0, 10);
@@ -64,6 +67,7 @@
 
   /* ---------------------------------------------------------------- loading */
   let authIdentity = null; // {abbr, name} من swap-auth.js بعد تسجيل الدخول
+  const AUTOFILL_KEY = 'auh_swap_find_autofill';
 
   /**
    * صاحبُ الطلب في الواجهة الجديدة هو صاحبُ الحساب نفسُه دائماً — لا يُكتب
@@ -86,6 +90,62 @@
     note.style.marginTop = '6px';
     note.innerHTML = '<i class="fas fa-lock"></i> هذا حسابُك — لا يمكن تقديم طلبٍ باسم شخصٍ آخر.';
     $('ch1').appendChild(note);
+    if (typeof refresh === 'function') refresh();
+  }
+
+  /**
+   * جسرُ «البحث عن بديل» (`swap-find.html`) — بعد قبول عرضٍ هناك، تُكتب
+   * بيانات الطلب الجاهزة في `AUH.storage` ويُعاد توجيه صاحب الإعلان إلى
+   * هذه الصفحة. تُستدعى من موضعين (`boot()` وداخل `setAuthIdentity`) لأن
+   * ترتيب انتهاء تحميل البيانات مقابل تسجيل الدخول غير مضمون — تماماً كـ
+   * `applyAuthIdentity` أعلاه؛ فحصُ الجهوزية إذاً **قبل** حذف المفتاح، وإلا
+   * يُستهلَك المفتاح على النداء المبكّر الذي لا يملك بعدُ بيانات الجدول،
+   * فيضيع قبل أن يصل النداء الثاني الجاهز فعلياً. يُطبَّق فقط إن طابق
+   * `fromAbbr` المخزَّن هوية الجلسة الفعلية — جهازٌ مشتركٌ قد يُسجَّل عليه
+   * شخصٌ آخر بين لحظة القبول ولحظة فتح هذه الصفحة. يملأ كل شيءٍ ما عدا
+   * خانة الإقرار النهائية — تلك تبقى على صاحب الطلب دائماً.
+   */
+  function applyFindAutofill() {
+    if (!S.from || !S.roster.length || !$('kind')) return; // غير جاهزٍ بعد — سيُعاد النداء لاحقاً
+    const raw = AUH.storage.get(AUTOFILL_KEY);
+    if (!raw) return;
+    AUH.storage.remove(AUTOFILL_KEY); // استهلاكٌ لمرّةٍ واحدة، من الآن فصاعداً بصرف النظر عن النتيجة
+
+    let data;
+    try { data = JSON.parse(raw); } catch (err) { return; }
+    if (normAr(data.fromAbbr || '') !== normAr(S.from.abbr)) return;
+
+    const to = S.roster.find(r => normAr(r.abbr) === normAr(data.toAbbr || ''));
+    if (!to) return;
+    const duty = dutiesOf(S.from).find(d => d.date === data.shiftDate && normAr(d.cat) === normAr(data.shiftType));
+    if (!duty) return; // المناوبة لم تعد موجودة في الجدول الحيّ — فشلٌ صامتٌ آمن، لا تخمين
+
+    S.kind = (data.kind === 'تبديل') ? 'تبديل' : 'شيل';
+    $('kind').querySelectorAll('button').forEach(b => {
+      b.classList.toggle('on', b.dataset.kind === S.kind);
+      b.disabled = true;
+    });
+
+    S.shift = duty;
+    S.to = to;
+    $('q2').value = to.name;
+    $('q2').disabled = true;
+    chosenBox($('ch2'), to, () => {});
+    const x2 = $('ch2').querySelector('.x');
+    if (x2) x2.remove();
+
+    if (S.kind === 'تبديل') {
+      S.back = dutiesOf(S.to).find(d => d.date === data.backDate && normAr(d.cat) === normAr(data.backType)) || null;
+    }
+    if (data.urgent) $('urgent').checked = true;
+
+    const note = document.createElement('div');
+    note.className = 'resp-note';
+    note.style.marginBottom = '14px';
+    note.innerHTML = '<i class="fas fa-handshake"></i> <span>عُبِّئ هذا الطلب تلقائياً من عرضٍ قبلتَه في ' +
+      '<b>واجهة البحث عن بديل</b> — راجع التفاصيل أدناه ثم أكمل الإقرار والإرسال.</span>';
+    $('form').insertBefore(note, $('form').firstChild);
+
     if (typeof refresh === 'function') refresh();
   }
 
@@ -147,6 +207,7 @@
       wire();
       applyLink();
       applyAuthIdentity();
+      applyFindAutofill();
       if (ADMIN_MODE) applyAdminMode();
     } catch (err) {
       $('boot').innerHTML =
@@ -156,58 +217,16 @@
     }
   }
 
-  /** One pass over the on-call sheet → every doctor's duties, in date order. */
+  /**
+   * فهرسةُ جدول المناوبات بالكامل — مُفوَّضةٌ لـ`swapRules.buildDutyIndex`
+   * (نفس «المرور الواحد» حرفياً، الآن مشتركٌ مع `swap-find.js`)؛ ما يبقى هنا
+   * خاصّاً بهذه الصفحة هو فقط فتح الرزنامة على الشهر الذي يهمّ فعلاً.
+   */
   function index(ds) {
-    const residents = ds.residents;
-    const oncall = ds.oncall;
-    const holidays = new Set(((ds.holidays && ds.holidays.list) || []).map(h => h.date).filter(Boolean));
-
-    S.roster = (residents.residents || [])
-      .filter(r => r && r.name)
-      .map(r => ({
-        name: r.name, abbr: r.abbr || '', spec: r.spec || '', status: r.st || '',
-        phone: r.phone || '', phone2: r.phone2 || '',
-        gender: r.gender || '',   // «طبيب» / «طبيبة» — decides باب eligibility
-        // Only residents actually on the job may be offered a duty. A blank
-        // status used to default to "joined", which quietly let detached and
-        // not-yet-joined names into the list.
-        joined: AUH.status.isJoined(r.st)
-      }));
-
-    const months = new Set();
-    (oncall.rows || []).forEach(dayRow => {
-      const date = dayRow.date;
-      if (!date) return;
-      months.add(date.slice(0, 7));
-      const holiday = schedule.isHolidayDate(date, holidays);
-
-      for (let col = 2; col < oncall.headers.length; col++) {
-        const cat = (oncall.headers[col] || '').trim();
-        const cell = (dayRow.row[col] || '').trim();
-        if (!cat || !cell) continue;
-
-        const sch = schedule.getCategorySchedule(cat, date, holidays);
-        const duty = {
-          date, cat, group: schedule.classifyGroup(cat),
-          night: schedule.isNightCategory(cat), holiday,
-          hard: HARD.includes(normAr(cat)),
-          hours: AUH.text.parseDurationHours(sch ? sch.duration : '')
-        };
-
-        const seen = new Set();
-        splitNames(cell).forEach(raw => {
-          const r = residents.findByNameOrAbbr(raw);
-          const key = r ? (r.abbr || r.name) : raw;
-          if (seen.has(key)) return;
-          seen.add(key);
-          if (!S.duties.has(key)) S.duties.set(key, []);
-          S.duties.get(key).push(duty);
-        });
-      }
-    });
-
-    S.duties.forEach(list => list.sort((a, b) => a.date.localeCompare(b.date)));
-    S.months = Array.from(months).sort();
+    const idx = swapRules.buildDutyIndex(ds);
+    S.roster = idx.roster;
+    S.duties = idx.duties;
+    S.months = idx.months;
     // open on the month that actually matters: the first one with a future duty
     const upcoming = S.months.findIndex(m => m >= today.slice(0, 7));
     S.m1 = S.m2 = upcoming < 0 ? Math.max(0, S.months.length - 1) : upcoming;
@@ -229,8 +248,8 @@
     if (i >= 0) S.m1 = S.m2 = i;
   }
 
-  const keyOf = doc => (doc.abbr || doc.name);
-  const dutiesOf = doc => (doc ? (S.duties.get(keyOf(doc)) || []) : []);
+  const keyOf = swapRules.keyOf;
+  const dutiesOf = doc => swapRules.dutiesOf(S.duties, doc);
 
   /**
    * العدد التراكمي المعروض للطبيب — نفسُ رقم بقية الموقع (لائحة المقيمين،
@@ -300,100 +319,22 @@
     document.addEventListener('click', e => { if (!input.closest('.combo').contains(e.target)) close(); });
   }
 
-  /* ------------------------------------------------- duty groups & gender */
+  /* --------------------------------------- swap rules — see swap-rules.js */
   /**
-   * The department reads duties as four families. Ordering candidates by family
-   * is what makes a request likely to be accepted, so it is computed once here.
+   * الأغلفة التالية تحافظ على نفس التواقيع القديمة (طبيبٌ كامل + `S.exceptional`
+   * الضمني) بينما تُفوِّض الحساب الفعلي إلى `swapRules` — إعادة تموضعٍ لا
+   * إعادة كتابةٍ لأي سلوك؛ كل نداءٍ قائمٍ في هذا الملف يبقى كما هو حرفياً.
    */
-  const GROUPS = {
-    'أجنحة':  ['تاني', 'ثالث', 'رابع', 'سابع', 'خارجيات'],   // «تاني رجال/نساء» يُطابقان بـ includes
-    'عنايات': ['عناية قلبية', 'عناية داخلية', 'عناية مركز'],
-    'منوع':   ['ديال', 'أورام']
-  };
-
-  function dutyGroup(cat) {
-    const n = normAr(cat || '');
-    if (!n) return 'منوع';
-    if (n.includes(normAr('اسعاف'))) return 'إسعاف';      // anything containing إسعاف
-    for (const g of Object.keys(GROUPS)) {
-      if (GROUPS[g].some(x => n.includes(normAr(x)))) return g;
-    }
-    return 'منوع';
-  }
-
-  /** إسعاف باب — نهاري or ليلي — is staffed by male residents only. */
-  function isDoorDuty(cat) {
-    const n = normAr(cat || '');
-    return n.includes(normAr('اسعاف')) && n.includes(normAr('باب'));
-  }
-
-  /** The roster writes "طبيب" / "طبيبة" in the gender column. */
-  const isMale = doc => normAr((doc && doc.gender) || '') === normAr('طبيب');
-  const genderBlocked = (cat, doc) => isDoorDuty(cat) && !isMale(doc);
-
-  /* ------------------------------------------------------------ swap rules */
-  /**
-   * What one schedule looks like after a duty leaves it and another arrives.
-   *
-   * The whole rule engine, stated once: build the list the person actually ends
-   * up with — their duties MINUS the one they hand over — and judge only the
-   * duty they RECEIVE against it. Judging an incoming duty against a list that
-   * still holds the outgoing one is what used to hide valid swaps: a colleague
-   * on 5/8 looked like a ستريب against my 4/8 even though 5/8 was the very duty
-   * they were handing me.
-   *
-   * @param {Array}       list  the person's current duties
-   * @param {string|null} out   the date they give away (null for a plain cover)
-   * @param {string}      inc   the date they receive
-   */
-  /**
-   * Two duties are the SAME duty only when the day and the category match.
-   * A resident can hold two duties on one day, so removing "everything on that
-   * date" would quietly delete a duty the exchange never touched.
-   */
-  function sameDuty(a, b) {
-    return !!a && !!b && a.date === b.date && normAr(a.cat || '') === normAr(b.cat || '');
-  }
-
-  function afterExchange(list, out, inc, allowStrip) {
-    // `out` may be a duty object or a bare date (older call sites).
-    const outDuty = typeof out === 'string' ? { date: out, cat: null } : out;
-    const rest = (list || []).filter(d => {
-      if (!outDuty) return true;
-      return outDuty.cat === null ? d.date !== outDuty.date : !sameDuty(d, outDuty);
-    });
-    const n = dayNum(typeof inc === 'string' ? inc : inc.date);
-    const same = rest.find(d => dayNum(d.date) === n);
-    const prev = rest.find(d => dayNum(d.date) === n - 1);
-    const next = rest.find(d => dayNum(d.date) === n + 1);
-    const strip = !same && !!(prev || next);
-
-    return {
-      ok: !same && (allowStrip || !strip),
-      sameDay: !!same, strip, same, prev, next,
-      blocks: [
-        same && `مناوبة في نفس اليوم (${same.cat})`,
-        prev && `مناوبة في اليوم السابق ${fmt(prev.date)}`,
-        next && `مناوبة في اليوم التالي ${fmt(next.date)}`
-      ].filter(Boolean)
-    };
-  }
 
   /** Judge `date` for `taker`, ignoring the date they hand over. */
   function evaluate(taker, date, ignore, allowStrip) {
     const allow = allowStrip === undefined ? S.exceptional : allowStrip;
-    const r = afterExchange(dutiesOf(taker), ignore, date, allow);
-    const month = date.slice(0, 7);
-    return Object.assign({}, r, {
-      after: dutiesOf(taker).filter(d => d.date !== ignore && d.date.startsWith(month)).length + 1
-    });
+    return swapRules.evaluate(dutiesOf(taker), date, ignore, allow);
   }
 
   /** شيل — can `to` simply take my duty? */
   function coverFeasible(myDuty, to) {
-    if (genderBlocked(myDuty.cat, to)) return null;
-    const r = afterExchange(dutiesOf(to), null, myDuty, S.exceptional);
-    return r.ok ? { strip: r.strip } : null;
+    return swapRules.coverFeasible(myDuty, dutiesOf(to), to, S.exceptional);
   }
 
   /**
@@ -401,36 +342,17 @@
    * simulated: each side loses what it hands over BEFORE the arrival is judged.
    */
   function swapFeasible(from, myDuty, to, theirDuty) {
-    // Only the very same duty is pointless. Trading a DIFFERENT duty on the
-    // same day is a real swap — إسعاف داخلي ليلي for إسعاف داخلي نهاري on the
-    // one date leaves each of us with exactly one duty that day.
-    if (sameDuty(myDuty, theirDuty)) return null;
-    if (genderBlocked(myDuty.cat, to)) return null;        // باب: males only
-    if (genderBlocked(theirDuty.cat, from)) return null;
-
-    // Judge the schedules each side ACTUALLY ends up with.
-    const theirs = afterExchange(dutiesOf(to), theirDuty, myDuty, S.exceptional);
-    if (!theirs.ok) return null;
-    const mine = afterExchange(dutiesOf(from), myDuty, theirDuty, S.exceptional);
-    if (!mine.ok) return null;
-
-    return { duty: theirDuty, strip: theirs.strip || mine.strip };
+    return swapRules.swapFeasible(from, dutiesOf(from), myDuty, to, dutiesOf(to), theirDuty, S.exceptional);
   }
 
   /** Every duty of `to` that can be traded for mine. */
   function feasibleSwaps(from, shift, to) {
-    const late = shift.date < today;
-    return dutiesOf(to)
-      .filter(d => (late ? d.date < today : d.date >= today))
-      .map(d => swapFeasible(from, shift, to, d))
-      .filter(Boolean)
-      .map(x => x.duty);
+    return swapRules.feasibleSwaps(from, dutiesOf(from), shift, to, dutiesOf(to), today, S.exceptional);
   }
 
   /** The duty list someone ends up with — what "بعد التبديل" draws. */
   function dutiesAfter(doc, add, remove) {
-    const list = dutiesOf(doc).filter(d => !remove || !sameDuty(d, remove));
-    return (add ? list.concat([add]) : list).sort((a, b) => a.date.localeCompare(b.date));
+    return swapRules.dutiesAfter(dutiesOf(doc), add, remove);
   }
 
   /* ------------------------------------------------------- who can take it */
@@ -633,10 +555,10 @@
           cls.push('pick');
           click = ` data-date="${iso}"`;
           if (iso < today) { cls.push('late'); why = 'مضت'; }
-        } else if (mine.length) {
-          cls.push('blocked');
-          why = 'قديمةٌ جداً';
         }
+        // مناوبةٌ أقدم من يومين: لا تُعلَّم «قديمةٌ جداً» بحمرة تنبيه — تبقى
+        // رماديةً هادئة (.past العامّة أعلاه) بلا تعليقٍ خاص، فلا تُصبح
+        // قابلةً للاختيار فحسب (الخادم سيرفضها على كل حال).
         if (iso === opts.selected) cls.push('sel');
       } else {
         const v = evaluate(opts.doctor, iso, opts.ignore);
@@ -1486,6 +1408,7 @@
     setAuthIdentity(identity) {
       authIdentity = identity || null;
       applyAuthIdentity();
+      applyFindAutofill();
       if (identity) { loadMyRequests(); startMyRequestsAutoRefresh(); }
     },
     resetForNewRequest

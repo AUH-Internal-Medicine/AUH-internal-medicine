@@ -14,6 +14,7 @@
   const { normAr, smartSearch, escapeHtml } = AUH.text;
   const TOKEN_KEY = 'auh_swap_session';
   const GUIDE_SEEN_KEY = 'auh_swap_guide_seen';
+  const BANNER_DISMISSED_KEY = 'auh_banner_find_dismissed';
 
   let residentsList = []; // [{abbr, name}]
   let registerPicked = null; // {abbr, name} أثناء التسجيل
@@ -39,8 +40,15 @@
       const cp = el('authChangePassBtn');
       if (cp) cp.onclick = openChangePassword;
     }
+    // زرّ «البحث عن بديل» في الرأس — موجودٌ في swap.html فقط (لا داعي له في
+    // swap-find.html نفسها)، فيُفحَص وجوده أولاً. يظهر بعد الدخول مباشرةً.
+    const findCta = el('heroFindCta');
+    if (findCta && identity) findCta.hidden = false;
     // صاحبُ طلب التبديل = صاحبُ الحساب دائماً — راجع swap.js لِمَ هذا مقفل.
+    // نفس البوّابة والمنطق يُعاد استخدامهما حرفياً في swap-find.html (واجهة
+    // «البحث عن بديل») — فقط أحد الكائنين الآتيين موجودٌ فعلياً بحسب الصفحة.
     if (identity && AUH.swap && AUH.swap.setAuthIdentity) AUH.swap.setAuthIdentity(identity);
+    if (identity && AUH.swapFind && AUH.swapFind.setAuthIdentity) AUH.swapFind.setAuthIdentity(identity);
   }
 
   function setGateError(scope, msg) {
@@ -93,6 +101,23 @@
     return residentsList.find(r => normAr(r.name) === n) || null;
   }
 
+  /**
+   * تسجيل الدخول يرسل الاختصارَ دائماً، بصرف النظر عمّا كتبه المستخدم أو
+   * اختاره من القائمة المنسدلة (اسمٌ كاملٌ أو اختصار) — فلا حاجة لدعم
+   * مطابقة الاسم في الخادم (`نظام-التبديل.gs`)، ويعمل الحلّ فوراً دون أي
+   * إعادة نشرٍ هناك. مطابقةٌ تامّة فقط (بعد `normAr`)؛ إن لم تتطابق، يُرسَل
+   * ما كُتب كما هو فيحاول الخادم مطابقته بنفسه (اختصار أو إيميل).
+   */
+  function resolveLoginIdentifier(typed) {
+    const n = normAr((typed || '').trim());
+    if (!n) return typed;
+    const byAbbr = residentsList.find(r => normAr(r.abbr) === n);
+    if (byAbbr) return byAbbr.abbr;
+    const byName = residentsList.find(r => normAr(r.name) === n);
+    if (byName) return byName.abbr;
+    return typed;
+  }
+
   /* ─────────────────────────────── تبويبا الدخول/التسجيل ─────────────────────────────── */
 
   function switchAuthTab(which) {
@@ -105,7 +130,8 @@
   /* ────────────────────────────────── تسجيل الدخول ────────────────────────────────── */
 
   function doLogin() {
-    const abbr = el('loginAbbr').value.trim();
+    const typed = el('loginAbbr').value.trim();
+    const abbr = resolveLoginIdentifier(typed);
     const password = el('loginPassword').value;
     setGateError('login', '');
     if (!abbr || !password) { setGateError('login', 'أدخل اسمك/اختصارك وكلمة السرّ.'); return; }
@@ -265,11 +291,38 @@
    * ولا دليلَ هنا إطلاقاً: الأدمن مصادَقٌ عليه بكلمة سرّه هو عند الإرسال. */
   const ADMIN_MODE = new URLSearchParams(location.search).get('admin') === '1';
 
+  /**
+   * إشعارُ إطلاق «البحث عن بديل» أعلى الصفحة — نافذةٌ زمنيةٌ ثابتة واحدة
+   * لكل الزوّار (`FEATURE_FIND_BANNER_UNTIL` في `core/config.js`)، لا لكل
+   * مستخدمٍ على حِدة؛ تنتهي تلقائياً بعد ذلك التاريخ بصرف النظر عن أي شيء.
+   * زرّ الإغلاق يُسكِته لمن أغلقه فقط، ولا يُمدِّد النافذة العامّة.
+   */
+  function initFeatureBanner() {
+    const banner = el('featureBanner');
+    if (!banner) return;
+    const until = (AUH.config && AUH.config.FEATURE_FIND_BANNER_UNTIL) || '';
+    const deadline = until ? Date.parse(until) : NaN;
+    if (!deadline || Date.now() >= deadline) return;
+    if (AUH.storage.get(BANNER_DISMISSED_KEY)) return;
+
+    banner.hidden = false;
+    const close = el('featureBannerClose');
+    if (close) {
+      close.onclick = e => {
+        e.preventDefault();
+        e.stopPropagation();
+        AUH.storage.set(BANNER_DISMISSED_KEY, '1');
+        banner.hidden = true;
+      };
+    }
+  }
+
   function boot() {
     wireEvents();
     loadResidentsForPicker();
 
     if (ADMIN_MODE) { el('authGate').hidden = true; return; }
+    initFeatureBanner(); // لا إشعار ميزاتٍ جديدة أثناء إدخال الأدمن طلباً يدوياً نيابةً عن أحد
 
     const afterGuide = () => {
       const token = AUH.storage.get(TOKEN_KEY);

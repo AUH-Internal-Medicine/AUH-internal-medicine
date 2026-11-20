@@ -21,6 +21,9 @@
   // باقي الإجراءات، فميزانية صبرٍ أكبر تمنع رسالة "لم يُجب الخادم" المُضلِّلة
   // بينما القرار نفَّذ فعلاً على الخادم.
   const HEAVY = { tries: 24, gapMs: 700, timeoutMs: 5000 };
+  // قرارٌ جماعيّ قد يكتب على الجدول عدّة مرّاتٍ متتالية (طلبٌ واحدٌ لكل عنصر) —
+  // ميزانية صبرٍ أكبر من HEAVY نفسها.
+  const BULK = { tries: 40, gapMs: 800, timeoutMs: 6000 };
 
   /** @returns {Promise<{state:'ok', id}|{state:'error', message}>} */
   function submitRequest(token, data) {
@@ -62,8 +65,28 @@
     return client.postAndPoll('adminSubmitRequest', Object.assign({ passcode: passcode }, data), QUICK);
   }
 
+  /**
+   * قرارٌ واحدٌ على عدّة طلباتٍ معاً — تحديدٌ متعدّد في لوحة الأدمن بدل المرور
+   * على كل طلبٍ على حِدة.
+   * @returns {Promise<{state:'ok', decided:Array, skipped:Array}|{state:'error', message}>}
+   */
+  function adminDecideRequestsBulk(passcode, ids, decision, note) {
+    return client.postAndPoll('adminDecideRequestsBulk', { passcode: passcode, ids: ids, decision: decision, note: note }, BULK);
+  }
+
+  /** @returns {Promise<{state:'ok', enabled:boolean}|{state:'error', message}>} */
+  function adminSetAutoApprove(passcode, enabled) {
+    return client.postAndPoll('adminSetAutoApprove', { passcode: passcode, enabled: !!enabled }, QUICK);
+  }
+
+  /** @returns {Promise<{state:'ok', enabled:boolean}|{state:'error', message}>} */
+  function adminGetAutoApproveStatus(passcode) {
+    return client.postAndPoll('adminGetAutoApproveStatus', { passcode: passcode }, QUICK);
+  }
+
   AUH.data.swapRequests = {
     submitRequest, myRequests, cancelRequest, adminListRequests, adminDecideRequest,
-    retryScheduleExecution, adminSubmitRequest
+    retryScheduleExecution, adminSubmitRequest, adminDecideRequestsBulk,
+    adminSetAutoApprove, adminGetAutoApproveStatus
   };
 })(typeof window !== 'undefined' ? window : globalThis);

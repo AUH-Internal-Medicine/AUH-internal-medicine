@@ -66,7 +66,7 @@
     },
 
     /**
-     * استبيانُ الشهر داخلَ الموقع — تبويبُ «استبيان شهر ١١».
+     * استبيانُ الشهر داخلَ الموقع — تبويبُ «استبيان شهر ١٢».
      *
      * هذا هو **كلُّ** ما يُضبط لتشغيله أو إغلاقه أو نقلِه إلى الشهر التالي.
      * والكتابةُ تَمرّ عبر سكربتِ Apps Script في `5-أدوات/apps-script/`،
@@ -77,8 +77,11 @@
       /**
        * رابطُ تطبيقِ الويب من Apps Script، المنتهي بـ `/exec`.
        * فارغاً ← يُعرض في التبويب «لم يُفتح بعد» بلا أيِّ عطل.
+       *
+       * ✅ نُشر 2026-11-20 — تحقّقتُ بـ`ping` مباشرةً: يردّ `month:12,
+       * year:2026, days:31, open:false` بالضبط كما يجب الآن.
        */
-      endpoint: 'https://script.google.com/macros/s/AKfycbwSOCA_xQbqgZSp6-1PHf-jU5zeghZgl4imjWlVZD-oTd9kZoizJWaoTA-qls56HxXBRA/exec',
+      endpoint: 'https://script.google.com/macros/s/AKfycbytzUfYipCI1y3VDaI6Z9s4PCksnkjG_EGh3r6Wsk0L3SGrdldnalmjznGOzbiQH4htaQ/exec',
 
       /**
        * معرّفُ OAuth للويب (Google Cloud Console). يُفعّل «الدخول بحساب
@@ -95,15 +98,21 @@
        * يَبقى إدخالُ البريد لعرضِ الجواب المسجَّل وحدَه: لا نموذجَ ولا إرسالَ
        * ولا زرَّ تعديل. والحارسُ الحقيقيُّ `OPEN: false` في سكربت Apps Script
        * — فهذا هنا للعرض، وذاك يَرفض أيَّ إرسالٍ يُحاول تجاوزَ الصفحة.
+       *
+       * ✅ `setup` شُغِّلت وتحقّقتُ من مخرجاتها (2026-11-20): ٢١٩ اسماً في
+       * اللائحة، و١٢٣/١٢٣ بريداً بُرُدَ الشهر الماضي مقترناً باسمٍ — نظيفة
+       * تماماً. قلبتُ `closed` إلى `false` هنا؛ **يبقى عليك وحدك** قلب
+       * `OPEN: true` في السكربت ثم Deploy ← Manage deployments ← ✏️ ←
+       * New version ← Deploy — فالاثنان يجب أن يتغيّرا معاً لا أحدهما.
        */
-      closed: true,
+      closed: false,
 
       /** الشهرُ المسؤولُ عنه الاستبيان (أيامُ عدم القدرة على المناوبة). */
-      month: 11,
+      month: 12,
       year: 2026,
 
       /** الشهرُ الذي يُقيَّم فرزُه ورزنامتُه (الشهرُ المنصرف). */
-      ratedMonth: 10
+      ratedMonth: 11
     },
 
     /**
@@ -122,6 +131,14 @@
        */
       endpoint: 'https://script.google.com/macros/s/AKfycbw5ZUsA1la8BE30LuvfaiFk-8136S6MxqeDIUzUYF8B3zN6KWWTMgZof46n-DmAtQGevQ/exec'
     },
+
+    /**
+     * إشعار إطلاق «البحث عن بديل» (`swap-find.html`) أعلى `swap.html` —
+     * نافذةٌ زمنيةٌ ثابتة واحدة لكل الزوّار («من الآن»، لا لكل مستخدمٍ على
+     * حِدة) — غيّر التاريخ فقط إن احتجت تمديدها أو إطلاق إشعارٍ مشابهٍ لاحقاً.
+     * ينتهي العرضُ تلقائياً بعد هذا التاريخ بصرف النظر عن أي شيءٍ آخر.
+     */
+    FEATURE_FIND_BANNER_UNTIL: '2026-11-19T00:00:00+03:00',
 
     /**
      * The residency years the site covers. Each year is a self-contained set of
@@ -204,10 +221,10 @@
    */
   const TABS = [
     { id: 'residents', icon: '<i class="fas fa-user-doctor"></i>', label: 'لائحة المقيمين' },
-    // استبيانُ الشهر — مُوقَّتٌ بطبعه: يُعبَّأ مرّةً في الشهر ثم يُغلق. أُخفي
-    // 2026-11-07 ليحلّ زرّ التبديل محلّه (نفس اللون المميَّز)؛ لإعادته احذف
-    // `hidden: true` فقط.
-    { id: 'survey11', icon: '<i class="fas fa-clipboard-question"></i>', label: 'استبيان شهر 11', highlight: 'survey', hidden: true },
+    // استبيانُ الشهر — مُوقَّتٌ بطبعه: يُعبَّأ مرّةً في الشهر ثم يُغلق. أُعيد
+    // إظهارُه 2026-11-20 لإطلاق استبيان شهر 12 (كان مخفياً منذ 2026-11-07
+    // أيّامَ استبيان شهر 11، بعد أن أُغلق بابُ تعبئته).
+    { id: 'survey12', icon: '<i class="fas fa-clipboard-question"></i>', label: 'استبيان شهر 12', highlight: 'survey' },
     // تبديل المناوبات — صفحةٌ منفصلة (`swap.html`) لا تبويبٌ داخل هذه
     // الصفحة، فلها `href` بدل `id` فعليّ في التوجيه: `buildNav()` في
     // `views/layout.js` يرسمها رابطاً `<a>` لا زرّ `<button data-tab>`،
@@ -226,7 +243,10 @@
     { id: 'emergencymeds', icon: '<i class="fas fa-kit-medical"></i>', label: 'أدوية إسعافية', highlight: true },
     { id: 'links', icon: '<i class="fas fa-link"></i>', label: 'روابط هامة' },
     { id: 'myinfo', icon: '<i class="fas fa-id-card"></i>', label: 'معلوماتي' },
-    { id: 'qa', icon: '<i class="fas fa-circle-question"></i>', label: 'Q&A' }
+    { id: 'qa', icon: '<i class="fas fa-circle-question"></i>', label: 'Q&A' },
+    // آخر ما استُحدث بالموقع — صفحةٌ منفصلة (`updates.html`) بنفس نمط `swap`
+    // أعلاه، لكن آخر زرٍّ في الشريط عمداً، بلونٍ مميَّزٍ خاصٍّ بها.
+    { id: 'updates', href: 'updates.html', icon: '<i class="fas fa-bell"></i>', label: 'آخر التحديثات', highlight: 'updates' }
   ];
 
   AUH.config = CONFIG;
